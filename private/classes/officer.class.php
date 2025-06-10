@@ -1,0 +1,140 @@
+<?php
+class Officer extends DatabaseObject {
+
+    static protected $table_name = 'officer';
+    static protected $db_columns = [
+        'id', 'username', 'password', 'full_name', 'position', 'email', 'google_id', 'facebook_id', 'line_id',
+        'is_active', 'is_approved', 'approved_by', 'approved_at', 'login_token', 'token_expiry',
+        'created_by', 'updated_by', 'created_at', 'updated_at', 'departments_id', 'usertype_id'
+    ];
+
+    public $id;
+    public $username;
+    public $password;
+    public $full_name;
+    public $position;
+    public $email;
+    public $google_id;
+    public $facebook_id;
+    public $line_id;
+    public $is_active = 1;
+    public $is_approved = 0;
+    public $approved_by;
+    public $approved_at;
+    public $login_token;
+    public $token_expiry;
+    public $created_by;
+    public $updated_by;
+    public $created_at;
+    public $updated_at;
+    public $departments_id;
+    public $usertype_id;
+
+    public function __construct($args=[]) {
+        $this->username = $args['username'] ?? '';
+        $this->password = $args['password'] ?? '';
+        $this->full_name = $args['full_name'] ?? '';
+        $this->position = $args['position'] ?? '';
+        $this->email = $args['email'] ?? '';
+        $this->google_id = $args['google_id'] ?? NULL;
+        $this->facebook_id = $args['facebook_id'] ?? NULL;
+        $this->line_id = $args['line_id'] ?? NULL;
+        $this->is_active = $args['is_active'] ?? 1;
+        $this->is_approved = $args['is_approved'] ?? 0;
+        $this->approved_by = $args['approved_by'] ?? NULL;
+        $this->approved_at = $args['approved_at'] ?? NULL;
+        $this->login_token = $args['login_token'] ?? NULL;
+        $this->token_expiry = $args['token_expiry'] ?? NULL;
+        $this->created_by = $args['created_by'] ?? NULL;
+        $this->updated_by = $args['updated_by'] ?? NULL;
+        $this->created_at = $args['created_at'] ?? NULL;
+        $this->updated_at = $args['updated_at'] ?? NULL;
+        $this->departments_id = $args['departments_id'] ?? NULL;
+        $this->usertype_id = $args['usertype_id'] ?? NULL;
+    }
+
+    static public function find_by_username($username) {
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE username = '" . self::$database->escape_string($username) . "' ";
+        $sql .= "LIMIT 1";
+        $result_array = static::find_by_sql($sql);
+        return !empty($result_array) ? array_shift($result_array) : false;
+    }
+
+    public static function alert_and_redirect($title, $message, $redirect_url) {
+        echo '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>';
+        echo <<<HTML
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            Swal.fire({
+                icon: 'info',
+                title: '{$title}',
+                text: '{$message}',
+                confirmButtonText: 'ตกลง'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '{$redirect_url}';
+                }
+            });
+        </script>
+        HTML;
+        echo '</body></html>';
+        exit;
+
+    }
+
+    static public function find_or_create_by_facebook($fb_id, $full_name, $email = null) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE facebook_id = '" . self::$database->escape_string($fb_id) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        if (!empty($result)) return $result[0];
+
+        $new_user = new Officer([
+            'facebook_id' => $fb_id,
+            'full_name' => $full_name,
+            'email' => $email,
+            'username' => 'facebook_'.$fb_id,
+            'departments_id' => 38, //ไม่ระบุหน่วยงาน
+            'is_active' => 1,
+            'is_approved' => 0
+        ]);
+        $new_user->save();
+        return $new_user;
+    }
+
+    static public function find_or_create_by_google($google_id, $full_name, $email = null) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE google_id = '" . self::$database->escape_string($google_id) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        if (!empty($result)) return $result[0];
+
+        $new_user = new Officer([
+            'google_id' => $google_id,
+            'full_name' => $full_name,
+            'username' => 'google_'.$google_id,
+            'email' => $email,
+            'departments_id' => 38, //ไม่ระบุหน่วยงาน
+            'is_active' => 1,
+            'is_approved' => 0
+        ]);
+        $new_user->save();
+        return $new_user;
+    }
+
+    static public function find_or_create_by_line($line_id, $full_name, $email = null) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE line_id = '" . self::$database->escape_string($line_id) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        if (!empty($result)) return $result[0];
+
+        $new_user = new Officer([
+            'line_id' => $line_id,
+            'full_name' => $full_name,
+            'email' => $email,
+            'username' => 'line_'.$line_id,
+            'departments_id' => 38, //ไม่ระบุหน่วยงาน
+            'is_active' => 1,
+            'is_approved' => 0
+        ]);
+        $new_user->save();
+        return $new_user;
+    }
+}
+?>
