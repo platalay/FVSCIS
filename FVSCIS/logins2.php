@@ -61,6 +61,47 @@ $Departments=Department::find_all();
         </div>
 
 
+        <!-- Fisherman Modal -->
+<div class="modal fade" id="FishermanModal" tabindex="-1" aria-labelledby="FishermanModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="formFisherman">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="FishermanModalLabel">ลงทะเบียนชาวประมง</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="citizen_id" class="form-label">หมายเลขบัตรประชาชน</label>
+            <input type="text" class="form-control" name="fisherman[citizen_id]" id="citizen_id" required>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">อีเมล (ไม่บังคับ)</label>
+            <input type="email" class="form-control" name="fisherman[email]" id="email">
+          </div>
+
+          <?php
+          if (isset($_SESSION['username']) && isset($_SESSION['user_id'])) {
+              $firstChar = strtolower(substr($_SESSION['username'], 0, 1));
+
+              if ($firstChar === 'g') {
+                  echo '<input type="hidden" name="Officer[google_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+              } elseif ($firstChar === 'l') {
+                  echo '<input type="hidden" name="Officer[line_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+              } elseif ($firstChar === 'f') {
+                  echo '<input type="hidden" name="Officer[facebook_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+              }
+          }
+          ?>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">บันทึก</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
     <!-- Officer Modal -->
 <div class="modal fade" id="OfficerModal" tabindex="-1" aria-labelledby="OfficerModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -197,9 +238,37 @@ $Departments=Department::find_all();
             new bootstrap.Tooltip(tooltipTriggerEl)
           })
         });
-      </script>    
+      </script> 
+      
+      
         <script>
         $(document).ready(function() {
+
+
+          $('#formFisherman').on('submit', function (e) {
+            e.preventDefault();
+            const formData = $(this).serialize();
+
+            $.ajax({
+              url: 'ajax/save_fisherman.php',
+              type: 'POST',
+              data: formData,
+              dataType: 'json',
+              success: function (response) {
+                if (response.success) {
+                  alert('บันทึกข้อมูลสำเร็จ');
+                  $('#modalfisherman').modal('hide');
+                } else {
+                  alert('ผิดพลาด: ' + response.message);
+                }
+              },
+              error: function () {
+                alert('เกิดข้อผิดพลาดจากระบบ');
+              }
+            });
+          });
+          //end $('#formFisherman').on('submit', function (e) {
+
 
           $('#OfficerForm').on('submit', function(e) {
             e.preventDefault();

@@ -41,7 +41,7 @@ class Department extends DatabaseObject {
     
     static public function find_by_department_group_id($department_group_id) {
             $sql = "SELECT * FROM " . static::$table_name . " ";
-            $sql .= "WHERE department_group_id='" . self::$database->escape_string($department_group_id) . "'";
+            $sql .= "WHERE parent_department='" . self::$database->escape_string($department_group_id) . "'";
             $obj_array = static::find_by_sql($sql);
             if(!empty($obj_array)) {
               return array_shift($obj_array);

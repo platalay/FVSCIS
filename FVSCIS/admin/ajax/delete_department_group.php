@@ -1,5 +1,7 @@
 <?php
 require_once('../../../private/initialize.php');
+header('Content-Type: application/json');
+ob_start(); // ป้องกัน output อื่น
 
 $id = $_POST['id'] ?? null;
 
@@ -8,7 +10,6 @@ if (empty($id) || !is_numeric($id)) {
     exit;
 }
 
-// ตรวจสอบว่ามี department ที่ผูกกับ group นี้หรือไม่
 $related_departments = Department::find_by_department_group_id($id);
 if ($related_departments !== false) {
     echo json_encode([
@@ -18,14 +19,12 @@ if ($related_departments !== false) {
     exit;
 }
 
-// ดึงข้อมูล group ที่จะลบ
 $DepartmentGroup = DepartmentGroup::find_by_id($id);
 if (!$DepartmentGroup) {
     echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูล']);
     exit;
 }
 
-// ลบได้
 $result = $DepartmentGroup->delete();
 
 if ($result) {
