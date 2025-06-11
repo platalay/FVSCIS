@@ -76,7 +76,20 @@ $Departments=Department::find_all();
           
           <!-- Hidden Fields -->
           <input type="hidden" name="Officer[username]" value="<?= $_SESSION['username'] ?>">
-          <input type="hidden" name="Officer[google_id]" value="<?= $_SESSION['user_id'] ?>">
+          <?php
+          if (isset($_SESSION['username']) && isset($_SESSION['user_id'])) {
+              $firstChar = strtolower(substr($_SESSION['username'], 0, 1));
+
+              if ($firstChar === 'g') {
+                  echo '<input type="hidden" name="Officer[google_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+              } elseif ($firstChar === 'l') {
+                  echo '<input type="hidden" name="Officer[line_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+              } elseif ($firstChar === 'f') {
+                  echo '<input type="hidden" name="Officer[facebook_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+              }
+          }
+          ?>
+
           
           <div class="mb-3">
             <label for="name" class="form-label">ชื่อ - นามสกุล</label>
@@ -107,9 +120,9 @@ $Departments=Department::find_all();
             <label for="UserType" class="form-label">สิทธิ์การใช้งาน</label>
             <select class="form-control" name="Officer[usertype_id]" id="UserType"  required>
               <option value="" selected data-default>select UserType</option>  
-              <option value="2">หน่วยงานตรวจ</option>
-              <option value="3">ผู้ดูแลระบบส่วนกลาง</option>
-              <option value="5">เจ้าหน้าที่ผู้ลงนาม</option>
+              <option value="2">ผู้ดูแลระบบส่วนกลาง</option>
+              <option value="3">เจ้าหน้าที่หน่วยงานตรวจ</option>
+              <option value="4">ผู้มีอำนาจลงนาม</option>
             </select>
           </div>
 
