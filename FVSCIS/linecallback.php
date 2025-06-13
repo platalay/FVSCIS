@@ -108,7 +108,7 @@ $_SESSION['email'] = htmlspecialchars($user_info['email'] ?? '');
                     Officer::alert_and_redirect(
                         'บัญชียังกรอกข้อมูลไม่ครบ',
                         'กรุณาตรวจสอบ และรอการอนุมัติจากเจ้าหน้าที่',
-                        'register_officer.php'
+                        'logins2.php'
                     );
                 } else {
                     Officer::alert_and_redirect(
@@ -125,9 +125,9 @@ $_SESSION['email'] = htmlspecialchars($user_info['email'] ?? '');
                     redirect_to('Fisherman/index.php');
                 } else {
                     Fisherman::alert_and_redirect(
-                        'ไม่พบบัญชีผู้ใช้งาน',
-                        'กรุณากรอกหมายเลขบัตรประชาชน และรอการอนุมัติจากเจ้าหน้าที่',
-                        'register_fisherman.php'
+                        'รอการอนุมัติ',
+                        'คุณขอเข้าใช้ระบบในฐานะเจ้าหน้าที่ กรุณารอการอนุมัติจากผู้ดูแลระบบ',
+                        'login.php'
                     );
                 }
             } else {

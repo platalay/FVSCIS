@@ -59,23 +59,37 @@ class Fisherman extends DatabaseObject {
     }
 
     public static function alert_and_redirect($title, $message, $redirect_url) {
+        $title_escaped = htmlspecialchars($title, ENT_QUOTES);
+        $message_escaped = htmlspecialchars($message, ENT_QUOTES);
+        $redirect_url_escaped = htmlspecialchars($redirect_url, ENT_QUOTES);
+
         echo <<<HTML
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script>
-            Swal.fire({
-                icon: 'info',
-                title: '{$title}',
-                text: '{$message}',
-                confirmButtonText: 'ตกลง'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '{$redirect_url}';
-                }
-            });
-        </script>
+        <!DOCTYPE html>
+        <html lang="th">
+        <head>
+            <meta charset="UTF-8">
+            <title>แจ้งเตือน</title>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        </head>
+        <body>
+            <script>
+                Swal.fire({
+                    icon: 'info',
+                    title: '{$title_escaped}',
+                    text: '{$message_escaped}',
+                    confirmButtonText: 'ตกลง'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '{$redirect_url_escaped}';
+                    }
+                });
+            </script>
+        </body>
+        </html>
         HTML;
         exit;
     }
+
 
     static public function find_or_create_by_facebook($fb_id, $full_name, $citizen_id, $email = null) {
         $sql = "SELECT * FROM " . static::$table_name . " WHERE facebook_id = '" . self::$database->escape_string($fb_id) . "' LIMIT 1";
