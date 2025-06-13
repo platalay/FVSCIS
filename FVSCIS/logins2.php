@@ -15,7 +15,7 @@ $Departments=Department::find_all();
     <meta name="author" content="" />
 
     <title>FVSCIS Login S2</title>
-
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <!-- Custom fonts for this template-->
     <link
       href="vendor/fontawesome-free/css/all.min.css"
@@ -76,20 +76,20 @@ $Departments=Department::find_all();
             <input type="text" class="form-control" name="fisherman[citizen_id]" id="citizen_id" required>
           </div>
           <div class="mb-3">
-            <label for="email" class="form-label">อีเมล (ไม่บังคับ)</label>
+            <label for="email" class="form-label">อีเมล (ไม่บังคับหากบันทึกจะมีการแจ้งข้อมูลผ่านทาง email)</label>
             <input type="email" class="form-control" name="fisherman[email]" id="email">
           </div>
-
+          <input type="hidden" name="fisherman[username]" value="<?= $_SESSION['username'] ?>">
           <?php
           if (isset($_SESSION['username']) && isset($_SESSION['user_id'])) {
               $firstChar = strtolower(substr($_SESSION['username'], 0, 1));
 
               if ($firstChar === 'g') {
-                  echo '<input type="hidden" name="Officer[google_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="fisherman[google_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
               } elseif ($firstChar === 'l') {
-                  echo '<input type="hidden" name="Officer[line_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="fisherman[line_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
               } elseif ($firstChar === 'f') {
-                  echo '<input type="hidden" name="Officer[facebook_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="fisherman[facebook_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
               }
           }
           ?>
@@ -108,7 +108,7 @@ $Departments=Department::find_all();
     <div class="modal-content">
 
       <div class="modal-header">
-        <h5 class="modal-title" id="OfficerModalLabel">สมัครสมาชิก</h5>
+        <h5 class="modal-title" id="OfficerModalLabel">ลงทะเบียนเข้าใช้งานระบบ</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
@@ -172,7 +172,7 @@ $Departments=Department::find_all();
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-        <button type="submit" form="OfficerForm" class="btn btn-primary">สมัครสมาชิก</button>
+        <button type="submit" form="OfficerForm" class="btn btn-primary">สมัครเข้าใช้งาน</button>
       </div>
 
     </div>
@@ -187,7 +187,7 @@ $Departments=Department::find_all();
     <div class="modal-content">
     
       <div class="modal-header">
-        <h5 class="modal-title" id="FishermanModalLabel">สมัครสมาชิก</h5>
+        <h5 class="modal-title" id="FishermanModalLabel">สมัครเข้าใช้งานระบบ</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       
@@ -228,7 +228,7 @@ $Departments=Department::find_all();
 
     <!-- Core plugin JavaScript-->
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>            
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>   
     <!-- Custom scripts for all pages-->
     <script src="js/sb-admin-2.min.js"></script>
     <script>
@@ -248,7 +248,14 @@ $Departments=Department::find_all();
           $('#formFisherman').on('submit', function (e) {
             e.preventDefault();
             const formData = $(this).serialize();
-
+            Swal.fire({
+              title: 'กำลังดำเนินการ...',
+              html: 'โปรดรอสักครู่',
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              }
+            });
             $.ajax({
               url: 'ajax/save_fisherman.php',
               type: 'POST',
@@ -256,17 +263,36 @@ $Departments=Department::find_all();
               dataType: 'json',
               success: function (response) {
                 if (response.success) {
-                  alert('บันทึกข้อมูลสำเร็จ');
-                  $('#modalfisherman').modal('hide');
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'สำเร็จ',
+                    text: 'บันทึกข้อมูลเรียบร้อยแล้ว กรุณารอการอนุมัติ',
+                    confirmButtonText: 'ตกลง'
+                  }).then(() => {
+                    window.location.href = 'login.php';
+                  });
                 } else {
-                  alert('ผิดพลาด: ' + response.message);
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: response.message,
+                    confirmButtonText: 'ปิด'
+                  }).then(() => {
+                    window.location.href = 'login.php';
+                  });
                 }
               },
               error: function () {
-                alert('เกิดข้อผิดพลาดจากระบบ');
+                Swal.fire({
+                  icon: 'error',
+                  title: 'ข้อผิดพลาดของระบบ',
+                  text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้',
+                  confirmButtonText: 'ตกลง'
+                });
               }
             });
           });
+
           //end $('#formFisherman').on('submit', function (e) {
 
 
