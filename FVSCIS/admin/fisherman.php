@@ -64,18 +64,21 @@ include("../../private/shared/topbaradmin.html");
                                     </tfoot>
                                     <tbody>
                                     <?php  
-                                    $color = ((int)$Fisherman->is_approved === 1) ? '#2e7d32' : '#e65100';
+                                    
                                     $Fishermans = Fisherman::find_all();             
-                                    foreach($Fishermans as $Fisherman) { ?> 
+                                    foreach($Fishermans as $Fisherman) { 
+                                        $color = ((int)$Fisherman->is_approved === 1) ? '#2e7d32' : '#e65100';
+                                        ?> 
                                     <tr style="font-size: 14px;">
                                     <td class="text-center align-middle" style="color: <?= $color; ?>">   
                                     <?php echo h($Fisherman->id); ?>
                                     
                                     <div class="d-flex flex-column align-items-center mt-2" style="gap: 10px;">
                                         <!-- ภายใน foreach ของ Officer -->
+                                        
                                         <button class="btn btn-primary btn-sm" title="แก้ไข"
                                                 style="width: 35px; height: 35px;"
-                                                onclick="editFisherman(<?php echo $Fisherman->id; ?>)">
+                                                onclick="editFisherman(<?= $Fisherman->id ?>)">
                                             <i class="fas fa-edit text-white"></i>
                                         </button>
 
@@ -112,97 +115,57 @@ include("../../private/shared/topbaradmin.html");
                     </div>
 
 
-                    <!-- Edit Officer Modal -->
-                    <div class="modal fade" id="EditOfficerModal" tabindex="-1" aria-labelledby="EditOfficerModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
+                    <!-- Edit fisherman Modal -->
+                    <div class="modal fade" id="modalEditFisherman" tabindex="-1" aria-labelledby="modalEditFishermanLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <form id="formEditFisherman">
                         <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="EditOfficerModalLabel">แก้ไขข้อมูลเจ้าหน้าที่</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-
-                        <div class="modal-body">
-                            <form id="EditOfficerForm" action="update_officer.php" method="post">
-                            <input type="hidden" name="Officer[id]" id="edit_id">
-
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                <label for="edit_username" class="form-label">ชื่อผู้ใช้</label>
-                                <input type="text" class="form-control" name="Officer[username]" id="edit_username" required>
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_password" class="form-label">รหัสผ่าน</label>
-                                <input type="text" class="form-control" name="Officer[password]" id="edit_password">
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_full_name" class="form-label">ชื่อ - นามสกุล</label>
-                                <input type="text" class="form-control" name="Officer[full_name]" id="edit_full_name">
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_position" class="form-label">ตำแหน่ง</label>
-                                <input type="text" class="form-control" name="Officer[position]" id="edit_position">
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_email" class="form-label">อีเมล</label>
-                                <input type="email" class="form-control" name="Officer[email]" id="edit_email">
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_google_id" class="form-label">Google ID</label>
-                                <input type="text" class="form-control" name="Officer[google_id]" id="edit_google_id">
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_facebook_id" class="form-label">Facebook ID</label>
-                                <input type="text" class="form-control" name="Officer[facebook_id]" id="edit_facebook_id">
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_line_id" class="form-label">LINE ID</label>
-                                <input type="text" class="form-control" name="Officer[line_id]" id="edit_line_id">
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_is_active" class="form-label">สถานะใช้งาน</label>
-                                <select class="form-select" name="Officer[is_active]" id="edit_is_active">
-                                    <option value="1">ใช้งาน</option>
-                                    <option value="0">ไม่ใช้งาน</option>
-                                </select>
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_is_approved" class="form-label">สถานะการอนุมัติ</label>
-                                <select class="form-select" name="Officer[is_approved]" id="edit_is_approved">
-                                    <option value="1">อนุมัติแล้ว</option>
-                                    <option value="0">รออนุมัติ</option>
-                                </select>
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_departments_id" class="form-label">หน่วยงาน</label>
-                                <?php $departments = Department::find_all();?>
-                                <select name="Officer[departments_id]" id="edit_departments_id" class="form-select">
-                                <option value="">-- กรุณาเลือกกลุ่มหน่วยงาน --</option>
-                                <?php foreach($departments as $group): ?>
-                                    <option value="<?php echo $group->id; ?>"><?php echo $group->name; ?></option>
-                                <?php endforeach; ?>
-                                </select>
-                                </div>
-                                <div class="col-md-6">
-                                <label for="edit_usertype_id" class="form-label">สิทธิ์การใช้งาน</label>
-                                <?php $UserTypes = UserType::find_all();?>
-                                <select class="form-select" name="Officer[usertype_id]" id="edit_usertype_id">
-                                    <option value="">-- กรุณาเลือกกลุ่มหน่วยงาน --</option>
-                                    <?php foreach($UserTypes as $UserType): ?>
-                                        <option value="<?php echo $UserType->id; ?>"><?php echo $UserType->name_th; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                </div>
+                            <div class="modal-header">
+                            <h5 class="modal-title" id="modalEditFishermanLabel">แก้ไขข้อมูลชาวประมง</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
                             </div>
-                            </form>
-                        </div>
+                            <div class="modal-body">
+                            <input type="hidden" name="fisherman[id]" id="edit-id">
 
-                        <div class="modal-footer">
+                            <div class="mb-3">
+                                <label for="edit-full_name" class="form-label">ชื่อเต็ม</label>
+                                <input type="text" class="form-control" name="fisherman[full_name]" id="edit-full_name" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="edit-email" class="form-label">อีเมล</label>
+                                <input type="email" class="form-control" name="fisherman[email]" id="edit-email">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="edit-citizen_id" class="form-label">หมายเลขบัตรประชาชน</label>
+                                <input type="text" class="form-control" name="fisherman[citizen_id]" id="edit-citizen_id" required>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" name="fisherman[is_active]" id="edit-is_active" value="1">
+                                <label class="form-check-label" for="edit-is_active">เปิดใช้งาน</label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" name="fisherman[is_approved]" id="edit-is_approved" value="1">
+                                <label class="form-check-label" for="edit-is_approved">อนุมัติแล้ว</label>
+                            </div>
+
+                            <input type="hidden" name="fisherman[approved_by]" id="edit-approved_by">
+                            <input type="hidden" name="fisherman[approved_at]" id="edit-approved_at">
+                            <input type="hidden" name="fisherman[updated_by]" id="edit-updated_by">
+                            <input type="hidden" name="fisherman[updated_at]" id="edit-updated_at">
+                            </div>
+                            <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                            <button type="submit" form="EditOfficerForm" class="btn btn-success">บันทึกการแก้ไข</button>
+                            </div>
                         </div>
-                        </div>
+                        </form>
                     </div>
                     </div>
+
 
                 <!-- /.container-fluid -->
 </div>
@@ -231,82 +194,84 @@ include("../../private/shared/footeradmin.html");
                     table.search(this.value).draw();
                 });
                 
-                $('#EditOfficerForm').on('submit', function (e) {
-                e.preventDefault();
-                        $.ajax({
-                            url: 'ajax/update_officer.php',
-                            type: 'POST',
-                            data: $(this).serialize(),
-                            dataType: 'json',
-                            success: function (response) {
-                                if (response.success) {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'บันทึกสำเร็จ',
-                                        showConfirmButton: false,
-                                        timer: 1500
-                                    }).then(() => {
-                                        location.reload();
-                                    });
-                                } else {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'ไม่สามารถบันทึกข้อมูลได้',
-                                        text: response.message
-                                    });
-                                }
-                            },
-                            error: function (xhr) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'เกิดข้อผิดพลาด',
-                                    text: xhr.responseText
-                                });
-                            }
+                $('#formEditFisherman').on('submit', function (e) {
+                    e.preventDefault();
+                    const formData = $(this).serialize();
+
+                    $.ajax({
+                        url: 'ajax/update_fisherman.php',
+                        type: 'POST',
+                        data: formData,
+                        dataType: 'json',
+                        success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                            icon: 'success',
+                            title: 'บันทึกสำเร็จ',
+                            timer: 1500,
+                            showConfirmButton: false
+                            }).then(() => {
+                            $('#modalEditFisherman').modal('hide');
+                            location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                            icon: 'error',
+                            title: 'ไม่สามารถบันทึกได้',
+                            text: response.message
+                            });
+                        }
+                        },
+                        error: function () {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ข้อผิดพลาด',
+                            text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'
                         });
-                    });
+                        }
+                    }); // ← ปิด )
+                    }); // ← ปิดทั้งหมด
+
             });
         </script>
         
         <script>
-        function editOfficer(id) {
-                $.ajax({
-                    url: 'ajax/get_officer.php',
-                    type: 'GET',
-                    data: { id: id },
-                    dataType: 'json',
-                    success: function(data) {
-                        // เติมค่าลงฟอร์มใน modal
-                        $('#edit_id').val(data.id);
-                        $('#edit_username').val(data.username);
-                        $('#edit_password').val(data.password);
-                        $('#edit_full_name').val(data.full_name);
-                        $('#edit_position').val(data.position);
-                        $('#edit_email').val(data.email);
-                        $('#edit_google_id').val(data.google_id);
-                        $('#edit_facebook_id').val(data.facebook_id);
-                        $('#edit_line_id').val(data.line_id);
-                        $('#edit_is_active').val(data.is_active);
-                        $('#edit_is_approved').val(data.is_approved);
-                        // ✅ ตั้งค่าค่า dropdown ให้เลือก option ที่ถูกต้อง
-                        $('#edit_departments_id').val(data.departments_id).trigger('change');
-                        $('#edit_usertype_id').val(data.usertype_id).trigger('change');
+        function editFisherman(id) {
+            $.ajax({
+                url: 'ajax/get_fisherman.php',
+                type: 'GET',
+                data: { id: id },
+                dataType: 'json',
+                success: function(fisherman) {
+                // วางค่าลงในฟอร์ม
+                $('#edit-id').val(fisherman.id);
+                $('#edit-full_name').val(fisherman.full_name);
+                $('#edit-email').val(fisherman.email);
+                $('#edit-citizen_id').val(fisherman.citizen_id);
 
-                        // เปิด modal
-                        const editModal = new bootstrap.Modal(document.getElementById('EditOfficerModal'));
-                        editModal.show();
-                    },
-                    error: function(xhr) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'ไม่สามารถโหลดข้อมูลได้',
-                            text: 'เกิดข้อผิดพลาด: ' + xhr.responseText
-                        });
-                    }
+                $('#edit-is_active').prop('checked', fisherman.is_active == 1);
+                $('#edit-is_approved').prop('checked', fisherman.is_approved == 1);
+
+                $('#edit-approved_by').val(fisherman.approved_by);
+                $('#edit-approved_at').val(fisherman.approved_at);
+                $('#edit-updated_by').val(fisherman.updated_by); // หรือใช้ session user_id ฝั่ง JS ถ้ามี
+                $('#edit-updated_at').val(new Date().toISOString().slice(0, 19).replace('T', ' '));
+
+                // แสดง modal
+                $('#modalEditFisherman').modal('show');
+                },
+                error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถโหลดข้อมูลชาวประมงได้'
                 });
+                }
+            });
             }
 
-            function deleteOfficer(id) {
+
+            function deleteFisherman(id) {
                 Swal.fire({
                     title: 'คุณแน่ใจหรือไม่?',
                     text: 'การลบเจ้าหน้าที่นี้จะไม่สามารถย้อนกลับได้',
@@ -319,7 +284,7 @@ include("../../private/shared/footeradmin.html");
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: 'ajax/delete_officer.php',
+                            url: 'ajax/delete_fisherman.php',
                             type: 'POST',
                             data: { id: id },
                             dataType: 'json',

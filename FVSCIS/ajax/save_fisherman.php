@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fisherman']['citizen_
             $fisherman->google_id = $google_id;
             $fisherman->facebook_id = $facebook_id;
             $fisherman->line_id = $line_id;
-
+            $fisherman->full_name = $Elicenses[0]->display_name;
             if ($fisherman->save()) {
                 $response['success'] = true;
             } else {
