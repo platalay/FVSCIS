@@ -38,7 +38,7 @@ require_once('../private/initialize.php');
             <div class="card-body p-0">
               <div class="row">
                 <div class="col-lg-6 d-flex align-items-center justify-content-center">
-                <button type="button" class="p-0 border-0 bg-transparent" style="box-shadow: none;" data-bs-toggle="modal" data-bs-target="#FishermanModal" title="ลงทะเบียนใช้งานสำหรับชาวประมง">
+                <button type="button" class="p-0 border-0 bg-transparent" style="box-shadow: none;" data-bs-toggle="modal" data-bs-target="#modalAddFisherman" title="ลงทะเบียนใช้งานสำหรับชาวประมง">
   <img src="img/fisher_man.png" class="img-fluid" style="max-height: 200px;" alt="Officer">
 </button>    
                 
@@ -101,45 +101,53 @@ require_once('../private/initialize.php');
 </div>    
 
 
-<!-- Fisher Modal -->
-<div class="modal fade" id="FishermanModal" tabindex="-1" aria-labelledby="FishermanModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-    
-      <div class="modal-header">
-        <h5 class="modal-title" id="FishermanModalLabel">สมัครสมาชิก</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <!-- Fisher Modal -->
+      <div class="modal fade" id="modalAddFisherman" tabindex="-1" aria-labelledby="modalAddFishermanLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <form id="formAddFisherman" method="POST" action="ajax/save_fisherman_local.php">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="modalAddFishermanLabel">ลงทะเบียนชาวประมง (บัญชีภายใน)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+              </div>
+
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="username" class="form-label">ชื่อผู้ใช้</label>
+                  <input type="text" class="form-control" name="fisherman[username]" id="username" required>
+                </div>
+
+                <div class="mb-3">
+                  <label for="password" class="form-label">รหัสผ่าน</label>
+                  <input type="password" class="form-control" name="fisherman[password]" id="password" required>
+                </div>
+
+                <div class="mb-3">
+                  <label for="confirm_password" class="form-label">ยืนยันรหัสผ่าน</label>
+                  <input type="password" class="form-control" id="confirm_password" required>
+                </div>
+
+                <div class="mb-3">
+                  <label for="email" class="form-label">อีเมล</label>
+                  <input type="email" class="form-control" name="fisherman[email]" id="email">
+                </div>
+
+                <div class="mb-3">
+                  <label for="citizen_id" class="form-label">หมายเลขบัตรประชาชน</label>
+                  <input type="text" class="form-control" name="fisherman[citizen_id]" id="citizen_id" required>
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">บันทึก</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-      
-      <div class="modal-body">
-        <form id="FishermanForm">
-          <div class="mb-3">
-            <label for="name" class="form-label">ชื่อ - นามสกุล</label>
-            <input type="text" class="form-control" id="name" required>
-          </div>
-          <div class="mb-3">
-            <label for="email" class="form-label">อีเมล</label>
-            <input type="email" class="form-control" id="email" required>
-          </div>
-          <div class="mb-3">
-            <label for="password" class="form-label">รหัสผ่าน</label>
-            <input type="password" class="form-control" id="password" required>
-          </div>
-          <div class="mb-3">
-            <label for="confirmPassword" class="form-label">ยืนยันรหัสผ่าน</label>
-            <input type="password" class="form-control" id="confirmPassword" required>
-          </div>
-        </form>
-      </div>
-      
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-        <button type="submit" form="FishermanForm" class="btn btn-primary">สมัครสมาชิก</button>
-      </div>
-      
-    </div>
-  </div>
-</div>  
+
+
 
     <!-- Bootstrap core JavaScript-->
     <script src="vendor/jquery/jquery.min.js"></script>
