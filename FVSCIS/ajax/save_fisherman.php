@@ -18,8 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fisherman']['citizen_
             $fisherman = new Fisherman();
             $fisherman->citizen_id = $citizen_id;
             $fisherman->email = $email;
-            $fisherman->create_at = date('Y-m-d H:i:s');
-            $fisherman->create_by = $_SESSION['user_id'] ?? 'system';
+            $fisherman->created_at = date('Y-m-d H:i:s');
+            $fisherman->created_by = $_SESSION['user_id'] ?? 0;
             $fisherman->username = $username;
             $fisherman->google_id = $google_id;
             $fisherman->facebook_id = $facebook_id;

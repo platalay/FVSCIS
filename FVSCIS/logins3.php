@@ -45,7 +45,7 @@ require_once('../private/initialize.php');
                 
                 </div>
                 <div class="col-lg-6 d-flex align-items-center justify-content-center">
-                <button type="button" class="p-0 border-0 bg-transparent" style="box-shadow: none;" data-bs-toggle="modal" data-bs-target="#OfficerModal" title="ลงทะเบียนใช้งานสำหรับเจ้าหน้าที่กรม">
+                <button type="button" class="p-0 border-0 bg-transparent" style="box-shadow: none;" data-bs-toggle="modal" data-bs-target="#modalAddOfficer" title="ลงทะเบียนใช้งานสำหรับเจ้าหน้าที่กรม">
   <img src="img/officer.png" class="img-fluid" style="max-height: 200px;" alt="Officer">
 </button>
 </div>
@@ -61,44 +61,73 @@ require_once('../private/initialize.php');
 
 
     <!-- Officer Modal -->
-<div class="modal fade" id="OfficerModal" tabindex="-1" aria-labelledby="OfficerModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-    
-      <div class="modal-header">
-        <h5 class="modal-title" id="OfficerModalLabel">สมัครสมาชิก</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      
-      <div class="modal-body">
-        <form id="OfficerForm">
-          <div class="mb-3">
-            <label for="name" class="form-label">ชื่อ - นามสกุล</label>
-            <input type="text" class="form-control" id="name" required>
-          </div>
-          <div class="mb-3">
-            <label for="email" class="form-label">อีเมล</label>
-            <input type="email" class="form-control" id="email" required>
-          </div>
-          <div class="mb-3">
-            <label for="password" class="form-label">รหัสผ่าน</label>
-            <input type="password" class="form-control" id="password" required>
-          </div>
-          <div class="mb-3">
-            <label for="confirmPassword" class="form-label">ยืนยันรหัสผ่าน</label>
-            <input type="password" class="form-control" id="confirmPassword" required>
+    <div class="modal fade" id="modalAddOfficer" tabindex="-1" aria-labelledby="modalAddOfficerLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form id="formAddOfficer" method="POST" action="ajax/save_officer_local.php">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalAddOfficerLabel">ลงทะเบียนเจ้าหน้าที่ (บัญชีภายใน)</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+            </div>
+
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="username" class="form-label">ชื่อผู้ใช้</label>
+                  <input type="text" class="form-control" name="officer[username]" id="usernameOfficer" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="Officer_password" class="form-label">รหัสผ่าน</label>
+                  <input type="password" class="form-control" name="officer[password]" id="Officer_password" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="Officer_confirm_password" class="form-label">ยืนยันรหัสผ่าน</label>
+                  <input type="password" class="form-control" name="officer[confirm_password]" id="Officer_confirm_password" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="full_name" class="form-label">ชื่อ - นามสกุล</label>
+                  <input type="text" class="form-control" name="officer[full_name]" id="full_name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="position" class="form-label">ตำแหน่ง</label>
+                  <input type="text" class="form-control" name="officer[position]" id="position">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="email" class="form-label">อีเมล</label>
+                  <input type="email" class="form-control" name="officer[email]" id="email">
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_departments_id" class="form-label">หน่วยงาน</label>
+                  <?php $departments = Department::find_all();?>
+                  <select name="officer[departments_id]" id="edit_departments_id" class="form-select">
+                  <option value="">-- กรุณาเลือกกลุ่มหน่วยงาน --</option>
+                  <?php foreach($departments as $group): ?>
+                      <option value="<?php echo $group->id; ?>"><?php echo $group->name; ?></option>
+                  <?php endforeach; ?>
+                  </select>
+                  </div>
+                  <div class="col-md-6">
+                  <label for="edit_usertype_id" class="form-label">สิทธิ์การใช้งาน</label>
+                  <?php $UserTypes = UserType::find_all();?>
+                  <select class="form-select" name="officer[usertype_id]" id="edit_usertype_id">
+                      <option value="">-- กรุณาเลือกกลุ่มหน่วยงาน --</option>
+                      <?php foreach($UserTypes as $UserType): ?>
+                          <option value="<?php echo $UserType->id; ?>"><?php echo $UserType->name_th; ?></option>
+                      <?php endforeach; ?>
+                  </select>
+                  </div>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">บันทึก</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            </div>
           </div>
         </form>
       </div>
-      
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-        <button type="submit" form="OfficerForm" class="btn btn-primary">สมัครสมาชิก</button>
-      </div>
-      
     </div>
-  </div>
-</div>    
+   
 
 
       <!-- Fisher Modal -->
@@ -114,17 +143,17 @@ require_once('../private/initialize.php');
               <div class="modal-body">
                 <div class="mb-3">
                   <label for="username" class="form-label">ชื่อผู้ใช้</label>
-                  <input type="text" class="form-control" name="fisherman[username]" id="username" required>
+                  <input type="text" class="form-control" name="fisherman[username]" id="usernameFisherman" required>
                 </div>
 
                 <div class="mb-3">
-                  <label for="password" class="form-label">รหัสผ่าน</label>
-                  <input type="password" class="form-control" name="fisherman[password]" id="password" required>
+                  <label for="Fisherman_password" class="form-label">รหัสผ่าน</label>
+                  <input type="password" class="form-control" name="fisherman[password]" id="Fisherman_password" required>
                 </div>
 
                 <div class="mb-3">
-                  <label for="confirm_password" class="form-label">ยืนยันรหัสผ่าน</label>
-                  <input type="password" class="form-control" id="confirm_password" required>
+                  <label for="Fisherman_confirm_password" class="form-label">ยืนยันรหัสผ่าน</label>
+                  <input type="password" class="form-control" name="fisherman[confirm_password]" id="Fisherman_confirm_password" required>
                 </div>
 
                 <div class="mb-3">
@@ -152,6 +181,9 @@ require_once('../private/initialize.php');
     <!-- Bootstrap core JavaScript-->
     <script src="vendor/jquery/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
     <!-- Core plugin JavaScript-->
@@ -167,6 +199,205 @@ require_once('../private/initialize.php');
           })
         });
       </script>    
+      
+      <script>
+        $(document).ready(function () {
+          $('#usernameFisherman').on('blur', function () {
+            const username = $(this).val().trim();
+            if (username === '') return;
+
+            $.ajax({
+              url: 'ajax/check_fisherman_username.php',
+              type: 'POST',
+              data: { username: username },
+              dataType: 'json',
+              success: function (res) {
+                if (!res.available) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'ชื่อผู้ใช้ซ้ำ',
+                    text: 'ชื่อผู้ใช้นี้ถูกใช้ไปแล้ว กรุณาเลือกชื่ออื่น'
+                  });
+                  $('#username').val('').focus();
+                }
+              },
+              error: function () {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'ข้อผิดพลาด',
+                  text: 'ไม่สามารถตรวจสอบชื่อผู้ใช้ได้'
+                });
+              }
+            });
+          });
+        });
+      </script>
+
+       <script>
+        $(document).ready(function () {
+          $('#usernameOfficer').on('blur', function () {
+            const username = $(this).val().trim();
+            if (username === '') return;
+
+            $.ajax({
+              url: 'ajax/check_Officer_username.php',
+              type: 'POST',
+              data: { username: username },
+              dataType: 'json',
+              success: function (res) {
+                if (!res.available) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'ชื่อผู้ใช้ซ้ำ',
+                    text: 'ชื่อผู้ใช้นี้ถูกใช้ไปแล้ว กรุณาเลือกชื่ออื่น'
+                  });
+                  $('#username').val('').focus();
+                }
+              },
+              error: function () {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'ข้อผิดพลาด',
+                  text: 'ไม่สามารถตรวจสอบชื่อผู้ใช้ได้'
+                });
+              }
+            });
+          });
+        });
+      </script>
+      <script>
+      $(document).ready(function () {
+        $('#formAddFisherman, #formAddOfficer').on('submit', function (e) {
+          const pass = $(this).find('#password').val();
+          const confirm = $(this).find('#confirm_password').val();
+
+          if (pass !== confirm) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'warning',
+              title: 'รหัสผ่านไม่ตรงกัน',
+              text: 'กรุณายืนยันรหัสผ่านให้ตรงกับรหัสผ่านหลัก'
+            });
+            return false;
+          }
+        });
+      });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+          $('#formAddFisherman').on('submit', function (e) {
+            e.preventDefault();
+
+            const form = $(this);
+            const password = $('#Fisherman_password').val();
+            const confirm = $('#Fisherman_confirm_password').val();
+
+            if (password !== confirm) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'รหัสผ่านไม่ตรงกัน',
+                text: 'กรุณายืนยันรหัสผ่านให้ตรงกัน'
+              });
+              return;
+            }
+
+            const formData = form.serialize();
+            console.log(formData)
+            $.ajax({
+              url: 'ajax/save_fisherman_local.php',
+              type: 'POST',
+              data: formData,
+              dataType: 'json',
+              success: function (response) {
+                if (response.success) {
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'ลงทะเบียนสำเร็จ',
+                    text: 'กรุณารอการอนุมัติจากเจ้าหน้าที่',
+                    timer: 2000,
+                    showConfirmButton: false
+                  }).then(() => {
+                    $('#modalAddFisherman').modal('hide');
+                    form.trigger('reset');
+                  });
+                } else {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: response.message
+                  });
+                }
+              },
+              error: function () {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'ข้อผิดพลาด',
+                  text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้'
+                });
+              }
+            });
+          });
+        });
+      </script>
+
+
+        <script>
+          $(document).ready(function () {
+            $('#formAddOfficer').on('submit', function (e) {
+              e.preventDefault();
+
+              const pass = $('#Officer_password').val();
+              const confirm = $('#Officer_confirm_password').val();
+
+              if (pass !== confirm) {
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'รหัสผ่านไม่ตรงกัน',
+                  text: 'กรุณายืนยันรหัสผ่านเจ้าหน้าที่ให้ตรงกัน'
+                });
+                return;
+              }
+
+              const formData = $(this).serialize();
+              console.log(formData)
+              $.ajax({
+                url: 'ajax/save_officer_local.php',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function (response) {
+                  if (response.success) {
+                    Swal.fire({
+                      icon: 'success',
+                      title: 'บันทึกสำเร็จ',
+                      text: 'เพิ่มบัญชีเจ้าหน้าที่เรียบร้อยแล้ว'
+                    }).then(() => {
+                      $('#modalAddOfficer').modal('hide');
+                      $('#formAddOfficer')[0].reset();
+                      // ถ้ามี DataTable หรือรายการให้ refresh ก็ใส่ตรงนี้ได้
+                      // เช่น: table.ajax.reload();
+                    });
+                  } else {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'เกิดข้อผิดพลาด',
+                      text: response.message
+                    });
+                  }
+                },
+                error: function () {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'ข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
+                  });
+                }
+              });
+            });
+          });
+        </script>
+
 
   </body>
 </html>

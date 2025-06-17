@@ -50,6 +50,14 @@ class Fisherman extends DatabaseObject {
         $this->updated_at = $args['updated_at'] ?? NULL;
     }
 
+    public static function find_by_citizen_id($citizen_id) {
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE citizen_id = '" . self::$database->escape_string($citizen_id) . "' ";
+        $sql .= "LIMIT 1";
+        $result_array = static::find_by_sql($sql);
+        return !empty($result_array) ? array_shift($result_array) : false;
+    }
+
     static public function find_by_username($username) {
         $sql = "SELECT * FROM " . static::$table_name . " ";
         $sql .= "WHERE username = '" . self::$database->escape_string($username) . "' ";
@@ -143,6 +151,14 @@ class Fisherman extends DatabaseObject {
         ]);
         $new_user->save();
         return $new_user;
+    }
+
+    public function set_hashed_password($plain_password) {
+        $this->password = password_hash($plain_password, PASSWORD_DEFAULT);
+    }
+
+    public function verify_password($plain_password) {
+        return password_verify($plain_password, $this->password);
     }
 }
 ?>

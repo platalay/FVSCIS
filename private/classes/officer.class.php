@@ -147,5 +147,13 @@ class Officer extends DatabaseObject {
         $new_user->save();
         return $new_user;
     }
+
+    public function set_hashed_password($plain_password) {
+        $this->password = password_hash($plain_password, PASSWORD_DEFAULT);
+    }
+
+    public function verify_password($plain_password) {
+        return password_verify($plain_password, $this->password);
+    }
 }
 ?>

@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $officer = new Officer($args);
     $officer->is_active = 1;
     $officer->is_approved = 0;
-    $officer->created_by = $_SESSION['username'];
+    $officer->created_by = $_SESSION['user_id'] ?? 0;
     $officer->created_at = date('Y-m-d H:i:s');
     $officer->updated_at = date('Y-m-d H:i:s');
 
