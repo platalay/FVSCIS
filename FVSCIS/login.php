@@ -92,7 +92,9 @@ if ($session->is_logged_in()) {
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="forgotPasswordModalLabel">ลืมรหัสผ่าน</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+              </button>
             </div>
 
             <div class="modal-body">
@@ -114,8 +116,11 @@ if ($session->is_logged_in()) {
                 <label for="citizen_id">หมายเลขบัตรประจำตัวประชาชน</label>
                 <input type="text" name="citizen_id" class="form-control" maxlength="13" placeholder="1234567890123">
               </div>
-
+              <small class="form-text text-muted">
+                หากคุณลืมชื่อผู้ใช้งาน กรุณาติดต่อเจ้าหน้าที่เพื่อขอความช่วยเหลือ
+              </small>
               <div id="forgot-password-result" class="text-center mt-3"></div>
+
             </div>
 
             <div class="modal-footer">
@@ -152,70 +157,50 @@ if ($session->is_logged_in()) {
   <?php $session->clear_message(); ?>
   <?php endif; ?>
   <script>
-  document.getElementById('user_type').addEventListener('change', function () {
-    const userType = this.value;
-    document.getElementById('officer_email_group').classList.add('d-none');
-    document.getElementById('fisherman_id_group').classList.add('d-none');
+document.addEventListener("DOMContentLoaded", function () {
+  const userTypeSelect = document.getElementById('user_type');
+  const officerGroup = document.getElementById('officer_email_group');
+  const fishermanGroup = document.getElementById('fisherman_id_group');
+  const form = document.getElementById('forgotPasswordForm');
+  const resultBox = document.getElementById('forgot-password-result');
 
-    if (userType === 'officer') {
-      document.getElementById('officer_email_group').classList.remove('d-none');
-    } else if (userType === 'fisherman') {
-      document.getElementById('fisherman_id_group').classList.remove('d-none');
-    }
-  });
-  </script>
-  <script>
-  document.getElementById('user_type').addEventListener('change', function () {
-    const type = this.value;
-    document.getElementById('officer_email_group').classList.toggle('d-none', type !== 'officer');
-    document.getElementById('fisherman_id_group').classList.toggle('d-none', type !== 'fisherman');
-  });
-  </script>
-  <script>
-  document.getElementById('forgotForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const resultBox = document.getElementById('forgot-result');
-    resultBox.innerHTML = 'กำลังดำเนินการ...';
-
-    fetch('forgot_password_process.php', {
-      method: 'POST',
-      body: new FormData(this)
-    })
-    .then(res => res.text())
-    .then(html => {
-      resultBox.innerHTML = html;
-    })
-    .catch(err => {
-      resultBox.innerHTML = '<div class="alert alert-danger">เกิดข้อผิดพลาด กรุณาลองใหม่</div>';
+  // แสดง/ซ่อนฟิลด์ตามประเภทผู้ใช้
+  if (userTypeSelect) {
+    userTypeSelect.addEventListener('change', function () {
+      const type = this.value;
+      officerGroup.classList.toggle('d-none', type !== 'officer');
+      fishermanGroup.classList.toggle('d-none', type !== 'fisherman');
     });
-  });
-  </script>
+  }
 
-  <script>
-  document.getElementById('forgotPasswordForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+  // จัดการ submit form
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
 
-    const form = e.target;
-    const formData = new FormData(form);
+      resultBox.innerHTML = '⏳ กำลังดำเนินการ...';
+      resultBox.className = 'text-muted';
 
-    fetch('forgot_password_process.php', {
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      const resultBox = document.getElementById('forgot-password-result');
-      resultBox.innerHTML = data.message;
-      resultBox.className = data.status === 'success' ? 'alert alert-success' : 'alert alert-danger';
-    })
-    .catch(() => {
-      const resultBox = document.getElementById('forgot-password-result');
-      resultBox.innerHTML = 'เกิดข้อผิดพลาดในการประมวลผล';
-      resultBox.className = 'alert alert-danger';
+      fetch('forgot_password_process.php', {
+        method: 'POST',
+        body: new FormData(form)
+      })
+      .then(res => res.json())
+      .then(data => {
+        resultBox.innerHTML = data.message;
+        resultBox.className = data.status === 'success'
+          ? 'alert alert-success'
+          : 'alert alert-danger';
+      })
+      .catch(() => {
+        resultBox.innerHTML = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+        resultBox.className = 'alert alert-danger';
+      });
     });
-  });
-  </script>
+  }
+});
+</script>
+
 
 
 </body>

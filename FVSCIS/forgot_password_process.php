@@ -1,49 +1,59 @@
 <?php
 require_once('../private/initialize.php');
 
-// รับค่าจาก POST
-$user_type = $_POST['user_type'] ?? '';
-$email = trim($_POST['email'] ?? '');
-$citizen_id = trim($_POST['citizen_id'] ?? '');
+header('Content-Type: application/json');
 
-// ตรวจสอบความถูกต้อง
+$user_type = $_POST['user_type'] ?? '';
+$email = $_POST['email'] ?? '';
+$citizen_id = $_POST['citizen_id'] ?? '';
+
 if ($user_type === 'officer' && !empty($email)) {
     $officer = Officer::find_by_email($email);
-    if ($officer && $officer->is_approved) {
-        // สร้างรหัสผ่านใหม่
-        $new_password = bin2hex(random_bytes(4)); // เช่น 'a8b4d2e3'
-        $officer->password = password_hash($new_password, PASSWORD_DEFAULT);
+    if ($officer) {
+        // สร้างรหัสใหม่
+        $new_password = bin2hex(random_bytes(4));
+        $officer->set_hashed_password($new_password);
         $officer->save();
 
-        // ส่งกลับข้อความให้แสดงบน modal
+        // ส่งอีเมลหรือแสดงผล
         echo json_encode([
             'status' => 'success',
-            'message' => "รหัสผ่านใหม่ของคุณคือ: <strong>{$new_password}</strong><br>กรุณาเข้าสู่ระบบและเปลี่ยนรหัสผ่านทันที"
+            'message' => 'รหัสผ่านใหม่ของคุณคือ: <strong>' . $new_password . '</strong>'
         ]);
         exit;
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'ไม่พบอีเมลในระบบหรือยังไม่ได้อนุมัติ']);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'ไม่พบบัญชีที่มีอีเมลนี้ในระบบ'
+        ]);
         exit;
     }
 
 } elseif ($user_type === 'fisherman' && !empty($citizen_id)) {
-    $fisherman = Fisherman::find_by_username($citizen_id);
-    if ($fisherman && $fisherman->is_approved) {
+    $fisherman = Fisherman::find_by_citizen_id($citizen_id);
+    if ($fisherman) {
         $new_password = bin2hex(random_bytes(4));
-        $fisherman->password = password_hash($new_password, PASSWORD_DEFAULT);
+        $fisherman->set_hashed_password($new_password);
         $fisherman->save();
 
         echo json_encode([
             'status' => 'success',
-            'message' => "รหัสผ่านใหม่ของคุณคือ: <strong>{$new_password}</strong><br>กรุณาเข้าสู่ระบบและเปลี่ยนรหัสผ่านทันที"
+            'message' => 'รหัสผ่านใหม่ของคุณคือ: <strong>' . $new_password . '</strong>'
         ]);
         exit;
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'ไม่พบหมายเลขบัตรในระบบหรือยังไม่ได้อนุมัติ']);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'ไม่พบบัญชีที่มีหมายเลขบัตรนี้ในระบบ'
+        ]);
         exit;
     }
 
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'กรุณากรอกข้อมูลให้ครบถ้วน']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'ข้อมูลไม่ครบถ้วนหรือประเภทผู้ใช้ไม่ถูกต้อง'
+    ]);
     exit;
 }
+?>
