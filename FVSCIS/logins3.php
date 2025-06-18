@@ -314,12 +314,13 @@ require_once('../private/initialize.php');
                   Swal.fire({
                     icon: 'success',
                     title: 'ลงทะเบียนสำเร็จ',
-                    text: 'กรุณารอการอนุมัติจากเจ้าหน้าที่',
+                    text: 'เพิ่มบัญชีเจ้าหน้าที่เรียบร้อยแล้ว กรุณารอการอนุมัติจากเจ้าหน้าที่',
                     timer: 2000,
                     showConfirmButton: false
                   }).then(() => {
                     $('#modalAddFisherman').modal('hide');
                     form.trigger('reset');
+                    window.location.href = 'login.php';
                   });
                 } else {
                   Swal.fire({
@@ -370,13 +371,12 @@ require_once('../private/initialize.php');
                   if (response.success) {
                     Swal.fire({
                       icon: 'success',
-                      title: 'บันทึกสำเร็จ',
-                      text: 'เพิ่มบัญชีเจ้าหน้าที่เรียบร้อยแล้ว'
+                      title: 'ลงทะเบียนสำเร็จ',
+                      text: 'เพิ่มบัญชีเจ้าหน้าที่เรียบร้อยแล้ว กรุณารอการอนุมัติจากเจ้าหน้าที่'
                     }).then(() => {
                       $('#modalAddOfficer').modal('hide');
                       $('#formAddOfficer')[0].reset();
-                      // ถ้ามี DataTable หรือรายการให้ refresh ก็ใส่ตรงนี้ได้
-                      // เช่น: table.ajax.reload();
+                      window.location.href = 'login.php';
                     });
                   } else {
                     Swal.fire({

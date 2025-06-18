@@ -4,66 +4,124 @@ class Session {
 
   private $user_id;
   public $username;
+  public $role;
+  public $user_picture;
   private $last_login;
 
-  public const MAX_LOGIN_AGE = 60*60*24; // 1 day
+  public const MAX_LOGIN_AGE = 60 * 60 * 24; // 1 วัน
+  public const COOKIE_EXPIRY_DAYS = 30;
+  public const COOKIE_NAME = 'remember_token';
 
   public function __construct() {
     session_start();
     $this->check_stored_login();
+    if (!$this->is_logged_in()) {
+      $this->check_remember_me_cookie(); // ✅ เพิ่มตรงนี้
+    }
   }
 
-  public function login($admin) {
-    if($admin) {
-      // prevent session fixation attacks
+  public function login($user, $role, $picture = '', $remember_me = false) {
+    if ($user && $role) {
       session_regenerate_id();
-      $this->user_id = $_SESSION['user_id'] = $admin->id;
-      $this->username = $_SESSION['username'] = $admin->username;
-      $this->last_login = $_SESSION['last_login'] = time();
+
+      $this->user_id       = $_SESSION['user_id'] = $user->id;
+      $this->username      = $_SESSION['username'] = $user->username;
+      $this->role          = $_SESSION['role'] = $role;
+      $this->user_picture  = $_SESSION['user_picture'] = $picture;
+      $this->last_login    = $_SESSION['last_login'] = time();
+
+      if ($remember_me) {
+        $token = bin2hex(random_bytes(32));
+        $expiry = date('Y-m-d H:i:s', time() + (self::COOKIE_EXPIRY_DAYS * 24 * 60 * 60));
+
+        // บันทึก token ลงฐานข้อมูล
+        $user->login_token = $token;
+        $user->token_expiry = $expiry;
+        $user->save();
+
+        // สร้าง cookie
+        setcookie(self::COOKIE_NAME, "{$role}|{$token}", time() + (self::COOKIE_EXPIRY_DAYS * 24 * 60 * 60), "/");
+      }
     }
     return true;
   }
 
-  public function is_logged_in() {
-    // return isset($this->user_id);
-    return isset($this->user_id) && $this->last_login_is_recent();
-  }
-
   public function logout() {
-    unset($_SESSION['user_id']);
-    unset($_SESSION['username']);
-    unset($_SESSION['last_login']);
-    unset($this->user_id);
-    unset($this->username);
-    unset($this->last_login);
+    // ลบ token จากฐานข้อมูล
+    if ($this->is_logged_in()) {
+      $user = null;
+      if ($this->role === 'fisherman') {
+        $user = Fisherman::find_by_id($this->user_id);
+      } else {
+        $user = Officer::find_by_id($this->user_id);
+      }
+
+      if ($user) {
+        $user->login_token = null;
+        $user->token_expiry = null;
+        $user->save();
+      }
+    }
+
+    // ลบ cookie
+    setcookie(self::COOKIE_NAME, '', time() - 3600, "/");
+
+    unset(
+      $_SESSION['user_id'],
+      $_SESSION['username'],
+      $_SESSION['role'],
+      $_SESSION['user_picture'],
+      $_SESSION['last_login']
+    );
+    unset(
+      $this->user_id,
+      $this->username,
+      $this->role,
+      $this->user_picture,
+      $this->last_login
+    );
     return true;
   }
 
   private function check_stored_login() {
-    if(isset($_SESSION['user_id'])) {
-      $this->user_id = $_SESSION['user_id'];
-      $this->username = $_SESSION['username'] ?? null;
-      $this->last_login = $_SESSION['last_login'] ?? null;
+    if (isset($_SESSION['user_id'])) {
+      $this->user_id       = $_SESSION['user_id'];
+      $this->username      = $_SESSION['username'] ?? null;
+      $this->role          = $_SESSION['role'] ?? null;
+      $this->user_picture  = $_SESSION['user_picture'] ?? null;
+      $this->last_login    = $_SESSION['last_login'] ?? null;
+    }
+  }
+
+  private function check_remember_me_cookie() {
+    if (!isset($_COOKIE[self::COOKIE_NAME])) return;
+
+    list($role, $token) = explode('|', $_COOKIE[self::COOKIE_NAME], 2);
+
+    if ($role === 'fisherman') {
+      $user = Fisherman::find_by_token($token);
+    } else {
+      $user = Officer::find_by_token($token);
+    }
+
+    if ($user && strtotime($user->token_expiry) > time()) {
+      $this->login($user, $role); // รีเซ็ต session ใหม่
+    } else {
+      // ลบ cookie ถ้า token ไม่ valid
+      setcookie(self::COOKIE_NAME, '', time() - 3600, "/");
     }
   }
 
   private function last_login_is_recent() {
-    if(!isset($this->last_login)) {
-      return false;
-    } elseif(($this->last_login + self::MAX_LOGIN_AGE) < time()) {
-      return false;
-    } else {
-      return true;
-    }
+    return isset($this->last_login) &&
+           (($this->last_login + self::MAX_LOGIN_AGE) >= time());
   }
 
-  public function message($msg="") {
-    if(!empty($msg)) {
-      // Then this is a "set" message
+  public function message($msg = "") {
+    if (!empty($msg)) {
       $_SESSION['message'] = $msg;
       return true;
     } else {
-      // Then this is a "get" message
       return $_SESSION['message'] ?? '';
     }
   }
@@ -71,6 +129,47 @@ class Session {
   public function clear_message() {
     unset($_SESSION['message']);
   }
+
+  public static function map_usertype_id_to_role($id) {
+    switch ((int)$id) {
+      case 1: return 'admin';
+      case 2: return 'headquarter';
+      case 3: return 'inspectofficer';
+      case 5: return 'signer';
+      default: return 'unknown';
+    }
+  }
+
+  public static function redirect_by_role($role) {
+    $folder = strtolower(trim($role));
+    $destination = "{$folder}/index.php";
+    redirect_to($destination);
+  }
+
+  public function is_logged_in() {
+    return isset($this->user_id) && $this->last_login_is_recent();
+  }
+
+  public function require_role(array $allowed_roles) {
+    if (!$this->is_logged_in()) {
+      $this->message('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+      redirect_to('../login.php');
+    }
+
+    if (!in_array($this->role, $allowed_roles)) {
+      $this->message('คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
+      redirect_to('../login.php');
+    }
+  }
+
+  public function get_display_name() {
+      $user = null;
+      if ($this->role === 'fisherman') {
+          $user = Fisherman::find_by_id($this->user_id);
+      } else {
+          $user = Officer::find_by_id($this->user_id);
+      }
+      return $user?->get_display_name() ?? $this->username;
+  }
 }
 
-?>

@@ -43,7 +43,7 @@
             href="#"
             id="searchDropdown"
             role="button"
-            data-toggle="dropdown"
+            data-bs-toggle="dropdown"
             aria-haspopup="true"
             aria-expanded="false"
           >
@@ -80,7 +80,7 @@
             href="#"
             id="alertsDropdown"
             role="button"
-            data-toggle="dropdown"
+            data-bs-toggle="dropdown"
             aria-haspopup="true"
             aria-expanded="false"
           >
@@ -147,17 +147,23 @@
             href="#"
             id="userDropdown"
             role="button"
-            data-toggle="dropdown"
+            data-bs-toggle="dropdown"
             aria-haspopup="true"
             aria-expanded="false"
           >
             <span class="mr-2 d-none d-lg-inline text-gray-600 small"
-              >Douglas McGee</span
+              ><?= htmlspecialchars($session->get_display_name()) ?></span
             >
-            <img
-              class="img-profile rounded-circle"
-              src="../img/undraw_profile.svg"
-            />
+            <?php
+            $profile_img = !empty($session->user_picture)
+                ? htmlspecialchars($session->user_picture)
+                : '../img/undraw_profile.svg';
+            ?>
+            <img 
+            src="<?= $profile_img ?>" 
+            class="img-profile rounded-circle" 
+            onerror="this.onerror=null;this.src='../img/undraw_profile.svg';"/>
+
           </a>
           <!-- Dropdown - User Information -->
           <div
@@ -180,8 +186,8 @@
             <a
               class="dropdown-item"
               href="#"
-              data-toggle="modal"
-              data-target="#logoutModal"
+              data-bs-toggle="modal"
+              data-bs-target="#logoutModal"
             >
               <i
                 class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"

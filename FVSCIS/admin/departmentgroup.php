@@ -1,8 +1,8 @@
 <?php
 require_once('../../private/initialize.php');
-include("../../private/shared/headeradmin.html");
-include("../../private/shared/sidebaradmin.html");
-include("../../private/shared/topbaradmin.html");
+include("../../private/shared/headeradmin.php");
+include("../../private/shared/sidebaradmin.php");
+include("../../private/shared/topbaradmin.php");
 ?>
 
 <!-- Begin Page Content -->
@@ -132,7 +132,7 @@ include("../../private/shared/topbaradmin.html");
 </div>
 
   
-<?php include("../../private/shared/footeradmin.html"); ?>
+<?php include("../../private/shared/footeradmin.php"); ?>
 <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
@@ -252,4 +252,4 @@ include("../../private/shared/topbaradmin.html");
   });
 </script>
 
-<?php include("../../private/shared/footerall.html"); ?>
+<?php include("../../private/shared/footerall.php"); ?>

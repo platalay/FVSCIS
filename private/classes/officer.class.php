@@ -61,6 +61,15 @@ class Officer extends DatabaseObject {
         return !empty($result_array) ? array_shift($result_array) : false;
     }
 
+    static public function find_by_token($token) {
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE login_token = '" . self::$database->escape_string($token) . "' ";
+        $sql .= "AND token_expiry > NOW() ";
+        $sql .= "LIMIT 1";
+        $result_array = static::find_by_sql($sql);
+        return !empty($result_array) ? array_shift($result_array) : false;
+    }
+
     public static function alert_and_redirect($title, $message, $redirect_url) {
         $title_escaped = htmlspecialchars($title, ENT_QUOTES);
         $message_escaped = htmlspecialchars($message, ENT_QUOTES);
@@ -93,7 +102,6 @@ class Officer extends DatabaseObject {
         exit;
     }
 
-
     static public function find_or_create_by_facebook($fb_id, $full_name, $email = null) {
         $sql = "SELECT * FROM " . static::$table_name . " WHERE facebook_id = '" . self::$database->escape_string($fb_id) . "' LIMIT 1";
         $result = static::find_by_sql($sql);
@@ -104,7 +112,7 @@ class Officer extends DatabaseObject {
             'full_name' => $full_name,
             'email' => $email,
             'username' => 'facebook_'.$fb_id,
-            'departments_id' => 38, //ไม่ระบุหน่วยงาน
+            'departments_id' => 38,
             'is_active' => 1,
             'is_approved' => 0
         ]);
@@ -122,7 +130,7 @@ class Officer extends DatabaseObject {
             'full_name' => $full_name,
             'username' => 'google_'.$google_id,
             'email' => $email,
-            'departments_id' => 38, //ไม่ระบุหน่วยงาน
+            'departments_id' => 38,
             'is_active' => 1,
             'is_approved' => 0
         ]);
@@ -140,7 +148,7 @@ class Officer extends DatabaseObject {
             'full_name' => $full_name,
             'email' => $email,
             'username' => 'line_'.$line_id,
-            'departments_id' => 38, //ไม่ระบุหน่วยงาน
+            'departments_id' => 38,
             'is_active' => 1,
             'is_approved' => 0
         ]);
@@ -155,5 +163,26 @@ class Officer extends DatabaseObject {
     public function verify_password($plain_password) {
         return password_verify($plain_password, $this->password);
     }
+
+    public function generate_login_token($days_valid = 30) {
+        $this->login_token = bin2hex(random_bytes(32));
+        $this->token_expiry = date('Y-m-d H:i:s', time() + ($days_valid * 86400));
+        return $this->save();
+    }
+
+    public static function verify_login_token($token) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE login_token = '" . self::$database->escape_string($token) . "' AND token_expiry >= NOW() LIMIT 1";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : false;
+    }
+
+    public function clear_login_token() {
+        $this->login_token = NULL;
+        $this->token_expiry = NULL;
+        return $this->save();
+    }
+
+    public function get_display_name() {
+        return !empty($this->full_name) ? $this->full_name : $this->username;
+    }
 }
-?>

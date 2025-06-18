@@ -1,4 +1,4 @@
-</div>
+
 </div>
 <!-- End of Main Content -->
 
@@ -54,18 +54,29 @@ aria-hidden="true"
     >
       Cancel
     </button>
-    <a class="btn btn-primary" href="login.html">Logout</a>
+    <a class="btn btn-primary" href="../logout.php">Logout</a>
   </div>
 </div>
 </div>
 </div>
 
+<!-- jQuery CDN + fallback -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    if (typeof jQuery === 'undefined') {
+        document.write('<script src="../vendor/jquery/jquery.min.js"><\/script>');
+    }
+</script>
+
 <!-- Bootstrap core JavaScript-->
 <script src="../vendor/jquery/jquery.min.js"></script>
-<script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!--<script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>-->
+<!-- Bootstrap 5 JS Bundle (รวม Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Core plugin JavaScript-->
 <script src="../vendor/jquery-easing/jquery.easing.min.js"></script>
 
 <!-- Custom scripts for all pages-->
 <script src="../js/sb-admin-2.min.js"></script>
+

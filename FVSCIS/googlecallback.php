@@ -1,14 +1,16 @@
 <?php
 require_once('../private/initialize.php');
+
 $client_id = GOOGLE_CLIENT_ID;
 $client_secret = GOOGLE_CLIENT_SECRET;
 $redirect_uri = GOOGLE_LOGIN_CALLBACK_URL;
+
+$session = new Session();
 
 if (isset($_GET['code'])) {
     $code = $_GET['code'];
 
     $token_url = 'https://oauth2.googleapis.com/token';
-
     $post_fields = [
         'code' => $code,
         'client_id' => $client_id,
@@ -31,40 +33,36 @@ if (isset($_GET['code'])) {
     $data = json_decode($response, true);
 
     if (isset($data['id_token'])) {
-        $id_token = $data['id_token'];
-        $payload = explode('.', $id_token)[1] ?? '';
+        // Decode JWT payload
+        $payload = explode('.', $data['id_token'])[1] ?? '';
         $userinfo = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
 
-        $_SESSION['user_id'] = htmlspecialchars($userinfo['sub']);
-        $_SESSION['user_picture'] = htmlspecialchars($userinfo['picture']);
-        $_SESSION['username'] = htmlspecialchars('google_' . $userinfo['sub']);
-        $_SESSION['email'] = htmlspecialchars($userinfo['email'] ?? '');
+        // เตรียมข้อมูล
+        $google_id = htmlspecialchars($userinfo['sub']);
+        $username = 'google_' . $google_id;
+        $picture = htmlspecialchars($userinfo['picture'] ?? '');
+        $email = htmlspecialchars($userinfo['email'] ?? '');
 
-        $Officer = Officer::find_by_username($_SESSION['username']);
+        // ตรวจสอบ Officer ก่อน
+        $Officer = Officer::find_by_username($username);
         if ($Officer) {
             if ($Officer->is_approved) {
-                switch ((int)$Officer->usertype_id) {
-                    case 1:
-                        redirect_to('admin/index.php');
-                        break;
-                    case 2:
-                        redirect_to('officer/index.php');
-                        break;
-                    case 3:
-                        redirect_to('headquarter/index.php');
-                        break;
-                    case 5:
-                        redirect_to('authorize/index.php');
-                        break;
-                    default:
-                        Officer::alert_and_redirect(
-                            'ไม่สามารถเข้าสู่ระบบ',
-                            'สิทธิ์ของคุณไม่ถูกต้อง',
-                            'login.php'
-                        );
+                $role = Session::map_usertype_id_to_role($Officer->usertype_id);
+                if ($role === 'unknown') {
+                    Officer::alert_and_redirect(
+                        'ไม่สามารถเข้าสู่ระบบ',
+                        'สิทธิ์ของคุณไม่ถูกต้อง',
+                        'login.php'
+                    );
                 }
+
+                // Login แล้ว redirect
+                $session->login($Officer, $role, $picture);
+                Session::redirect_by_role($role);
+
             } else {
-                if ((int)$Officer->departments_id == 38 || (int)$Officer->usertype_id == 6 || $Officer->position == '') {
+                // ยังไม่อนุมัติ
+                if ((int)$Officer->departments_id === 38 || (int)$Officer->usertype_id === 6 || $Officer->position === '') {
                     Officer::alert_and_redirect(
                         'บัญชียังกรอกข้อมูลไม่ครบ',
                         'กรุณาตรวจสอบ และรอการอนุมัติจากเจ้าหน้าที่',
@@ -78,11 +76,14 @@ if (isset($_GET['code'])) {
                     );
                 }
             }
+
         } else {
-            $fisherman = Fisherman::find_by_username($_SESSION['username']);
+            // ตรวจสอบ Fisherman
+            $fisherman = Fisherman::find_by_username($username);
             if ($fisherman) {
                 if ($fisherman->is_approved) {
-                    redirect_to('Fisherman/index.php');
+                    $session->login($fisherman, 'fisherman', $picture);
+                    Session::redirect_by_role('fisherman');
                 } else {
                     Fisherman::alert_and_redirect(
                         'รอการอนุมัติ',
@@ -91,13 +92,17 @@ if (isset($_GET['code'])) {
                     );
                 }
             } else {
+                // ยังไม่เคยลงทะเบียน
                 redirect_to('logins2.php');
             }
         }
+
     } else {
-        $session->message('ไม่สามารถรับ token ได้<br>');
+        $session->message('ไม่สามารถรับ token ได้จาก Google');
+        redirect_to('login.php');
     }
+
 } else {
     echo "ไม่ได้รับ code จาก Google";
 }
-?>
+

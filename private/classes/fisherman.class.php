@@ -4,7 +4,8 @@ class Fisherman extends DatabaseObject {
     static protected $table_name = 'fisherman';
     static protected $db_columns = [
         'id', 'username', 'password', 'full_name', 'email', 'google_id', 'facebook_id', 'line_id',
-        'citizen_id', 'is_active', 'is_approved', 'approved_by', 'approved_at', 'login_token', 'token_expiry',
+        'citizen_id', 'is_active', 'is_approved', 'approved_by', 'approved_at',
+        'login_token', 'token_expiry',
         'created_by', 'updated_by', 'created_at', 'updated_at'
     ];
 
@@ -27,9 +28,8 @@ class Fisherman extends DatabaseObject {
     public $updated_by;
     public $created_at;
     public $updated_at;
-    
 
-    public function __construct($args=[]) {
+    public function __construct($args = []) {
         $this->username = $args['username'] ?? '';
         $this->password = $args['password'] ?? '';
         $this->full_name = $args['full_name'] ?? '';
@@ -50,20 +50,96 @@ class Fisherman extends DatabaseObject {
         $this->updated_at = $args['updated_at'] ?? NULL;
     }
 
-    public static function find_by_citizen_id($citizen_id) {
-        $sql = "SELECT * FROM " . static::$table_name . " ";
-        $sql .= "WHERE citizen_id = '" . self::$database->escape_string($citizen_id) . "' ";
-        $sql .= "LIMIT 1";
-        $result_array = static::find_by_sql($sql);
-        return !empty($result_array) ? array_shift($result_array) : false;
+    public static function find_by_id($id) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE id = '" . self::$database->escape_string($id) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : false;
     }
 
-    static public function find_by_username($username) {
-        $sql = "SELECT * FROM " . static::$table_name . " ";
-        $sql .= "WHERE username = '" . self::$database->escape_string($username) . "' ";
-        $sql .= "LIMIT 1";
-        $result_array = static::find_by_sql($sql);
-        return !empty($result_array) ? array_shift($result_array) : false;
+    public static function find_by_username($username) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE username = '" . self::$database->escape_string($username) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : false;
+    }
+
+    public static function find_by_citizen_id($citizen_id) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE citizen_id = '" . self::$database->escape_string($citizen_id) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : false;
+    }
+
+    public static function find_by_token($token) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE login_token = '" . self::$database->escape_string($token) . "' AND token_expiry >= NOW() LIMIT 1";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : false;
+    }
+
+    public function save_token($token, $expiry) {
+        $this->login_token = $token;
+        $this->token_expiry = $expiry;
+        return $this->save();
+    }
+
+    public function set_hashed_password($plain_password) {
+        $this->password = password_hash($plain_password, PASSWORD_DEFAULT);
+    }
+
+    public function verify_password($plain_password) {
+        return password_verify($plain_password, $this->password);
+    }
+
+    public static function find_or_create_by_facebook($fb_id, $full_name, $citizen_id, $email = null) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE facebook_id = '" . self::$database->escape_string($fb_id) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        if (!empty($result)) return $result[0];
+
+        $new_user = new Fisherman([
+            'facebook_id' => $fb_id,
+            'full_name' => $full_name,
+            'email' => $email,
+            'username' => 'facebook_' . $fb_id,
+            'citizen_id' => $citizen_id,
+            'is_active' => 1,
+            'is_approved' => 0
+        ]);
+        $new_user->save();
+        return $new_user;
+    }
+
+    public static function find_or_create_by_google($google_id, $full_name, $citizen_id, $email = null) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE google_id = '" . self::$database->escape_string($google_id) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        if (!empty($result)) return $result[0];
+
+        $new_user = new Fisherman([
+            'google_id' => $google_id,
+            'full_name' => $full_name,
+            'username' => 'google_' . $google_id,
+            'citizen_id' => $citizen_id,
+            'email' => $email,
+            'is_active' => 1,
+            'is_approved' => 0
+        ]);
+        $new_user->save();
+        return $new_user;
+    }
+
+    public static function find_or_create_by_line($line_id, $full_name, $citizen_id, $email = null) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE line_id = '" . self::$database->escape_string($line_id) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        if (!empty($result)) return $result[0];
+
+        $new_user = new Fisherman([
+            'line_id' => $line_id,
+            'full_name' => $full_name,
+            'username' => 'line_' . $line_id,
+            'citizen_id' => $citizen_id,
+            'email' => $email,
+            'is_active' => 1,
+            'is_approved' => 0
+        ]);
+        $new_user->save();
+        return $new_user;
     }
 
     public static function alert_and_redirect($title, $message, $redirect_url) {
@@ -97,68 +173,9 @@ class Fisherman extends DatabaseObject {
         HTML;
         exit;
     }
-
-
-    static public function find_or_create_by_facebook($fb_id, $full_name, $citizen_id, $email = null) {
-        $sql = "SELECT * FROM " . static::$table_name . " WHERE facebook_id = '" . self::$database->escape_string($fb_id) . "' LIMIT 1";
-        $result = static::find_by_sql($sql);
-        if (!empty($result)) return $result[0];
-
-        $new_user = new Officer([
-            'facebook_id' => $fb_id,
-            'full_name' => $full_name,
-            'email' => $email,
-            'username' => 'facebook_'.$fb_id,
-            'citizen_id' => $citizen_id,
-            'is_active' => 1,
-            'is_approved' => 0
-        ]);
-        $new_user->save();
-        return $new_user;
+    public function get_display_name() {
+        return !empty($this->full_name) ? $this->full_name : $this->username;
     }
 
-    static public function find_or_create_by_google($google_id, $full_name, $citizen_id, $email = null) {
-        $sql = "SELECT * FROM " . static::$table_name . " WHERE google_id = '" . self::$database->escape_string($google_id) . "' LIMIT 1";
-        $result = static::find_by_sql($sql);
-        if (!empty($result)) return $result[0];
-
-        $new_user = new Officer([
-            'google_id' => $google_id,
-            'full_name' => $full_name,
-            'username' => 'google_'.$google_id,
-            'citizen_id' => $citizen_id,
-            'email' => $email,
-            'is_active' => 1,
-            'is_approved' => 0
-        ]);
-        $new_user->save();
-        return $new_user;
-    }
-
-    static public function find_or_create_by_line($line_id, $full_name, $citizen_id, $email = null) {
-        $sql = "SELECT * FROM " . static::$table_name . " WHERE line_id = '" . self::$database->escape_string($line_id) . "' LIMIT 1";
-        $result = static::find_by_sql($sql);
-        if (!empty($result)) return $result[0];
-
-        $new_user = new Officer([
-            'line_id' => $line_id,
-            'full_name' => $full_name,
-            'email' => $email,
-            'citizen_id' => $citizen_id,
-            'username' => 'line_'.$line_id,
-            'is_active' => 1,
-            'is_approved' => 0
-        ]);
-        $new_user->save();
-        return $new_user;
-    }
-
-    public function set_hashed_password($plain_password) {
-        $this->password = password_hash($plain_password, PASSWORD_DEFAULT);
-    }
-
-    public function verify_password($plain_password) {
-        return password_verify($plain_password, $this->password);
-    }
 }
 ?>
