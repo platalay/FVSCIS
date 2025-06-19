@@ -20,6 +20,7 @@
       >
         <div class="input-group">
           <input
+            id="topSearch"
             type="text"
             class="form-control bg-light border-0 small"
             placeholder="Search for..."
