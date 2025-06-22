@@ -108,11 +108,12 @@ class DatabaseObject {
     $sql .= join("', '", array_values($attributes));
     $sql .= "')";
     $result = self::$database->query($sql);
-    if($result) {
-      $this->id = self::$database->insert_id;
+    if ($result) {
+    $this->id = self::$database->insert_id;
+    } else {
+        error_log("[SQL-FAIL] " . $sql);
+        error_log("[MySQL ERROR] " . self::$database->error);
     }
-    //return $sql;
-    //error_log($sql);
     return $result;
   }
 

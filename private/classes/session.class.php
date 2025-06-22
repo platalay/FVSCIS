@@ -133,7 +133,7 @@ class Session {
   public static function map_usertype_id_to_role($id) {
     switch ((int)$id) {
       case 1: return 'admin';
-      case 2: return 'headquarter';
+      case 2: return 'Headquarter';
       case 3: return 'inspectofficer';
       case 5: return 'signer';
       default: return 'unknown';
@@ -150,17 +150,37 @@ class Session {
     return isset($this->user_id) && $this->last_login_is_recent();
   }
 
-  public function require_role(array $allowed_roles) {
-    if (!$this->is_logged_in()) {
-      $this->message('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-      redirect_to('../login.php');
-    }
+    public function require_role(array $allowed_roles) {
+      if (!$this->is_logged_in()) {
+          if ($this->is_ajax_request()) {
+              header('Content-Type: application/json');
+              echo json_encode([
+                  'success' => false,
+                  'message' => 'กรุณาเข้าสู่ระบบอีกครั้ง (Session หมดอายุ)'
+              ]);
+              exit;
+          }
+          redirect_to('../login.php');
+      }
 
-    if (!in_array($this->role, $allowed_roles)) {
-      $this->message('คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
-      redirect_to('../login.php');
-    }
+      if (!in_array($this->role, $allowed_roles)) {
+          if ($this->is_ajax_request()) {
+              header('Content-Type: application/json');
+              echo json_encode([
+                  'success' => false,
+                  'message' => 'คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้'
+              ]);
+              exit;
+          }
+          redirect_to('../login.php');
+      }
   }
+
+  private function is_ajax_request() {
+      return isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+  }
+
 
   public function get_display_name() {
       $user = null;
@@ -170,6 +190,10 @@ class Session {
           $user = Officer::find_by_id($this->user_id);
       }
       return $user?->get_display_name() ?? $this->username;
+  }
+  
+  public function user_id() {
+      return $this->user_id;
   }
 }
 

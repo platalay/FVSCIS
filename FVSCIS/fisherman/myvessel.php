@@ -462,24 +462,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     text: result.message,
                     confirmButtonText: 'ตกลง'
                 });
-                location.reload(); // รีโหลดเพื่ออัปเดตหน้าตาราง
+
+                location.reload(); // ✅ reload หลังจาก alert ปิด
             } else {
                 throw new Error(result.message);
             }
         } catch (err) {
+            // ❌ กรณี AJAX ล้มเหลว / JSON ผิด / server error
             Swal.fire({
                 icon: 'error',
                 title: 'เกิดข้อผิดพลาด',
                 text: err.message,
                 confirmButtonText: 'ตกลง'
+            }).then(() => {
+                // ✅ ถ้า session หมดอายุ → ส่งกลับหน้า login
+                if (err.message.includes('Session')) {
+                    window.location.href = '../login.php';
+                }
             });
         }
     });
 });
 </script>
-
-
-
-
-
 <?php include("../../private/shared/footerall.php"); ?>

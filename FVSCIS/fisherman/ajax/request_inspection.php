@@ -26,6 +26,16 @@ try {
         throw new Exception("กรุณากรอกข้อมูลให้ครบถ้วน");
     }
 
+    // ✅ ตรวจสอบว่าเรือนี้มีคำขอที่ยังไม่เสร็จหรือไม่
+    $existing_request = InspectionRequest::find_active_by_ship($ship_code);
+    if ($existing_request) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'คุณมีคำขอตรวจเรือที่ยังไม่เสร็จ กรุณายกเลิกหรือรอผลก่อน',
+        ]);
+        exit;
+    }
+
     // ✅ 1. บันทึกคำขอ
     $request = new InspectionRequest();
     $request->ship_code           = $ship_code;
@@ -38,11 +48,12 @@ try {
     $request->inspect_date_start  = $inspect_start;
     $request->inspect_date_end    = $inspect_end;
     $request->confirm_agreement   = $agree;
-    $request->created_by          = $session->username ?? 'guest';
+    $request->created_by = $session->user_id() ?? 0;
     $request->created_at          = date('Y-m-d H:i:s');
-
+    $request->status = InspectionRequest::STATUS_PENDING;
+    
     if (!$request->save()) {
-        throw new Exception("ไม่สามารถบันทึกคำขอได้");
+        throw new Exception("ไม่สามารถบันทึกคำขอได้" . ($request->errors ?? ''));
     }
 
     // ✅ 2. บันทึก log
@@ -55,7 +66,7 @@ try {
     $log->inspection_request_id = $request->id;
     $log->action_id             = $action->id;
     $log->note                  = 'ชาวประมงยื่นคำขอตรวจเรือ';
-    $log->performed_by          = $session->username ?? 'guest';
+    $log->performed_by = $session->user_id() ?? 0; // ถ้าไม่มี session ให้เก็บเป็น 0 (system)
     $log->target_department_id  = $department_id;
     $log->target_usertype_id    = 3; // สมมุติว่า 3 = officer
     $log->port_license_no       = $port_license;
@@ -65,10 +76,13 @@ try {
         'success' => true,
         'message' => 'บันทึกคำขอเรียบร้อยแล้ว',
     ]);
+    exit;
+
 } catch (Exception $ex) {
     echo json_encode([
         'success' => false,
         'message' => $ex->getMessage(),
     ]);
+    exit;
 }
-
+?>

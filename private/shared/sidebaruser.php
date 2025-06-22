@@ -32,7 +32,12 @@
         <span>เรือของฉัน</span></a
       >
     </li>
-    
+    <li class="nav-item">
+      <a class="nav-link" href="mystatus.php">
+        <i class="fas fa-fw fa-table"></i>
+        <span>สถานะคำขอ</span></a
+      >
+    </li>
 
     <!-- Sidebar Toggler (Sidebar) -->
     <div class="text-center d-none d-md-inline">

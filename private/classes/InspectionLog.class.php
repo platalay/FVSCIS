@@ -13,8 +13,7 @@ class InspectionLog extends DatabaseObject {
         'performed_at',
         'target_department_id',
         'target_usertype_id',
-        'target_officer_id',
-        'port_license_no' // เพิ่มตรงนี้
+        'target_officer_id'
     ];
 
     public $id;
