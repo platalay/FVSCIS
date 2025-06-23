@@ -74,6 +74,7 @@
         </li>
 
         <!-- Nav Item - Alerts -->
+         <!-- 
         <li class="nav-item dropdown no-arrow mx-1">
           <a
             class="nav-link dropdown-toggle"
@@ -84,12 +85,12 @@
             aria-haspopup="true"
             aria-expanded="false"
           >
-            <i class="fas fa-bell fa-fw"></i>
+            <i class="fas fa-bell fa-fw"></i>-->
             <!-- Counter - Alerts -->
-            <span class="badge badge-danger badge-counter">3+</span>
-          </a>
+          <!--   <span class="badge badge-danger badge-counter">3+</span>
+          </a>-->
           <!-- Dropdown - Alerts -->
-          <div
+          <!-- <div
             class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
             aria-labelledby="alertsDropdown"
           >
@@ -136,7 +137,29 @@
               >Show All Alerts</a
             >
           </div>
+        </li>-->
+        <!-- Nav Item - Alerts -->
+        <!-- Nav Item - Alerts ajax-->
+        <li class="nav-item dropdown no-arrow mx-1">
+          <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown"
+            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-bell fa-fw"></i>
+            <span class="badge badge-danger badge-counter" id="alert-count">0</span>
+          </a>
+
+          <div class="dropdown-list dropdown-menu dropdown-menu-end shadow animated--grow-in"
+              aria-labelledby="alertsDropdown">
+            <h6 class="dropdown-header">แจ้งเตือนล่าสุด</h6>
+            <div id="alert-list">
+              <!-- AJAX จะโหลดรายการแจ้งเตือนมาที่นี่ -->
+              <div class="dropdown-item text-gray-500 small">กำลังโหลด...</div>
+            </div>
+            <a class="dropdown-item text-center small text-gray-500" href="notifications.php">ดูทั้งหมด</a>
+          </div>
         </li>
+        <!-- Nav Item - Alerts ajax-->
+
+        
 
         <div class="topbar-divider d-none d-sm-block"></div>
 

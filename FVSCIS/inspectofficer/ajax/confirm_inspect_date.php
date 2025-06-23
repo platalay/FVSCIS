@@ -20,7 +20,7 @@ try {
     }
 
     $request->confirmed_inspect_date = $confirmed_date;
-    $request->status = InspectionRequest::STATUS_INSPECTING;
+    //$request->status = InspectionRequest::STATUS_INSPECTING;
 
     if (!$request->save()) throw new Exception("ไม่สามารถอัปเดตได้");
 
@@ -38,8 +38,18 @@ try {
         $log->save();
     }
 
+    // ✅ แจ้งเตือนชาวประมง
+    Notification::create(
+        $request->created_by,
+        'fisherman',
+        "เจ้าหน้าที่ได้ยืนยันวันตรวจเรือเป็นวันที่ {$confirmed_date}",
+        'info',
+        'inspection_request',
+        $request->id,
+        $log->id ?? null
+    );
+
     echo json_encode(['success' => true, 'message' => 'ยืนยันวันตรวจเรียบร้อยแล้ว']);
 } catch (Exception $ex) {
     echo json_encode(['success' => false, 'message' => $ex->getMessage()]);
 }
-?>

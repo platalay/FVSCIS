@@ -133,7 +133,7 @@ class Session {
   public static function map_usertype_id_to_role($id) {
     switch ((int)$id) {
       case 1: return 'admin';
-      case 2: return 'Headquarter';
+      case 2: return 'headquarter';
       case 3: return 'inspectofficer';
       case 5: return 'signer';
       default: return 'unknown';

@@ -193,4 +193,13 @@ class Officer extends DatabaseObject {
     public function get_display_name() {
         return !empty($this->full_name) ? $this->full_name : $this->username;
     }
+
+    static public function find_by_department_id($department_id) {
+        $department_id = self::$database->escape_string($department_id);
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE departments_id = '" . $department_id . "' ";
+        $sql .= "AND is_active = 1 AND is_approved = 1 ";
+        $sql .= "ORDER BY full_name ASC";
+        return static::find_by_sql($sql);
+    }
 }

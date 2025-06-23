@@ -184,17 +184,7 @@ $fisherman=Fisherman::find_by_username($session->username);
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
-     <script>
-            $(document).ready(function () {
-                // ✅ เริ่มต้น DataTable
-                var table = $('#dataTable').DataTable();
-
-                // ✅ ช่องค้นหาด้านบน
-                $('#topSearch').on('keyup', function () {
-                    table.search(this.value).draw();
-                });
-            });
-            </script> 
+    <script src="../js/fvscis.js"></script> 
             
             <script>
             function openRequestModal(shipCode) {

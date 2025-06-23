@@ -71,6 +71,19 @@ try {
     $log->target_usertype_id    = 3; // สมมุติว่า 3 = officer
     $log->port_license_no       = $port_license;
     $log->save();
+    //save notification
+    $officers = Officer::find_by_department_id($department_id);
+    foreach ($officers as $officer) {
+        Notification::create_notification(
+            $officer->id,
+            'inspectofficer',
+            "มีคำขอตรวจสุขอนามัยเรือใหม่จากชาวประมง",
+            'action_required',
+            'inspection_request',
+            $request->id,
+            $log->id
+        );
+    }
 
     echo json_encode([
         'success' => true,

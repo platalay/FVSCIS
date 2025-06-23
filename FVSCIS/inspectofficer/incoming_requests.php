@@ -122,21 +122,11 @@ $Officer = Officer::find_by_id($session->user_id());
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
                     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-            <script>
-            $(document).ready(function () {
-                // ✅ เริ่มต้น DataTable
-                var table = $('#dataTable').DataTable();
-
-                // ✅ ช่องค้นหาด้านบน
-                $('#topSearch').on('keyup', function () {
-                    table.search(this.value).draw();
-                });
-            });
-            </script> 
-
+                                                
+    <script src="../js/fvscis.js"></script>                                            
             <script>
             function loadRequestDetail(id) {
                 $.ajax({
@@ -167,8 +157,7 @@ $Officer = Officer::find_by_id($session->user_id());
                             <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}`;
 
                         // ✅ ถ้ามีการนัดหมายวันตรวจ
-                        if (req.confirmed_inspect_date) {
-                            // ✅ แสดงวันที่แบบภาษาไทย (ไม่ใช่ใส่ใน input)
+                        if (req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00') {
                             const displayDate = new Date(req.confirmed_inspect_date).toLocaleDateString('th-TH', {
                                 day: '2-digit',
                                 month: '2-digit',
@@ -233,7 +222,6 @@ $Officer = Officer::find_by_id($session->user_id());
             });
             });
             </script>
-
-
+<?php 
 include("../../private/shared/footerall.php");
 ?>
