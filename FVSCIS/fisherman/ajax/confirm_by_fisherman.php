@@ -27,13 +27,14 @@ try {
 
     // ✅ 3. สร้าง log
     $log = new InspectionLog();
-    $log->request_id = $req->id;
-    $log->user_id = $session->user_id();
-    $log->user_role = 'fisherman';
-    $log->action_id = $action->id;
-    $log->description = "ชาวประมงยืนยันวันตรวจเรือ: " . $req->confirmed_inspect_date;
-    $log->created_at = date('Y-m-d H:i:s');
-    if (!$log->save()) throw new Exception("ไม่สามารถบันทึก log");
+    $log->inspection_request_id = $request->id;
+    $log->action_id             = $action->id;
+    $log->note                  = 'ชาวประมงยืนยันวันตรวจเรือ';
+    $log->performed_by          = $session->user_id() ?? 0; // รหัสผู้ใช้
+    $log->target_department_id  = $department_id;
+    $log->target_usertype_id    = 3; // สมมุติว่า 3 = officer
+    $log->port_license_no       = $port_license;
+    $log->save();
 
     // ✅ 4. แจ้งเตือนเจ้าหน้าที่กลุ่มที่รับผิดชอบ
     $message = "ชาวประมงยืนยันวันตรวจเรือ (" . $req->ship_code . ") เรียบร้อยแล้ว";

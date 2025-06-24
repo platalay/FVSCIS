@@ -51,6 +51,7 @@ try {
     $request->created_by = $session->user_id() ?? 0;
     $request->created_at          = date('Y-m-d H:i:s');
     $request->status = InspectionRequest::STATUS_PENDING;
+    $request->confirmed_inspect_date = null;
     
     if (!$request->save()) {
         throw new Exception("ไม่สามารถบันทึกคำขอได้" . ($request->errors ?? ''));

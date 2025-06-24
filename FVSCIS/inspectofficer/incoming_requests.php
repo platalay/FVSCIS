@@ -104,7 +104,7 @@ $Officer = Officer::find_by_id($session->user_id());
                             </div>
                             <div class="modal-footer">
                             <input type="hidden" name="request_id" id="confirm_request_id">
-                            <input type="hidden" id="original_confirmed_date" name="original_confirmed_date">
+                            <input type="hidden" name="original_confirmed_date" id="original_confirmed_date">
                             <input type="date" name="confirmed_date" class="form-control" required>
                             <button type="button" class="btn btn-primary" id="btnConfirmDate">ยืนยันวันตรวจ</button>
                             </div>
@@ -128,65 +128,77 @@ $Officer = Officer::find_by_id($session->user_id());
                                                 
     <script src="../js/fvscis.js"></script>                                            
             <script>
-            function loadRequestDetail(id) {
-                $.ajax({
-                    url: 'ajax/get_request_detail.php',
-                    method: 'GET',
-                    data: { id: id },
-                    dataType: 'json',
-                    success: function (data) {
-                        if (!data.success) {
-                            Swal.fire('ผิดพลาด', data.message, 'error');
-                            return;
+                function loadRequestDetail(id) {
+                    $.ajax({
+                        url: 'ajax/get_request_detail.php',
+                        method: 'GET',
+                        data: { id: id },
+                        dataType: 'json',
+                        success: function (data) {
+                            if (!data.success) {
+                                Swal.fire('ผิดพลาด', data.message, 'error');
+                                return;
+                            }
+
+                            const req = data.request;
+
+                            const statusMap = {
+                                pending: 'รอดำเนินการ',
+                                inspecting: 'กำลังตรวจ',
+                                completed: 'ตรวจเสร็จแล้ว',
+                                cancelled: 'ยกเลิก'
+                            };
+
+                            let html = `
+                                <p><strong>ชื่อเรือ:</strong> ${req.ship_name || '-'}</p>
+                                <p><strong>ทะเบียนเรือ:</strong> ${req.ship_code || '-'}</p>
+                                <p><strong>ช่วงวันที่ขอตรวจ:</strong> ${req.inspect_date_start} ถึง ${req.inspect_date_end}</p>
+                                <p><strong>ใบอนุญาตท่า:</strong> ${req.port_license_no || '-'}</p>
+                                <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}`;
+
+                            // ✅ ตรวจสอบค่าการนัดหมายวันตรวจ
+                            if (req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00') {
+                                const displayDate = new Date(req.confirmed_inspect_date).toLocaleDateString('th-TH', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                });
+                                html += `<br><span class="text-success"><i class="fas fa-calendar-check"></i> มีการนัดหมายวันที่ ${displayDate} แล้ว</span>`;
+                            } else {
+                                html += `<br><span class="text-danger"><i class="fas fa-exclamation-circle"></i> ยังไม่มีการนัดหมายวันตรวจ</span>`;
+                            }
+
+                            html += `</p>`;
+
+                            $('#modalRequestBody').html(html);
+                            $('#confirm_request_id').val(req.id);
+
+                            // ✅ ใส่ค่า input[type="date"] เฉพาะกรณีที่ไม่ใช่ '0000-00-00'
+                            $('input[name="confirmed_date"]').val(
+                                req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00'
+                                    ? req.confirmed_inspect_date
+                                    : ''
+                            );
+                            $('input[name="original_confirmed_date"]').val(
+                                req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00'
+                                    ? req.confirmed_inspect_date
+                                    : ''
+                            );
+
+                        },
+                        error: function () {
+                            Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้', 'error');
                         }
+                    });
+                }
+                </script>
 
-                        const req = data.request;
-
-                        const statusMap = {
-                            pending: 'รอดำเนินการ',
-                            inspecting: 'กำลังตรวจ',
-                            completed: 'ตรวจเสร็จแล้ว',
-                            cancelled: 'ยกเลิก'
-                        };
-
-                        let html = `
-                            <p><strong>ชื่อเรือ:</strong> ${req.ship_name || '-'}</p>
-                            <p><strong>ทะเบียนเรือ:</strong> ${req.ship_code || '-'}</p>
-                            <p><strong>ช่วงวันที่ขอตรวจ:</strong> ${req.inspect_date_start} ถึง ${req.inspect_date_end}</p>
-                            <p><strong>ใบอนุญาตท่า:</strong> ${req.port_license_no || '-'}</p>
-                            <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}`;
-
-                        // ✅ ถ้ามีการนัดหมายวันตรวจ
-                        if (req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00') {
-                            const displayDate = new Date(req.confirmed_inspect_date).toLocaleDateString('th-TH', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric'
-                            });
-                            html += `<br><span class="text-success"><i class="fas fa-calendar-check"></i> มีการนัดหมายวันที่ ${displayDate} แล้ว</span>`;
-                        }
-
-                        html += `</p>`;
-
-                        $('#modalRequestBody').html(html);
-                        $('#confirm_request_id').val(req.id);
-
-                        // ✅ ใส่ค่าลง input type=date แบบ raw (YYYY-MM-DD เท่านั้น)
-                        $('input[name="confirmed_date"]').val(req.confirmed_inspect_date || '');
-                    },
-                    error: function () {
-                        Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้', 'error');
-                    }
-                });
-            }
-
-            </script>
 
             <script>
             $(document).ready(function () {
             $('#btnConfirmDate').on('click', function () {
                 const formData = $('#confirmInspectionForm').serialize();
-
+                console.log (formData);
                 $.ajax({
                 url: 'ajax/confirm_inspect_date.php',
                 method: 'POST',
