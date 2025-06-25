@@ -31,6 +31,7 @@ try {
     $log->action_id             = $action->id;
     $log->note                  = 'ชาวประมงยืนยันวันตรวจเรือ';
     $log->performed_by          = $session->user_id() ?? 0; // รหัสผู้ใช้
+    $log->performed_at          = date('Y-m-d H:i:s'); // ✅ ใส่เวลาแบบ real-time
     $log->target_department_id  = $department_id;
     $log->target_usertype_id    = 3; // สมมุติว่า 3 = officer
     $log->port_license_no       = $port_license;
@@ -38,7 +39,7 @@ try {
 
     // ✅ 4. แจ้งเตือนเจ้าหน้าที่กลุ่มที่รับผิดชอบ
     $message = "ชาวประมงยืนยันวันตรวจเรือ (" . $req->ship_code . ") เรียบร้อยแล้ว";
-    $ref_type = 'inspection_request';
+    $ref_type = 'fisher_confirm_date';
     $ref_id = $req->id;
 
     $officers = Officer::find_by_department_id($req->department_id);
@@ -53,7 +54,7 @@ try {
             $log->id
         );
     }
-
+    Notification::mark_related_as_read('inspection_scheduled', $request->id);
     echo json_encode(['success' => true]);
 } catch (Exception $ex) {
     echo json_encode(['success' => false, 'message' => $ex->getMessage()]);

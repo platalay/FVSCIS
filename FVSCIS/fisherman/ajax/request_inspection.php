@@ -68,6 +68,7 @@ try {
     $log->action_id             = $action->id;
     $log->note                  = 'ชาวประมงยื่นคำขอตรวจเรือ';
     $log->performed_by = $session->user_id() ?? 0; // ถ้าไม่มี session ให้เก็บเป็น 0 (system)
+    $log->performed_at          = date('Y-m-d H:i:s'); // ✅ ใส่เวลาแบบ real-time
     $log->target_department_id  = $department_id;
     $log->target_usertype_id    = 3; // สมมุติว่า 3 = officer
     $log->port_license_no       = $port_license;

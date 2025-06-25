@@ -7,13 +7,14 @@ try {
     // รับ ID
     $id = $_GET['id'] ?? '';
     if (!$id) throw new Exception("ไม่มีรหัสคำขอ");
-
+    
     // ค้นหาคำขอ
     $request = InspectionRequest::find_by_id($id);
     if (!$request) throw new Exception("ไม่พบคำขอในระบบ");
 
     // เตรียมข้อมูลตอบกลับ
     $ship = Elicense::find_by_ship_code($el_db, $request->ship_code);
+    error_log("request->confirmed_inspect_date = ".$request->confirmed_inspect_date);
     $data = [
         'id' => $id,
         'ship_name'           => $ship->vessel_name,

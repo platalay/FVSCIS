@@ -95,6 +95,18 @@ class Notification extends DatabaseObject {
         }
         return $object;
     }
+
+    public static function mark_related_as_read($reference_type, $reference_id) {
+        $reference_type = self::$database->escape_string($reference_type);
+        $reference_id   = self::$database->escape_string($reference_id);
+
+        $sql = "UPDATE " . static::$table_name .
+            " SET is_read = 1 
+                WHERE reference_type = '" . $reference_type . "' 
+                AND reference_id = '" . $reference_id . "' 
+                AND is_read = 0";
+        return self::$database->query($sql);
+    }
 }
 ?>
 

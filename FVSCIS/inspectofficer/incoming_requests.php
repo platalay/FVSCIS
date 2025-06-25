@@ -141,7 +141,6 @@ $Officer = Officer::find_by_id($session->user_id());
                             }
 
                             const req = data.request;
-
                             const statusMap = {
                                 pending: 'รอดำเนินการ',
                                 inspecting: 'กำลังตรวจ',
@@ -156,7 +155,6 @@ $Officer = Officer::find_by_id($session->user_id());
                                 <p><strong>ใบอนุญาตท่า:</strong> ${req.port_license_no || '-'}</p>
                                 <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}`;
 
-                            // ✅ ตรวจสอบค่าการนัดหมายวันตรวจ
                             if (req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00') {
                                 const displayDate = new Date(req.confirmed_inspect_date).toLocaleDateString('th-TH', {
                                     day: '2-digit',
@@ -171,20 +169,22 @@ $Officer = Officer::find_by_id($session->user_id());
                             html += `</p>`;
 
                             $('#modalRequestBody').html(html);
-                            $('#confirm_request_id').val(req.id);
 
-                            // ✅ ใส่ค่า input[type="date"] เฉพาะกรณีที่ไม่ใช่ '0000-00-00'
-                            $('input[name="confirmed_date"]').val(
-                                req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00'
-                                    ? req.confirmed_inspect_date
-                                    : ''
-                            );
-                            $('input[name="original_confirmed_date"]').val(
-                                req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00'
-                                    ? req.confirmed_inspect_date
-                                    : ''
-                            );
-
+                            // ✅ รอ DOM render ก่อนค่อย set ค่าใน input
+                            setTimeout(() => {
+                                $('#confirm_request_id').val(req.id);
+                                $('input[name="confirmed_date"]').attr('min', req.inspect_date_start);
+                                $('input[name="confirmed_date"]').val(
+                                    req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00'
+                                        ? req.confirmed_inspect_date
+                                        : ''
+                                );
+                                $('input[name="original_confirmed_date"]').val(
+                                    req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00'
+                                        ? req.confirmed_inspect_date
+                                        : ''
+                                );
+                            }, 100); // ให้เวลา render 100 มิลลิวินาที
                         },
                         error: function () {
                             Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้', 'error');
@@ -198,7 +198,6 @@ $Officer = Officer::find_by_id($session->user_id());
             $(document).ready(function () {
             $('#btnConfirmDate').on('click', function () {
                 const formData = $('#confirmInspectionForm').serialize();
-                console.log (formData);
                 $.ajax({
                 url: 'ajax/confirm_inspect_date.php',
                 method: 'POST',
