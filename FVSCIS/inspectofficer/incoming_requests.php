@@ -59,7 +59,7 @@ $Officer = Officer::find_by_id($session->user_id());
 
                                             <!-- ปุ่มฟอร์มตรวจ (เงื่อนไขตาม confirmed_inspect_date) -->
                                             <?php if (!empty($req->confirmed_inspect_date)) : ?>
-                                                <a href="form_inspect.php?id=<?= h($req->id) ?>" class="btn btn-success btn-sm ms-1" title="ฟอร์มตรวจ">
+                                                <a href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>" class="btn btn-success btn-sm ms-1" title="ฟอร์มตรวจ">
                                                     <i class="fas fa-file-signature"></i>
                                                 </a>
                                             <?php else : ?>
