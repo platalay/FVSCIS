@@ -4,11 +4,16 @@ $session->require_role(['inspectofficer']);
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
+$request = InspectionRequest::find_by_id($_GET["request"]);
 ?>
 
 <!-- Begin Page Content -->
 <div class="container-fluid">
-  <h1 class="h3 mb-4 text-gray-800">ด้านน้ำจืดที่ใช้ในเรือและน้ำแข็งสำหรับเก็บรักษาสัตว์น้ำ (water and ice)</h1>
+  <h1 class="h3 mb-4 text-gray-800">ด้านน้ำจืดที่ใช้ในเรือและน้ำแข็งสำหรับเก็บรักษาสัตว์น้ำ (water and ice)
+    <a href="form_inspect.php?id=<?= htmlspecialchars($request->id) ?>" class="btn btn-secondary">
+  ← กลับไปหน้าฟอร์มตรวจสอบ
+  </a>
+  </h1>
   <!-- form start here -->
   
 <div class="accordion" id="inspectionAccordion">
