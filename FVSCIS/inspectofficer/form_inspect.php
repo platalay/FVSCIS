@@ -23,7 +23,7 @@ $check = '✅ ';
             
             <!-- โครงสร้างเรือ -->
 <div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_structure.php"
+    <a href="form_structure.php?request=<?php echo $request->id; ?>"
        style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
@@ -37,7 +37,7 @@ $check = '✅ ';
 
 <!-- วัสดุอุปกรณ์ -->
 <div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_material.php"
+    <a href="form_material.php?request=<?php echo $request->id; ?>"
        style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
@@ -51,7 +51,7 @@ $check = '✅ ';
 
 <!-- บุคลากร -->
 <div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_crew.php"
+    <a href="form_crew.php?request=<?php echo $request->id; ?>"
        style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
@@ -65,7 +65,7 @@ $check = '✅ ';
 
 <!-- น้ำจืดและน้ำแข็ง -->
 <div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_water_ice.php"
+    <a href="form_waterice.php?request=<?php echo $request->id; ?>"
        style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
@@ -79,7 +79,7 @@ $check = '✅ ';
 
 <!-- การเก็บรักษาสัตว์น้ำ -->
 <div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_preservation.php"
+    <a href="form_preservation.php?request=<?php echo $request->id; ?>"
        style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
