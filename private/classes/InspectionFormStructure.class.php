@@ -6,7 +6,7 @@ class InspectionFormStructure extends DatabaseObject {
         'id', 'request_id',
         'status_1_1', 'fail_1_1_1', 'fail_1_1_2', 'fail_1_1_3', 'remark_1_1',
         'status_1_2', 'remark_1_2',
-        'status_1_3', 'remark_1_3',
+        'status_1_3', 'fail_1_3_1', 'fail_1_3_2','remark_1_3',
         'status_1_4', 'fail_1_4_1', 'fail_1_4_2', 'remark_1_4',
         'status_1_5', 'fail_1_5_1', 'fail_1_5_2', 'fail_1_5_3', 'remark_1_5',
         'status_1_6', 'fail_1_6_1', 'fail_1_6_2', 'remark_1_6',
@@ -25,8 +25,10 @@ class InspectionFormStructure extends DatabaseObject {
 
     public $status_1_2;
     public $remark_1_2;
-
+    public $fail_1_3_1;
+    public $fail_1_3_2;
     public $status_1_3;
+
     public $remark_1_3;
 
     public $status_1_4;
@@ -77,8 +79,32 @@ class InspectionFormStructure extends DatabaseObject {
         $record = self::find_or_create($request_id);
         if (property_exists($record, $field)) {
             $record->$field = $value;
-            return $record->save();
+            $record->save();
+
+            // 🔄 ตรวจสอบความครบถ้วนของ status_1_1 ถึง status_1_7
+            $all_status_fields = [
+                'status_1_1', 'status_1_2', 'status_1_3', 'status_1_4',
+                'status_1_5', 'status_1_6', 'status_1_7'
+            ];
+
+            $is_complete = true;
+            foreach ($all_status_fields as $status_field) {
+                if (empty($record->$status_field)) {
+                    $is_complete = false;
+                    break;
+                }
+            }
+
+            // 🔧 อัปเดตฟิลด์ใน InspectionFormStatus
+            $status_record = InspectionFormStatus::find_by_request_id($request_id);
+            if ($status_record) {
+                $status_record->form_structure_status = $is_complete ? 1 : 0;
+                $status_record->save();
+            }
+
+            return true;
         }
         return false;
     }
+
 }

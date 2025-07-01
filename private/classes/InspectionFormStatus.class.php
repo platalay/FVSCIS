@@ -3,16 +3,17 @@
 class InspectionFormStatus extends DatabaseObject {
     protected static $table_name = 'inspection_form_status';
     protected static $db_columns = [
-        'id', 'vessel_id', 'inspection_date', 'inspector_id',
+        'id', 'request_id', 'vessel_id', 'inspection_date', 'inspector_id',
         'form_structure_status', 'form_material_status', 'form_crew_status',
         'form_water_ice_status', 'form_preservation_status',
         'document_number', 'department_code',
         'locked_by', 'locked_at',
         'new_id', 'parent_id',
-        'is_active', 'created_at', 'updated_at'
+        'is_active', 'created_at', 'updated_at', 'document_token','document_locked'
     ];
 
     public $id;
+    public $request_id;
     public $vessel_id;
     public $inspection_date;
     public $inspector_id;
@@ -35,6 +36,9 @@ class InspectionFormStatus extends DatabaseObject {
 
     public $created_at;
     public $updated_at;
+
+    public $document_token;
+    public $document_locked;
 
     // ✅ สร้างเลขเอกสาร (escape string + query manual)
     public static function generate_document_number($department_code) {
@@ -132,6 +136,15 @@ class InspectionFormStatus extends DatabaseObject {
         $sql .= " ORDER BY inspection_date DESC";
         $sql .= " LIMIT 1";
 
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : null;
+    }
+
+    public static function find_by_request_id($request_id) {
+        $escaped = self::$database->escape_string($request_id);
+
+        $sql = "SELECT * FROM " . static::$table_name;
+        $sql .= " WHERE request_id = '{$escaped}'";
         $result = static::find_by_sql($sql);
         return !empty($result) ? array_shift($result) : null;
     }

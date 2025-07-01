@@ -5,6 +5,7 @@ include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
 $request = InspectionRequest::find_by_id($_GET["request"]);
+$request_id = $request->id;
 ?>
 
 <!-- Begin Page Content -->
@@ -39,7 +40,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <div class="form-check mb-2">
             <input class="form-check-input form-status-radio" type="radio"
                    name="status_2_1" id="status_2_1_pass" value="pass"
-                   data-section="fail_group_2_1">
+                   data-item-code="2_1">
             <label class="form-check-label" for="status_2_1_pass">
               ผ่าน - วัสดุ อุปกรณ์และเครื่องมือมีที่เก็บเหมาะสม แยกส่วน และสะอาด
             </label>
@@ -47,7 +48,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <div class="form-check mb-2">
             <input class="form-check-input form-status-radio" type="radio"
                    name="status_2_1" id="status_2_1_fail" value="fail"
-                   data-section="fail_group_2_1">
+                   data-item-code="2_1">
             <label class="form-check-label" for="status_2_1_fail">
               ไม่ผ่าน
             </label>
@@ -57,20 +58,20 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- checklist ไม่ผ่าน -->
         <div id="fail_group_2_1" class="border p-3 mb-3 bg-light" style="display: none;">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox"
-                   id="chk_2_1_fail_1"
-                   data-code="fail_1"
+            <input class="form-check-input checklist-item" type="checkbox"
+                   id="fail_2_1_1"
+                   data-code="fail_2_1_1"
                    data-item-code="2_1">
-            <label class="form-check-label" for="chk_2_1_fail_1">
+            <label class="form-check-label" for="fail_2_1_1">
               ไม่มีภาชนะเก็บอุปกรณ์เฉพาะ / วางอุปกรณ์ปะปนกับพื้นที่อื่น
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox"
-                   id="chk_2_1_fail_2"
-                   data-code="fail_2"
+            <input class="form-check-input checklist-item" type="checkbox"
+                   id="fail_2_1_2"
+                   data-code="fail_2_1_2"
                    data-item-code="2_1">
-            <label class="form-check-label" for="chk_2_1_fail_2">
+            <label class="form-check-label" for="fail_2_1_2">
               พบการเก็บเครื่องมือที่ไม่สะอาดในพื้นที่สัมผัสสัตว์น้ำ
             </label>
           </div>
@@ -79,8 +80,9 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- หมายเหตุ -->
         <div class="mb-3">
           <label for="remark_2_1" class="form-label">หมายเหตุ (ถ้ามี):</label>
-          <textarea class="form-control" id="remark_2_1"
-                    data-code="2_1_remark"
+          <textarea class="form-control checklist-remark"
+                    id="remark_2_1"
+                    data-code="remark_2_1"
                     data-item-code="2_1"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
@@ -88,6 +90,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
     </div>
   </div>
 </div>
+
 
 
 
@@ -112,15 +115,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_2_2" id="status_2_2_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_2_2" id="status_2_2_pass" value="pass"
+                   data-item-code="2_2">
             <label class="form-check-label" for="status_2_2_pass">
               ผ่าน - อุปกรณ์และเครื่องมือที่สัมผัสสัตว์น้ำอยู่ในสภาพสมบูรณ์ ไม่ชำรุด ไม่มีรอยแตกหัก และไม่มีสนิม
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_2_2" id="status_2_2_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_2_2" id="status_2_2_fail" value="fail"
+                   data-item-code="2_2">
             <label class="form-check-label" for="status_2_2_fail">
               ไม่ผ่าน - พบเครื่องมือชำรุด/มีสนิม เช่น กระบะ ตะกร้า ลังโฟม ฯลฯ
             </label>
@@ -130,8 +135,9 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- หมายเหตุ -->
         <div class="mb-3">
           <label for="remark_2_2" class="form-label">หมายเหตุ (ถ้ามี):</label>
-          <textarea class="form-control" id="remark_2_2"
-                    data-code="2_2_remark"
+          <textarea class="form-control checklist-remark"
+                    id="remark_2_2"
+                    data-code="remark_2_2"
                     data-item-code="2_2"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
@@ -139,6 +145,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
     </div>
   </div>
 </div>
+
 
 
 <!-- จบข้อ 2 -->
@@ -162,15 +169,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_2_3" id="status_2_3_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_2_3" id="status_2_3_pass" value="pass"
+                   data-item-code="2_3">
             <label class="form-check-label" for="status_2_3_pass">
               ผ่าน - ใช้เครื่องมือที่เหมาะสมกับการปฏิบัติงาน และทำความสะอาดได้ง่าย
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_2_3" id="status_2_3_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_2_3" id="status_2_3_fail" value="fail"
+                   data-item-code="2_3">
             <label class="form-check-label" for="status_2_3_fail">
               ไม่ผ่าน - ใช้วัสดุ อุปกรณ์ และเครื่องมือผิดประเภท เช่น ใช้พลั่วตักน้ำแข็งไปตักปลา
             </label>
@@ -180,8 +189,9 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- หมายเหตุ -->
         <div class="mb-3">
           <label for="remark_2_3" class="form-label">หมายเหตุ (ถ้ามี):</label>
-          <textarea class="form-control" id="remark_2_3"
-                    data-code="2_3_remark"
+          <textarea class="form-control checklist-remark"
+                    id="remark_2_3"
+                    data-code="remark_2_3"
                     data-item-code="2_3"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
@@ -211,7 +221,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-2_4" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_2_4" id="status_2_4_pass" value="pass"
                    data-item-code="2_4">
             <label class="form-check-label" for="status_2_4_pass">
@@ -219,7 +229,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-2_4" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_2_4" id="status_2_4_fail" value="fail"
                    data-item-code="2_4">
             <label class="form-check-label" for="status_2_4_fail">
@@ -232,31 +242,31 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <div id="fail_group_2_4" class="border p-3 mb-3 bg-light" style="display: none;">
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_2_4_fail_1"
-                   data-code="fail_1"
+                   id="fail_2_4_1"
+                   data-code="fail_2_4_1"
                    data-item-code="2_4"
                    data-text="ไม่ผ่าน - ใช้น้ำไม่สะอาดล้างทำความสะอาดอุปกรณ์และเครื่องมือ">
-            <label class="form-check-label" for="chk_2_4_fail_1">
+            <label class="form-check-label" for="chk_fail_2_4_1">
               ใช้น้ำไม่สะอาดล้างทำความสะอาดอุปกรณ์และเครื่องมือ
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_2_4_fail_2"
-                   data-code="fail_2"
+                   id="fail_2_4_2"
+                   data-code="fail_2_4_2"
                    data-item-code="2_4"
                    data-text="ไม่ผ่าน - พบเศษสัตว์น้ำในอ่างล้างภาชนะทำความสะอาดเรือ">
-            <label class="form-check-label" for="chk_2_4_fail_2">
+            <label class="form-check-label" for="chk_fail_2_4_2">
               พบเศษสัตว์น้ำในอ่างล้างภาชนะทำความสะอาดเรือ
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_2_4_fail_3"
-                   data-code="fail_3"
+                   id="fail_2_4_3"
+                   data-code="fail_2_4_3"
                    data-item-code="2_4"
                    data-text="ไม่ผ่าน - อุปกรณ์ไม่ได้ล้างทำความสะอาดตามหลักเกณฑ์ของคราบสกปรก">
-            <label class="form-check-label" for="chk_2_4_fail_3">
+            <label class="form-check-label" for="chk_fail_2_4_3">
               อุปกรณ์ไม่ได้ล้างทำความสะอาดตามหลักเกณฑ์ของคราบสกปรก
             </label>
           </div>
@@ -267,7 +277,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <label for="remark_2_4" class="form-label">หมายเหตุ (ถ้ามี):</label>
           <textarea class="form-control checklist-remark"
                     id="remark_2_4"
-                    data-code="2_4_remark"
+                    data-code="remark_2_4"
                     data-item-code="2_4"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
@@ -296,31 +306,19 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_2_5" id="status_2_5_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_2_5" id="status_2_5_pass" value="pass"
+                   data-item-code="2_5">
             <label class="form-check-label" for="status_2_5_pass">
               ผ่าน - ภาชนะบรรจุสัตว์น้ำแข็งแรง และไม่ก่อให้เกิดการกดทับสัตว์น้ำ
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_2_5" id="status_2_5_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_2_5" id="status_2_5_fail" value="fail"
+                   data-item-code="2_5">
             <label class="form-check-label" for="status_2_5_fail">
-              ไม่ผ่าน
-            </label>
-          </div>
-        </div>
-
-        <!-- checklist ไม่ผ่าน (ไม่มี toggle ซ่อน/แสดง) -->
-        <div class="border p-3 mb-3 bg-light">
-          <div class="form-check mb-2">
-            <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_2_5_fail_1"
-                   data-code="fail_1"
-                   data-item-code="2_5"
-                   data-text="ไม่ผ่าน - ภาชนะบรรจุสัตว์น้ำไม่แข็งแรง พลาสติกบาง แตกหัก อยู่ในสภาพที่ไม่เหมาะกับการใช้งานและวางซ้อนกัน">
-            <label class="form-check-label" for="chk_2_5_fail_1">
-              ภาชนะบรรจุสัตว์น้ำไม่แข็งแรง พลาสติกบาง แตกหัก อยู่ในสภาพที่ไม่เหมาะกับการใช้งานและวางซ้อนกัน
+              ไม่ผ่าน - ภาชนะบรรจุสัตว์น้ำไม่แข็งแรง พลาสติกบาง แตกหัก อยู่ในสภาพที่ไม่เหมาะกับการใช้งานและวางซ้อนกัน
             </label>
           </div>
         </div>
@@ -330,7 +328,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <label for="remark_2_5" class="form-label">หมายเหตุ (ถ้ามี):</label>
           <textarea class="form-control checklist-remark"
                     id="remark_2_5"
-                    data-code="2_5_remark"
+                    data-code="remark_2_5"
                     data-item-code="2_5"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
@@ -338,6 +336,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
     </div>
   </div>
 </div>
+
 
 
 <!-- จบข้อ 5 -->
@@ -360,7 +359,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-2_6" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_2_6" id="status_2_6_pass" value="pass"
                    data-item-code="2_6">
             <label class="form-check-label" for="status_2_6_pass">
@@ -368,7 +367,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-2_6" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_2_6" id="status_2_6_fail" value="fail"
                    data-item-code="2_6">
             <label class="form-check-label" for="status_2_6_fail">
@@ -381,21 +380,21 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <div id="fail_group_2_6" class="border p-3 mb-3 bg-light" style="display: none;">
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_2_6_fail_1"
-                   data-code="fail_1"
+                   id="fail_2_6_1"
+                   data-code="fail_2_6_1"
                    data-item-code="2_6"
                    data-text="ไม่ผ่าน - คอแห้งภาชนะไม่มีรูระบายน้ำ">
-            <label class="form-check-label" for="chk_2_6_fail_1">
+            <label class="form-check-label" for="chk_fail_2_6_1">
               คอแห้งภาชนะไม่มีรูระบายน้ำ
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_2_6_fail_2"
-                   data-code="fail_2"
+                   id="fail_2_6_2"
+                   data-code="fail_2_6_2"
                    data-item-code="2_6"
                    data-text="ไม่ผ่าน - ภาชนะที่มีสัตว์น้ำอยู่มีลักษณะอุ้มน้ำ/อุ้มน้ำขัง">
-            <label class="form-check-label" for="chk_2_6_fail_2">
+            <label class="form-check-label" for="chk_fail_2_6_2">
               ภาชนะที่มีสัตว์น้ำอยู่มีลักษณะอุ้มน้ำ/อุ้มน้ำขัง
             </label>
           </div>
@@ -406,7 +405,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <label for="remark_2_6" class="form-label">หมายเหตุ (ถ้ามี):</label>
           <textarea class="form-control checklist-remark"
                     id="remark_2_6"
-                    data-code="2_6_remark"
+                    data-code="remark_2_6"
                     data-item-code="2_6"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
@@ -414,6 +413,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
     </div>
   </div>
 </div>
+
 
 <!-- จบข้อ 6 -->
 
@@ -429,28 +429,176 @@ include("../../private/shared/footerofficer.php");
 <script>
 $(document).ready(function () {
   $('.form-status-radio').on('change', function () {
-    const sectionId = $(this).data('section');
     const isFail = $(this).val() === 'fail';
-    $('#' + sectionId).toggle(isFail);
+    const itemCode = $(this).data('item-code'); // เช่น 1_1, 1_2
+    const targetSection = '#fail_group_' + itemCode;
+
+    if (isFail) {
+      $(targetSection).slideDown();
+    } else {
+      $(targetSection).slideUp();
+    }
   });
 });
 </script>
 
 <script>
 $(document).ready(function () {
-  $('.form-status-radio-2_4').on('change', function () {
-    const isFail = $(this).val() === 'fail';
-    $('#fail_group_2_4').toggle(isFail);
+  // ✅ autosave radio ทุกข้อ
+  $('input[type="radio"]').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('name');
+    const value = $(this).val();
+
+    // 👉 toggle checklist group ถ้ามี
+    const groupId = '#fail_group_' + field.replace('status_', '');
+    if ($(groupId).length) {
+      $(groupId).toggle(value === 'fail');
+    }
+
+    autosave(requestId, field, value);
   });
+
+  // ✅ autosave checkbox ทุกข้อ
+  $('input[type="checkbox"]').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).is(':checked') ? 1 : 0;
+    autosave(requestId, field, value);
+  });
+
+  // ✅ autosave textarea ทุกข้อ
+  $('textarea').on('input', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).val();
+    autosave(requestId, field, value);
+  });
+
+  // 🔁 core autosave
+  function autosave(requestId, field, value) {
+    $.ajax({
+      url: 'ajax/autosave_material.php',
+      method: 'POST',
+      data: {
+        request_id: requestId,
+        field: field,
+        value: value
+      },
+      success: function (res) {
+        console.log('✅ autosaved:', field, '=', value);
+      },
+      error: function () {
+        console.error('❌ autosave failed:', field);
+      }
+    });
+  }
 });
 </script>
 
 <script>
+  function loadMaterialData(requestId) {
+  $.post('ajax/load_material_all.php', { request_id: requestId }, function (res) {
+    if (res.success) {
+      const data = res.data;
+
+      for (let field in data) {
+        const value = data[field];
+
+        // ✅ Radio: status_2_1 ถึง status_2_6
+        if (field.startsWith('status_')) {
+          $(`input[name="${field}"][value="${value}"]`).prop('checked', true).trigger('change');
+        }
+
+        // ✅ Checkbox: fail_2_1_1 ถึง fail_2_6_2
+        if (field.startsWith('fail_') && value === "1") {
+          $(`#${field}`).prop('checked', true);
+        }
+
+        // ✅ Textarea: remark_2_1 ถึง remark_2_6
+        if (field.startsWith('remark_')) {
+          const code = field.replace('remark_', '');
+          $(`#remark_${code}`).val(value);
+        }
+      }
+    } else {
+      alert('โหลดข้อมูลไม่สำเร็จ: ' + res.message);
+    }
+  }, 'json');
+}
+
 $(document).ready(function () {
-  $('.form-status-radio-2_6').on('change', function () {
-    const isFail = $(this).val() === 'fail';
-    $('#fail_group_2_6').toggle(isFail);
+  const requestId = "<?= $request_id ?>";
+  loadMaterialData(requestId);
+});
+
+</script>
+
+<script>
+$(document).ready(function () {
+
+  // ✅ แก้ปัญหาเมื่อเลือก "ผ่าน" ต้อง uncheck checkbox ทั้งหมดใน fail group
+  $('input[type="radio"].form-status-radio').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const itemCode = $(this).data('item-code'); // เช่น 2_1, 2_4
+    const field = $(this).attr('name'); // เช่น status_2_1
+    const value = $(this).val(); // pass / fail
+    const failGroup = $('#fail_group_' + itemCode);
+
+    // 👉 toggle group
+    if (value === 'fail') {
+      failGroup.slideDown();
+    } else {
+      failGroup.slideUp();
+
+      // ✅ ยกเลิก checkbox ทั้งหมดในกลุ่ม และ autosave = 0
+      failGroup.find('input[type="checkbox"]').each(function () {
+        if ($(this).is(':checked')) {
+          $(this).prop('checked', false);
+          const checkboxId = $(this).attr('id');
+          autosave(requestId, checkboxId, 0);
+        }
+      });
+    }
+
+    autosave(requestId, field, value);
   });
+
+  // ✅ autosave checkbox ทุกข้อ
+  $('input[type="checkbox"]').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).is(':checked') ? 1 : 0;
+    autosave(requestId, field, value);
+  });
+
+  // ✅ autosave textarea ทุกข้อ
+  $('textarea').on('input', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).val();
+    autosave(requestId, field, value);
+  });
+
+  // 🔁 autosave core
+  function autosave(requestId, field, value) {
+    $.ajax({
+      url: 'ajax/autosave_material.php',
+      method: 'POST',
+      data: {
+        request_id: requestId,
+        field: field,
+        value: value
+      },
+      success: function () {
+        console.log('✅ autosaved:', field, '=', value);
+      },
+      error: function () {
+        console.error('❌ autosave failed:', field);
+      }
+    });
+  }
+
 });
 </script>
 
