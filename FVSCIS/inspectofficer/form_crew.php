@@ -350,7 +350,7 @@ $(document).ready(function () {
   // ✅ ฟังก์ชัน autosave กลาง
   function autosave(requestId, field, value) {
     $.ajax({
-      url: 'ajax/autosave_material.php',
+      url: 'ajax/autosave_crew.php',
       method: 'POST',
       data: { request_id: requestId, field: field, value: value },
       success: function () {
@@ -364,7 +364,7 @@ $(document).ready(function () {
 
   // ✅ โหลดข้อมูลเดิมกลับเข้า form
   function loadMaterialData(requestId) {
-    $.post('ajax/load_material_all.php', { request_id: requestId }, function (res) {
+    $.post('ajax/load_crew_all.php', { request_id: requestId }, function (res) {
       if (res.success) {
         const data = res.data;
         for (let field in data) {

@@ -5,6 +5,7 @@ include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
 $request = InspectionRequest::find_by_id($_GET["request"]);
+$request_id = $request->id;
 ?>
 
 <!-- Begin Page Content -->
@@ -167,22 +168,14 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- checklist ไม่ผ่าน -->
         <div id="fail_group_5_3" class="border p-3 mb-3 bg-light" style="display: none;">
           <div class="form-check mb-2">
-            <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_5_3_fail_1"
-                   data-code="fail_1"
-                   data-item-code="5_3"
-                   data-text="ไม่ผ่าน - มีน้ำแข็งไม่เพียงพอในห้องเก็บสัตว์น้ำ ภาชนะ ถัง หรือกระบะที่มีสัตว์น้ำ">
-            <label class="form-check-label" for="chk_5_3_fail_1">
+            <input class="form-check-input" type="checkbox" name="fail_5_3_1" id="fail_5_3_1">
+            <label class="form-check-label" for="fail_5_3_1">
               มีน้ำแข็งไม่เพียงพอในห้องเก็บสัตว์น้ำ ภาชนะ ถัง หรือกระบะที่มีสัตว์น้ำ
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_5_3_fail_2"
-                   data-code="fail_2"
-                   data-item-code="5_3"
-                   data-text="ไม่ผ่าน - สัตว์น้ำไม่สด">
-            <label class="form-check-label" for="chk_5_3_fail_2">
+            <input class="form-check-input" type="checkbox" name="fail_5_3_2" id="fail_5_3_2">
+            <label class="form-check-label" for="fail_5_3_2">
               สัตว์น้ำไม่สด
             </label>
           </div>
@@ -243,22 +236,14 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- checklist ไม่ผ่าน -->
         <div id="fail_group_5_4" class="border p-3 mb-3 bg-light" style="display: none;">
           <div class="form-check mb-2">
-            <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_5_4_fail_1"
-                   data-code="fail_1"
-                   data-item-code="5_4"
-                   data-text="ไม่ผ่าน - มีน้ำแข็งไม่เพียงพอต่อการเก็บรักษาสัตว์น้ำ">
-            <label class="form-check-label" for="chk_5_4_fail_1">
+            <input class="form-check-input" type="checkbox" name="fail_5_4_1" id="fail_5_4_1">
+            <label class="form-check-label" for="fail_5_4_1">
               มีน้ำแข็งไม่เพียงพอต่อการเก็บรักษาสัตว์น้ำ
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_5_4_fail_2"
-                   data-code="fail_2"
-                   data-item-code="5_4"
-                   data-text="ไม่ผ่าน - ในเรือแช่เย็นแข็ง อุณหภูมิของสัตว์น้ำสูงกว่า 0–4 องศาเซลเซียส">
-            <label class="form-check-label" for="chk_5_4_fail_2">
+            <input class="form-check-input" type="checkbox" name="fail_5_4_2" id="fail_5_4_2">
+            <label class="form-check-label" for="fail_5_4_2">
               ในเรือแช่เย็นแข็ง อุณหภูมิของสัตว์น้ำสูงกว่า 0–4 องศาเซลเซียส
             </label>
           </div>
@@ -457,14 +442,14 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_5_8" id="status_5_8_pass" value="pass"  data-item-code="5_8">
             <label class="form-check-label" for="status_5_8_pass">
               ผ่าน - ติดตั้งเทอร์โมมิเตอร์หรืออุปกรณ์บันทึกอุณหภูมิ และมีอุณหภูมิในห้องเย็นต่ำกว่า 18°C
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_5_8" id="status_5_8_fail" value="fail"  data-item-code="5_8">
             <label class="form-check-label" for="status_5_8_fail">
               ไม่ผ่าน
@@ -475,13 +460,13 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- เงื่อนไขไม่ผ่าน -->
         <div id="fail_group_5_8" style="display:none;" class="mb-3">
           <div class="form-check">
-            <input class="form-check-input form-status-radio" type="checkbox" name="fail_5_8_1" id="fail_5_8_1">
+            <input class="form-check-input" type="checkbox" name="fail_5_8_1" id="fail_5_8_1">
             <label class="form-check-label" for="fail_5_8_1">
               ไม่ติดตั้งเทอร์โมมิเตอร์หรืออุปกรณ์บันทึกอุณหภูมิ
             </label>
           </div>
           <div class="form-check">
-            <input class="form-check-input form-status-radio" type="checkbox" name="fail_5_8_2" id="fail_5_8_2">
+            <input class="form-check-input" type="checkbox" name="fail_5_8_2" id="fail_5_8_2">
             <label class="form-check-label" for="fail_5_8_2">
               มีอุณหภูมิในห้องเย็นสูงกว่า 18°C
             </label>
@@ -529,17 +514,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
             <input class="form-check-input form-status-radio" type="radio"
                    name="status_5_9" id="status_5_9_fail" value="fail"  data-item-code="5_9">
             <label class="form-check-label" for="status_5_9_fail">
-              ไม่ผ่าน
-            </label>
-          </div>
-        </div>
-
-        <!-- เงื่อนไขไม่ผ่าน -->
-        <div id="fail_group_5_9" style="display:none;" class="mb-3">
-          <div class="form-check">
-            <input class="form-check-input form-status-radio" type="checkbox" name="fail_5_9_1" id="fail_5_9_1">
-            <label class="form-check-label" for="fail_5_9_1">
-              อุณหภูมิในสัตว์น้ำสูงกว่า 18°C
+              ไม่ผ่าน อุณหภูมิในสัตว์น้ำสูงกว่า 18°C
             </label>
           </div>
         </div>
@@ -568,40 +543,110 @@ include("../../private/shared/footerofficer.php");
 
 <script>
   $(document).ready(function () {
-    $('.form-status-radio-5_3').on('change', function () {
-      const isFail = $(this).val() === 'fail';
-      $('#fail_group_5_3').toggle(isFail);
-    });
+    const requestId = <?= json_encode($request_id) ?>;
+
+    $.post('ajax/load_preservation_all.php', { request_id: requestId }, function (res) {
+      if (!res.success) return;
+
+      const data = res.data;
+      console.log(data);
+
+      // 🧠 วนทุก field ที่ได้มา
+      for (const [key, value] of Object.entries(data)) {
+        if (value === null || value === "") continue;
+
+        // ✅ radio (status_1_x)
+        if (key.startsWith('status_')) {
+          $(`input[name="${key}"][value="${value}"]`).prop('checked', true);
+
+          // ถ้าเป็น fail → แสดงกล่อง checklist
+          if (value === 'fail') {
+            const code = key.replace('status_', '');
+            $(`#fail_group_${code}`).show();
+          }
+        }
+
+        // ✅ checkbox (fail_1_x_x)
+        else if (key.startsWith('fail_') && value == '1') {
+          $(`input[id="${key}"]`).prop('checked', true);
+        }
+
+        // ✅ textarea (remark_1_x)
+        else if (key.startsWith('remark_')) {
+          $(`#${key}`).val(value);
+        }
+      }
+    }, 'json');
   });
 </script>
 
-<script>
-  $(document).ready(function () {
-    $('.form-status-radio-5_4').on('change', function () {
-      const isFail = $(this).val() === 'fail';
-      $('#fail_group_5_4').toggle(isFail);
-    });
-  });
-</script>
 
 <script>
-  $(document).ready(function () {
-    $('input[name="status_5_7"]').on('change', function () {
-      const isFail = $(this).val() === 'fail';
-      $('#fail_group_5_7').toggle(isFail);
-    });
-  });
-</script>
+$(document).ready(function () {
 
-<script>
-  $(document).ready(function () {
-    $('input[name="status_5_8"]').on('change', function () {
-      $('#fail_group_5_8').toggle($(this).val() === 'fail');
-    });
-    $('input[name="status_5_9"]').on('change', function () {
-      $('#fail_group_5_9').toggle($(this).val() === 'fail');
-    });
+  // ✅ แก้ปัญหาเมื่อเลือก "ผ่าน" ต้อง uncheck checkbox ทั้งหมดใน fail group
+  $('input[type="radio"].form-status-radio').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const itemCode = $(this).data('item-code'); // เช่น 2_1, 2_4
+    const field = $(this).attr('name'); // เช่น status_2_1
+    const value = $(this).val(); // pass / fail
+    const failGroup = $('#fail_group_' + itemCode);
+
+    // 👉 toggle group
+    if (value === 'fail') {
+      failGroup.slideDown();
+    } else {
+      failGroup.slideUp();
+
+      // ✅ ยกเลิก checkbox ทั้งหมดในกลุ่ม และ autosave = 0
+      failGroup.find('input[type="checkbox"]').each(function () {
+        if ($(this).is(':checked')) {
+          $(this).prop('checked', false);
+          const checkboxId = $(this).attr('id');
+          autosave(requestId, checkboxId, 0);
+        }
+      });
+    }
+
+    autosave(requestId, field, value);
   });
+
+  // ✅ autosave checkbox ทุกข้อ
+  $('input[type="checkbox"]').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).is(':checked') ? 1 : 0;
+    autosave(requestId, field, value);
+  });
+
+  // ✅ autosave textarea ทุกข้อ
+  $('textarea').on('input', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).val();
+    autosave(requestId, field, value);
+  });
+
+  // 🔁 autosave core
+  function autosave(requestId, field, value) {
+    $.ajax({
+      url: 'ajax/autosave_preservation.php',
+      method: 'POST',
+      data: {
+        request_id: requestId,
+        field: field,
+        value: value
+      },
+      success: function () {
+        console.log('✅ autosaved:', field, '=', value);
+      },
+      error: function () {
+        console.error('❌ autosave failed:', field);
+      }
+    });
+  }
+
+});
 </script>
 
 <?

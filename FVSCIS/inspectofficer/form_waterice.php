@@ -5,6 +5,7 @@ include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
 $request = InspectionRequest::find_by_id($_GET["request"]);
+$request_id = $request->id;
 ?>
 
 <!-- Begin Page Content -->
@@ -57,41 +58,41 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <div id="fail_group_4_1" class="border p-3 mb-3 bg-light" style="display: none;">
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_4_1_fail_1"
+                   id="fail_4_1_1"
                    data-code="fail_4_1_1"
                    data-item-code="4_1"
                    data-text="น้ำแข็งไม่มีใบรับรองมาตรฐาน GMP หรือ อย.">
-            <label class="form-check-label" for="chk_4_1_fail_1">
+            <label class="form-check-label" for="fail_4_1_1">
               น้ำแข็งไม่มีใบรับรองมาตรฐาน GMP หรือ อย.
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_4_1_fail_2"
+                   id="fail_4_1_2"
                    data-code="fail_4_1_2"
                    data-item-code="4_1"
                    data-text="น้ำแข็งชื้น มีคราบ มีสิ่งสกปรก">
-            <label class="form-check-label" for="chk_4_1_fail_2">
+            <label class="form-check-label" for="fail_4_1_2">
               น้ำแข็งชื้น มีคราบ มีสิ่งสกปรก
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_4_1_fail_3"
+                   id="fail_4_1_3"
                    data-code="fail_4_1_3"
                    data-item-code="4_1"
                    data-text="น้ำอุปโภคบริโภค ไม่สะอาด มีสี มีกลิ่น">
-            <label class="form-check-label" for="chk_4_1_fail_3">
+            <label class="form-check-label" for="fail_4_1_3">
               น้ำอุปโภคบริโภค ไม่สะอาด มีสี มีกลิ่น
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_4_1_fail_4"
+                   id="fail_4_1_4"
                    data-code="fail_4_1_4"
                    data-item-code="4_1"
                    data-text="น้ำแข็งหรือน้ำอุปโภคบริโภคมีปริมาณไม่เพียงพอ">
-            <label class="form-check-label" for="chk_4_1_fail_4">
+            <label class="form-check-label" for="fail_4_1_4">
               น้ำแข็งหรือน้ำอุปโภคบริโภคมีปริมาณไม่เพียงพอ
             </label>
           </div>
@@ -210,21 +211,21 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <div id="fail_group_4_3" class="border p-3 mb-3 bg-light" style="display: none;">
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_4_3_fail_1"
+                   id="fail_4_3_1"
                    data-code="fail_4_3_1"
                    data-item-code="4_3"
                    data-text="ไม่ผ่าน - เครื่องมือ ภาชนะขนถ่ายและรางขนส่งน้ำแข็งและน้ำจืด เป็นสนิม">
-            <label class="form-check-label" for="chk_4_3_fail_1">
+            <label class="form-check-label" for="fail_4_3_1">
               เครื่องมือ ภาชนะขนถ่ายและรางขนส่งน้ำแข็งและน้ำจืด เป็นสนิม
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="chk_4_3_fail_2"
+                   id="fail_4_3_2"
                    data-code="fail_4_3_2"
                    data-item-code="4_3"
                    data-text="ไม่ผ่าน - น้ำแข็งวางกองอยู่บนพื้นก่อนลงเรือ">
-            <label class="form-check-label" for="chk_4_3_fail_2">
+            <label class="form-check-label" for="fail_4_3_2">
               น้ำแข็งวางกองอยู่บนพื้นก่อนลงเรือ
             </label>
           </div>
@@ -309,21 +310,166 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
 include("../../private/shared/footerofficer.php");
 ?>
 <script>
-  $(document).ready(function () {
-    $('.form-status-radio-4_1').on('change', function () {
-      const isFail = $(this).val() === 'fail';
-      $('#fail_group_4_1').toggle(isFail);
-    });
+$(document).ready(function () {
+  // ✅ autosave radio ทุกข้อ
+  $('input[type="radio"]').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('name');
+    const value = $(this).val();
+
+    // 👉 toggle checklist group ถ้ามี
+    const groupId = '#fail_group_' + field.replace('status_', '');
+    if ($(groupId).length) {
+      $(groupId).toggle(value === 'fail');
+    }
+
+    autosave(requestId, field, value);
   });
+
+  // ✅ autosave checkbox ทุกข้อ
+  $('input[type="checkbox"]').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).is(':checked') ? 1 : 0;
+    autosave(requestId, field, value);
+  });
+
+  // ✅ autosave textarea ทุกข้อ
+  $('textarea').on('input', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).val();
+    autosave(requestId, field, value);
+  });
+
+  // 🔁 core autosave
+  function autosave(requestId, field, value) {
+    $.ajax({
+      url: 'ajax/autosave_structure.php',
+      method: 'POST',
+      data: {
+        request_id: requestId,
+        field: field,
+        value: value
+      },
+      success: function (res) {
+        console.log('✅ autosaved:', field, '=', value);
+      },
+      error: function () {
+        console.error('❌ autosave failed:', field);
+      }
+    });
+  }
+});
 </script>
+
 
 <script>
   $(document).ready(function () {
-    $('.form-status-radio-4_3').on('change', function () {
-      const isFail = $(this).val() === 'fail';
-      $('#fail_group_4_3').toggle(isFail);
-    });
+    const requestId = <?= json_encode($request_id) ?>;
+
+    $.post('ajax/load_waterice_all.php', { request_id: requestId }, function (res) {
+      if (!res.success) return;
+
+      const data = res.data;
+      console.log(data);
+
+      // 🧠 วนทุก field ที่ได้มา
+      for (const [key, value] of Object.entries(data)) {
+        if (value === null || value === "") continue;
+
+        // ✅ radio (status_1_x)
+        if (key.startsWith('status_')) {
+          $(`input[name="${key}"][value="${value}"]`).prop('checked', true);
+
+          // ถ้าเป็น fail → แสดงกล่อง checklist
+          if (value === 'fail') {
+            const code = key.replace('status_', '');
+            $(`#fail_group_${code}`).show();
+          }
+        }
+
+        // ✅ checkbox (fail_1_x_x)
+        else if (key.startsWith('fail_') && value == '1') {
+          $(`input[id="${key}"]`).prop('checked', true);
+        }
+
+        // ✅ textarea (remark_1_x)
+        else if (key.startsWith('remark_')) {
+          $(`#${key}`).val(value);
+        }
+      }
+    }, 'json');
   });
+</script>
+
+
+<script>
+$(document).ready(function () {
+
+  // ✅ แก้ปัญหาเมื่อเลือก "ผ่าน" ต้อง uncheck checkbox ทั้งหมดใน fail group
+  $('input[type="radio"].form-status-radio').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const itemCode = $(this).data('item-code'); // เช่น 2_1, 2_4
+    const field = $(this).attr('name'); // เช่น status_2_1
+    const value = $(this).val(); // pass / fail
+    const failGroup = $('#fail_group_' + itemCode);
+
+    // 👉 toggle group
+    if (value === 'fail') {
+      failGroup.slideDown();
+    } else {
+      failGroup.slideUp();
+
+      // ✅ ยกเลิก checkbox ทั้งหมดในกลุ่ม และ autosave = 0
+      failGroup.find('input[type="checkbox"]').each(function () {
+        if ($(this).is(':checked')) {
+          $(this).prop('checked', false);
+          const checkboxId = $(this).attr('id');
+          autosave(requestId, checkboxId, 0);
+        }
+      });
+    }
+
+    autosave(requestId, field, value);
+  });
+
+  // ✅ autosave checkbox ทุกข้อ
+  $('input[type="checkbox"]').on('change', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).is(':checked') ? 1 : 0;
+    autosave(requestId, field, value);
+  });
+
+  // ✅ autosave textarea ทุกข้อ
+  $('textarea').on('input', function () {
+    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
+    const field = $(this).attr('id');
+    const value = $(this).val();
+    autosave(requestId, field, value);
+  });
+
+  // 🔁 autosave core
+  function autosave(requestId, field, value) {
+    $.ajax({
+      url: 'ajax/autosave_waterice.php',
+      method: 'POST',
+      data: {
+        request_id: requestId,
+        field: field,
+        value: value
+      },
+      success: function () {
+        console.log('✅ autosaved:', field, '=', value);
+      },
+      error: function () {
+        console.error('❌ autosave failed:', field);
+      }
+    });
+  }
+
+});
 </script>
 
 
