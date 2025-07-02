@@ -428,135 +428,28 @@ include("../../private/shared/footerofficer.php");
 
 <script>
 $(document).ready(function () {
-  $('.form-status-radio').on('change', function () {
-    const isFail = $(this).val() === 'fail';
-    const itemCode = $(this).data('item-code'); // เช่น 1_1, 1_2
-    const targetSection = '#fail_group_' + itemCode;
-
-    if (isFail) {
-      $(targetSection).slideDown();
-    } else {
-      $(targetSection).slideUp();
-    }
-  });
-});
-</script>
-
-<script>
-$(document).ready(function () {
-  // ✅ autosave radio ทุกข้อ
-  $('input[type="radio"]').on('change', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('name');
-    const value = $(this).val();
-
-    // 👉 toggle checklist group ถ้ามี
-    const groupId = '#fail_group_' + field.replace('status_', '');
-    if ($(groupId).length) {
-      $(groupId).toggle(value === 'fail');
-    }
-
-    autosave(requestId, field, value);
-  });
-
-  // ✅ autosave checkbox ทุกข้อ
-  $('input[type="checkbox"]').on('change', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('id');
-    const value = $(this).is(':checked') ? 1 : 0;
-    autosave(requestId, field, value);
-  });
-
-  // ✅ autosave textarea ทุกข้อ
-  $('textarea').on('input', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('id');
-    const value = $(this).val();
-    autosave(requestId, field, value);
-  });
-
-  // 🔁 core autosave
-  function autosave(requestId, field, value) {
-    $.ajax({
-      url: 'ajax/autosave_material.php',
-      method: 'POST',
-      data: {
-        request_id: requestId,
-        field: field,
-        value: value
-      },
-      success: function (res) {
-        console.log('✅ autosaved:', field, '=', value);
-      },
-      error: function () {
-        console.error('❌ autosave failed:', field);
-      }
-    });
-  }
-});
-</script>
-
-<script>
-  function loadMaterialData(requestId) {
-  $.post('ajax/load_material_all.php', { request_id: requestId }, function (res) {
-    if (res.success) {
-      const data = res.data;
-
-      for (let field in data) {
-        const value = data[field];
-
-        // ✅ Radio: status_2_1 ถึง status_2_6
-        if (field.startsWith('status_')) {
-          $(`input[name="${field}"][value="${value}"]`).prop('checked', true).trigger('change');
-        }
-
-        // ✅ Checkbox: fail_2_1_1 ถึง fail_2_6_2
-        if (field.startsWith('fail_') && value === "1") {
-          $(`#${field}`).prop('checked', true);
-        }
-
-        // ✅ Textarea: remark_2_1 ถึง remark_2_6
-        if (field.startsWith('remark_')) {
-          const code = field.replace('remark_', '');
-          $(`#remark_${code}`).val(value);
-        }
-      }
-    } else {
-      alert('โหลดข้อมูลไม่สำเร็จ: ' + res.message);
-    }
-  }, 'json');
-}
-
-$(document).ready(function () {
   const requestId = "<?= $request_id ?>";
+
+  // ✅ โหลดข้อมูลเมื่อเริ่มต้น
   loadMaterialData(requestId);
-});
 
-</script>
-
-<script>
-$(document).ready(function () {
-
-  // ✅ แก้ปัญหาเมื่อเลือก "ผ่าน" ต้อง uncheck checkbox ทั้งหมดใน fail group
-  $('input[type="radio"].form-status-radio').on('change', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const itemCode = $(this).data('item-code'); // เช่น 2_1, 2_4
+  // ✅ กด radio แล้ว toggle กล่อง fail + autosave + clear checkbox ถ้าเลือก "ผ่าน"
+  $('input[type="radio"]').on('change', function () {
     const field = $(this).attr('name'); // เช่น status_2_1
-    const value = $(this).val(); // pass / fail
+    const value = $(this).val();        // pass หรือ fail
+    const itemCode = field.replace('status_', ''); // เช่น 2_1
     const failGroup = $('#fail_group_' + itemCode);
 
-    // 👉 toggle group
     if (value === 'fail') {
       failGroup.slideDown();
     } else {
       failGroup.slideUp();
 
-      // ✅ ยกเลิก checkbox ทั้งหมดในกลุ่ม และ autosave = 0
+      // เคลียร์ checkbox ทุกอันในกลุ่ม
       failGroup.find('input[type="checkbox"]').each(function () {
-        if ($(this).is(':checked')) {
-          $(this).prop('checked', false);
-          const checkboxId = $(this).attr('id');
-          autosave(requestId, checkboxId, 0);
+        if (this.checked) {
+          this.checked = false;
+          autosave(requestId, this.id, 0);
         }
       });
     }
@@ -564,32 +457,26 @@ $(document).ready(function () {
     autosave(requestId, field, value);
   });
 
-  // ✅ autosave checkbox ทุกข้อ
+  // ✅ checkbox → autosave
   $('input[type="checkbox"]').on('change', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('id');
-    const value = $(this).is(':checked') ? 1 : 0;
+    const field = this.id;
+    const value = this.checked ? 1 : 0;
     autosave(requestId, field, value);
   });
 
-  // ✅ autosave textarea ทุกข้อ
+  // ✅ textarea → autosave
   $('textarea').on('input', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('id');
+    const field = this.id;
     const value = $(this).val();
     autosave(requestId, field, value);
   });
 
-  // 🔁 autosave core
+  // ✅ ฟังก์ชัน autosave กลาง
   function autosave(requestId, field, value) {
     $.ajax({
       url: 'ajax/autosave_material.php',
       method: 'POST',
-      data: {
-        request_id: requestId,
-        field: field,
-        value: value
-      },
+      data: { request_id: requestId, field: field, value: value },
       success: function () {
         console.log('✅ autosaved:', field, '=', value);
       },
@@ -599,8 +486,37 @@ $(document).ready(function () {
     });
   }
 
+  // ✅ โหลดข้อมูลเดิมกลับเข้า form
+  function loadMaterialData(requestId) {
+    $.post('ajax/load_material_all.php', { request_id: requestId }, function (res) {
+      if (res.success) {
+        const data = res.data;
+        for (let field in data) {
+          const value = data[field];
+
+          // Radio
+          if (field.startsWith('status_')) {
+            $(`input[name="${field}"][value="${value}"]`).prop('checked', true).trigger('change');
+          }
+
+          // Checkbox
+          if (field.startsWith('fail_') && value === "1") {
+            $(`#${field}`).prop('checked', true);
+          }
+
+          // Textarea
+          if (field.startsWith('remark_')) {
+            $(`#${field}`).val(value);
+          }
+        }
+      } else {
+        alert('โหลดข้อมูลไม่สำเร็จ: ' + res.message);
+      }
+    }, 'json');
+  }
 });
 </script>
+
 
 <?
 include("../../private/shared/footerall.php");

@@ -36,7 +36,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-4_1" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_4_1" id="status_4_1_pass" value="pass"
                    data-item-code="4_1">
             <label class="form-check-label" for="status_4_1_pass">
@@ -44,7 +44,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-4_1" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_4_1" id="status_4_1_fail" value="fail"
                    data-item-code="4_1">
             <label class="form-check-label" for="status_4_1_fail">
@@ -58,9 +58,9 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
                    id="chk_4_1_fail_1"
-                   data-code="fail_1"
+                   data-code="fail_4_1_1"
                    data-item-code="4_1"
-                   data-text="ไม่ผ่าน - น้ำแข็งไม่มีใบรับรองมาตรฐาน GMP หรือ อย.">
+                   data-text="น้ำแข็งไม่มีใบรับรองมาตรฐาน GMP หรือ อย.">
             <label class="form-check-label" for="chk_4_1_fail_1">
               น้ำแข็งไม่มีใบรับรองมาตรฐาน GMP หรือ อย.
             </label>
@@ -68,9 +68,9 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
                    id="chk_4_1_fail_2"
-                   data-code="fail_2"
+                   data-code="fail_4_1_2"
                    data-item-code="4_1"
-                   data-text="ไม่ผ่าน - น้ำแข็งชื้น มีคราบ มีสิ่งสกปรก">
+                   data-text="น้ำแข็งชื้น มีคราบ มีสิ่งสกปรก">
             <label class="form-check-label" for="chk_4_1_fail_2">
               น้ำแข็งชื้น มีคราบ มีสิ่งสกปรก
             </label>
@@ -78,9 +78,9 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
                    id="chk_4_1_fail_3"
-                   data-code="fail_3"
+                   data-code="fail_4_1_3"
                    data-item-code="4_1"
-                   data-text="ไม่ผ่าน - น้ำอุปโภคบริโภค ไม่สะอาด มีสี มีกลิ่น">
+                   data-text="น้ำอุปโภคบริโภค ไม่สะอาด มีสี มีกลิ่น">
             <label class="form-check-label" for="chk_4_1_fail_3">
               น้ำอุปโภคบริโภค ไม่สะอาด มีสี มีกลิ่น
             </label>
@@ -88,9 +88,9 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
                    id="chk_4_1_fail_4"
-                   data-code="fail_4"
+                   data-code="fail_4_1_4"
                    data-item-code="4_1"
-                   data-text="ไม่ผ่าน - น้ำแข็งหรือน้ำอุปโภคบริโภคมีปริมาณไม่เพียงพอ">
+                   data-text="น้ำแข็งหรือน้ำอุปโภคบริโภคมีปริมาณไม่เพียงพอ">
             <label class="form-check-label" for="chk_4_1_fail_4">
               น้ำแข็งหรือน้ำอุปโภคบริโภคมีปริมาณไม่เพียงพอ
             </label>
@@ -102,7 +102,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <label for="remark_4_1" class="form-label">หมายเหตุ (ถ้ามี):</label>
           <textarea class="form-control checklist-remark"
                     id="remark_4_1"
-                    data-code="4_1_remark"
+                    data-code="remark_4_1"
                     data-item-code="4_1"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
@@ -110,6 +110,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
     </div>
   </div>
 </div>
+
 
 
 
@@ -134,15 +135,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_4_2" id="status_4_2_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_4_2" id="status_4_2_pass" value="pass"
+                   data-item-code="4_2">
             <label class="form-check-label" for="status_4_2_pass">
               ผ่าน - สถานที่เก็บและภาชนะที่บรรจุน้ำจืด และน้ำแข็งต้องอยู่ในสภาพดี ไม่มีสนิม
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_4_2" id="status_4_2_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_4_2" id="status_4_2_fail" value="fail"
+                   data-item-code="4_2">
             <label class="form-check-label" for="status_4_2_fail">
               ไม่ผ่าน - สถานที่เก็บและภาชนะที่บรรจุน้ำจืด และน้ำแข็งมีคราบสกปรกเป็นสนิม
             </label>
@@ -152,8 +155,10 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- หมายเหตุ -->
         <div class="mb-3">
           <label for="remark_4_2" class="form-label">หมายเหตุ (ถ้ามี):</label>
-          <textarea class="form-control" id="remark_4_2"
-                    name="remark_4_2"
+          <textarea class="form-control checklist-remark"
+                    id="remark_4_2"
+                    data-code="remark_4_2"
+                    data-item-code="4_2"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
       </form>
@@ -184,7 +189,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-4_3" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_4_3" id="status_4_3_pass" value="pass"
                    data-item-code="4_3">
             <label class="form-check-label" for="status_4_3_pass">
@@ -192,7 +197,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-4_3" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_4_3" id="status_4_3_fail" value="fail"
                    data-item-code="4_3">
             <label class="form-check-label" for="status_4_3_fail">
@@ -206,7 +211,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
                    id="chk_4_3_fail_1"
-                   data-code="fail_1"
+                   data-code="fail_4_3_1"
                    data-item-code="4_3"
                    data-text="ไม่ผ่าน - เครื่องมือ ภาชนะขนถ่ายและรางขนส่งน้ำแข็งและน้ำจืด เป็นสนิม">
             <label class="form-check-label" for="chk_4_3_fail_1">
@@ -216,7 +221,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
                    id="chk_4_3_fail_2"
-                   data-code="fail_2"
+                   data-code="fail_4_3_2"
                    data-item-code="4_3"
                    data-text="ไม่ผ่าน - น้ำแข็งวางกองอยู่บนพื้นก่อนลงเรือ">
             <label class="form-check-label" for="chk_4_3_fail_2">
@@ -230,7 +235,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
           <label for="remark_4_3" class="form-label">หมายเหตุ (ถ้ามี):</label>
           <textarea class="form-control checklist-remark"
                     id="remark_4_3"
-                    data-code="4_3_remark"
+                    data-code="remark_4_3"
                     data-item-code="4_3"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
@@ -238,6 +243,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
     </div>
   </div>
 </div>
+
 
 
 <!-- จบข้อ 3 -->
@@ -260,15 +266,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_4_4" id="status_4_4_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_4_4" id="status_4_4_pass" value="pass"
+                   data-item-code="4_4">
             <label class="form-check-label" for="status_4_4_pass">
               ผ่าน - มีฝาปิดมิดชิด
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_4_4" id="status_4_4_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_4_4" id="status_4_4_fail" value="fail"
+                   data-item-code="4_4">
             <label class="form-check-label" for="status_4_4_fail">
               ไม่ผ่าน - ไม่มีฝาปิด หรือฝาปิดชำรุด
             </label>
@@ -278,15 +286,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- หมายเหตุ -->
         <div class="mb-3">
           <label for="remark_4_4" class="form-label">หมายเหตุ (ถ้ามี):</label>
-          <textarea class="form-control"
+          <textarea class="form-control checklist-remark"
                     id="remark_4_4"
-                    name="remark_4_4"
+                    data-code="remark_4_4"
+                    data-item-code="4_4"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 
 <!-- จบข้อ 4 -->
 

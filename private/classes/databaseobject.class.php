@@ -136,13 +136,62 @@ class DatabaseObject {
     return $result;
   }
 
-  public function save() {
-    if (isset($this->id) && $this->id > 0) {
-        return $this->update();
-    } else {
-        return $this->create();
+    public function save() {
+        $now = date('Y-m-d H:i:s');
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+        $user_id = $GLOBALS['session']->user_id() ?? 0;
+
+        if (isset($this->id) && $this->id > 0) {
+            // ✋ ป้องกันการแก้ created_* โดยไม่ทำอะไรเลย
+            if (property_exists($this, 'created_at')) {
+                unset($this->created_at);
+            }
+            if (property_exists($this, 'created_by')) {
+                unset($this->created_by);
+            }
+            if (property_exists($this, 'created_ip')) {
+                unset($this->created_ip);
+            }
+
+            // อัปเดต updated_*
+            if (property_exists($this, 'updated_at')) {
+                $this->updated_at = $now;
+            }
+            if (property_exists($this, 'updated_by')) {
+                $this->updated_by = $user_id;
+            }
+            if (property_exists($this, 'updated_ip')) {
+                $this->updated_ip = $ip;
+            }
+
+            return $this->update();
+        } else {
+            // สร้างใหม่: เขียน created และ updated ไปพร้อมกัน
+            if (property_exists($this, 'created_at')) {
+                $this->created_at = $now;
+            }
+            if (property_exists($this, 'created_by')) {
+                $this->created_by = $user_id;
+            }
+            if (property_exists($this, 'created_ip')) {
+                $this->created_ip = $ip;
+            }
+
+            if (property_exists($this, 'updated_at')) {
+                $this->updated_at = $now;
+            }
+            if (property_exists($this, 'updated_by')) {
+                $this->updated_by = $user_id;
+            }
+            if (property_exists($this, 'updated_ip')) {
+                $this->updated_ip = $ip;
+            }
+
+            return $this->create();
+        }
     }
-  }
+
+
 
   public function merge_attributes($args=[]) {
     foreach($args as $key => $value) {

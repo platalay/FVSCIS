@@ -11,7 +11,7 @@ class InspectionFormStructure extends DatabaseObject {
         'status_1_5', 'fail_1_5_1', 'fail_1_5_2', 'fail_1_5_3', 'remark_1_5',
         'status_1_6', 'fail_1_6_1', 'fail_1_6_2', 'remark_1_6',
         'status_1_7', 'fail_1_7_1', 'fail_1_7_2', 'fail_1_7_3', 'fail_1_7_4', 'remark_1_7',
-        'created_at', 'updated_at'
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
@@ -56,6 +56,10 @@ class InspectionFormStructure extends DatabaseObject {
 
     public $created_at;
     public $updated_at;
+    public $created_by;
+    public $updated_by;
+    public $created_ip;
+    public $updated_ip;
 
     // 🔍 ดึงหรือสร้างใหม่หากไม่มี
     public static function find_or_create($request_id) {

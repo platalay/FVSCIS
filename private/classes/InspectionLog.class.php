@@ -13,7 +13,8 @@ class InspectionLog extends DatabaseObject {
         'performed_at',
         'target_department_id',
         'target_usertype_id',
-        'target_officer_id'
+        'target_officer_id',
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
@@ -27,6 +28,14 @@ class InspectionLog extends DatabaseObject {
     public $target_department_id;
     public $target_usertype_id;
     public $target_officer_id;
+    
+    public $created_at;
+    public $updated_at;
+    public $created_by;
+    public $updated_by;
+    public $created_ip;
+    public $updated_ip;
+    
     public function action_description_th() {
         $action = LogAction::find_by_id($this->action_id);
         return $action ? $action->description_th : '';

@@ -10,7 +10,7 @@ class InspectionFormCrew extends DatabaseObject {
         'status_3_3', 'fail_3_3_1', 'remark_3_3',
         'status_3_4', 'fail_3_4_1', 'remark_3_4',
         'status_3_5', 'fail_3_5_1', 'remark_3_5',
-        'created_at', 'updated_at'
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
@@ -40,6 +40,10 @@ class InspectionFormCrew extends DatabaseObject {
 
     public $created_at;
     public $updated_at;
+    public $created_by;
+    public $updated_by;
+    public $created_ip;
+    public $updated_ip;
 
     // สร้างหรือหา record เดิมเพื่อใช้สำหรับ auto save
     public static function find_or_create($request_id) {

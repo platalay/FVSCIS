@@ -10,7 +10,7 @@ class InspectionFormMaterial extends DatabaseObject {
         'status_2_4', 'fail_2_4_1', 'fail_2_4_2', 'fail_2_4_3', 'remark_2_4',
         'status_2_5', 'remark_2_5',
         'status_2_6', 'fail_2_6_1', 'fail_2_6_2', 'remark_2_6',
-        'created_at', 'updated_at'
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
@@ -44,6 +44,13 @@ class InspectionFormMaterial extends DatabaseObject {
 
     public $created_at;
     public $updated_at;
+    public $created_by;
+    public $updated_by;
+    public $created_ip;
+    public $updated_ip;
+
+
+
 
     public static function find_or_create($request_id) {
         $request_id = self::$database->escape_string($request_id);

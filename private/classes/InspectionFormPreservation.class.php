@@ -13,7 +13,7 @@ class InspectionFormPreservation extends DatabaseObject {
         'status_5_7', 'fail_5_7_1', 'fail_5_7_2', 'remark_5_7',
         'status_5_8', 'fail_5_8_1', 'fail_5_8_2', 'remark_5_8',
         'status_5_9', 'fail_5_9_1', 'fail_5_9_2', 'remark_5_9',
-        'created_at', 'updated_at'
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
@@ -58,6 +58,10 @@ class InspectionFormPreservation extends DatabaseObject {
 
     public $created_at;
     public $updated_at;
+    public $created_by;
+    public $updated_by;
+    public $created_ip;
+    public $updated_ip;
 
     // 🔍 หากมีแล้วให้คืน record นั้น, ถ้าไม่มีให้สร้างใหม่
     public static function find_or_create($request_id) {

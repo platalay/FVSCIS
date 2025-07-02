@@ -37,15 +37,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_1" id="status_5_1_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_1" id="status_5_1_pass" value="pass"
+                   data-item-code="5_1">
             <label class="form-check-label" for="status_5_1_pass">
               ผ่าน - มีพื้นที่จัดเก็บสารเคมี เช่น ผงซักฟอก น้ำยาล้างจาน ยาฆ่าแมลง สี ที่เป็นสัดส่วน ไม่มีโอกาสปนเปื้อนกับสัตว์น้ำ
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_1" id="status_5_1_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_1" id="status_5_1_fail" value="fail"
+                   data-item-code="5_1">
             <label class="form-check-label" for="status_5_1_fail">
               ไม่ผ่าน - ไม่มีพื้นที่จัดเก็บสารเคมี เช่น ผงซักฟอก น้ำยาล้างจาน ยาฆ่าแมลง สี ที่เป็นสัดส่วน 
               มีโอกาสปนเปื้อนกับสัตว์น้ำ
@@ -56,15 +58,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- หมายเหตุ -->
         <div class="mb-3">
           <label for="remark_5_1" class="form-label">หมายเหตุ (ถ้ามี):</label>
-          <textarea class="form-control"
+          <textarea class="form-control checklist-remark"
                     id="remark_5_1"
-                    name="remark_5_1"
+                    data-code="remark_5_1"
+                    data-item-code="5_1"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 
 
 <!-- จบข้อ 1 -->
@@ -88,15 +92,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_2" id="status_5_2_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_2" id="status_5_2_pass" value="pass"
+                   data-item-code="5_2">
             <label class="form-check-label" for="status_5_2_pass">
               ผ่าน - ภาชนะบรรจุสัตว์น้ำแต่ละอันมีขอบรองรับไม่ให้สัตว์น้ำกดทับกัน
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_2" id="status_5_2_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_2" id="status_5_2_fail" value="fail"
+                   data-item-code="5_2">
             <label class="form-check-label" for="status_5_2_fail">
               ไม่ผ่าน - ภาชนะบรรจุสัตว์น้ำไม่แข็งแรง ในขณะขนถ่ายพบว่าใช้งานซะที่แตกหัก อยู่ในสภาพที่ไม่เหมาะกับการใช้งาน 
               ทำให้สัตว์น้ำเป็นรอย มีตำหนิ
@@ -107,15 +113,17 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- หมายเหตุ -->
         <div class="mb-3">
           <label for="remark_5_2" class="form-label">หมายเหตุ (ถ้ามี):</label>
-          <textarea class="form-control"
+          <textarea class="form-control checklist-remark"
                     id="remark_5_2"
-                    name="remark_5_2"
+                    data-code="remark_5_2"
+                    data-item-code="5_2"
                     placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 
 
 <!-- จบข้อ 2 -->
@@ -139,7 +147,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-5_3" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_5_3" id="status_5_3_pass" value="pass"
                    data-item-code="5_3">
             <label class="form-check-label" for="status_5_3_pass">
@@ -147,7 +155,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-5_3" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_5_3" id="status_5_3_fail" value="fail"
                    data-item-code="5_3">
             <label class="form-check-label" for="status_5_3_fail">
@@ -215,7 +223,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-5_4" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_5_4" id="status_5_4_pass" value="pass"
                    data-item-code="5_4">
             <label class="form-check-label" for="status_5_4_pass">
@@ -223,7 +231,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input form-status-radio-5_4" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_5_4" id="status_5_4_fail" value="fail"
                    data-item-code="5_4">
             <label class="form-check-label" for="status_5_4_fail">
@@ -289,15 +297,15 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_5" id="status_5_5_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_5" id="status_5_5_pass" value="pass"  data-item-code="5_5">
             <label class="form-check-label" for="status_5_5_pass">
               ผ่าน - เก็บสัตว์น้ำในภาชนะที่รองรับอย่างเหมาะสม เช่น กระบะ ถัง ห้องเก็บสัตว์น้ำในเรือ
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_5" id="status_5_5_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_5" id="status_5_5_fail" value="fail"  data-item-code="5_5">
             <label class="form-check-label" for="status_5_5_fail">
               ไม่ผ่าน - เก็บสัตว์น้ำในที่ไม่เหมาะสม วางภาชนะบรรจุสัตว์น้ำบนดาดฟ้าเรือ มีน้ำแข็งน้อย ความเย็นไม่เพียงพอ
             </label>
@@ -337,15 +345,15 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_6" id="status_5_6_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_6" id="status_5_6_pass" value="pass"  data-item-code="5_6">
             <label class="form-check-label" for="status_5_6_pass">
               ผ่าน - มีสมุดบันทึกการทำประมง (fishing logbook) และบันทึกข้อมูลการทำประมง
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_6" id="status_5_6_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_6" id="status_5_6_fail" value="fail"  data-item-code="5_6">
             <label class="form-check-label" for="status_5_6_fail">
               ไม่ผ่าน - ไม่มีสมุดบันทึกการทำประมง (fishing logbook) หรือไม่บันทึกข้อมูลการทำประมง
             </label>
@@ -384,15 +392,15 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_7" id="status_5_7_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_7" id="status_5_7_pass" value="pass" data-item-code="5_7">
             <label class="form-check-label" for="status_5_7_pass">
               ผ่าน - ขนถ่ายสัตว์น้ำอย่างถูกสุขลักษณะ เช่น ใช้อุปกรณ์ที่ไม่ก่อให้เกิดความเสียหายแก่สัตว์น้ำ
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_7" id="status_5_7_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_7" id="status_5_7_fail" value="fail" data-item-code="5_7">
             <label class="form-check-label" for="status_5_7_fail">
               ไม่ผ่าน
             </label>
@@ -450,14 +458,14 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <div class="mb-3">
           <div class="form-check mb-2">
             <input class="form-check-input" type="radio"
-                   name="status_5_8" id="status_5_8_pass" value="pass">
+                   name="status_5_8" id="status_5_8_pass" value="pass"  data-item-code="5_8">
             <label class="form-check-label" for="status_5_8_pass">
               ผ่าน - ติดตั้งเทอร์โมมิเตอร์หรืออุปกรณ์บันทึกอุณหภูมิ และมีอุณหภูมิในห้องเย็นต่ำกว่า 18°C
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input" type="radio"
-                   name="status_5_8" id="status_5_8_fail" value="fail">
+                   name="status_5_8" id="status_5_8_fail" value="fail"  data-item-code="5_8">
             <label class="form-check-label" for="status_5_8_fail">
               ไม่ผ่าน
             </label>
@@ -467,13 +475,13 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- เงื่อนไขไม่ผ่าน -->
         <div id="fail_group_5_8" style="display:none;" class="mb-3">
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="fail_5_8_1" id="fail_5_8_1">
+            <input class="form-check-input form-status-radio" type="checkbox" name="fail_5_8_1" id="fail_5_8_1">
             <label class="form-check-label" for="fail_5_8_1">
               ไม่ติดตั้งเทอร์โมมิเตอร์หรืออุปกรณ์บันทึกอุณหภูมิ
             </label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="fail_5_8_2" id="fail_5_8_2">
+            <input class="form-check-input form-status-radio" type="checkbox" name="fail_5_8_2" id="fail_5_8_2">
             <label class="form-check-label" for="fail_5_8_2">
               มีอุณหภูมิในห้องเย็นสูงกว่า 18°C
             </label>
@@ -512,14 +520,14 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <div class="mb-3">
           <div class="form-check mb-2">
             <input class="form-check-input" type="radio"
-                   name="status_5_9" id="status_5_9_pass" value="pass">
+                   name="status_5_9" id="status_5_9_pass" value="pass"  data-item-code="5_9">
             <label class="form-check-label" for="status_5_9_pass">
               ผ่าน - ใช้เทอร์โมมิเตอร์ตรวจวัดอุณหภูมิในสัตว์น้ำ พบว่าไม่สูงกว่า 18°C
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_5_9" id="status_5_9_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_5_9" id="status_5_9_fail" value="fail"  data-item-code="5_9">
             <label class="form-check-label" for="status_5_9_fail">
               ไม่ผ่าน
             </label>
@@ -529,7 +537,7 @@ $request = InspectionRequest::find_by_id($_GET["request"]);
         <!-- เงื่อนไขไม่ผ่าน -->
         <div id="fail_group_5_9" style="display:none;" class="mb-3">
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="fail_5_9_1" id="fail_5_9_1">
+            <input class="form-check-input form-status-radio" type="checkbox" name="fail_5_9_1" id="fail_5_9_1">
             <label class="form-check-label" for="fail_5_9_1">
               อุณหภูมิในสัตว์น้ำสูงกว่า 18°C
             </label>

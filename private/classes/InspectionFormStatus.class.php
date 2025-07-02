@@ -9,7 +9,8 @@ class InspectionFormStatus extends DatabaseObject {
         'document_number', 'department_code',
         'locked_by', 'locked_at',
         'new_id', 'parent_id',
-        'is_active', 'created_at', 'updated_at', 'document_token','document_locked'
+        'is_active', 'document_token','document_locked',
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
@@ -34,11 +35,15 @@ class InspectionFormStatus extends DatabaseObject {
     public $parent_id;
     public $is_active = 1;
 
-    public $created_at;
-    public $updated_at;
-
     public $document_token;
     public $document_locked;
+
+    public $created_at;
+    public $updated_at;
+    public $created_by;
+    public $updated_by;
+    public $created_ip;
+    public $updated_ip;
 
     // ✅ สร้างเลขเอกสาร (escape string + query manual)
     public static function generate_document_number($department_code) {

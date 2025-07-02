@@ -38,13 +38,13 @@ $request_id = $request->id;
         <!-- ผ่าน / ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio"
-                   name="status_1_1" id="status_1_1_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_1" id="status_1_1_pass" value="pass" data-item-code="1_1">
             <label class="form-check-label" for="status_1_1_pass">ผ่าน</label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio"
-                   name="status_1_1" id="status_1_1_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_1" id="status_1_1_fail" value="fail" data-item-code="1_1">
             <label class="form-check-label" for="status_1_1_fail">ไม่ผ่าน</label>
           </div>
         </div>
@@ -104,18 +104,18 @@ $request_id = $request->id;
         <!-- ผ่าน / ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_1_2" id="status_1_2_pass"
-                   value="pass">
-            <label class="form-check-label" for="status_1_2_pass">
+                   value="pass" data-item-code="1_2">
+            <label class="form-check-label" for="status_1_2_pass" data-item-code="1_2">
               ผ่าน - ไม่มีมุมอับ ไม่มีสิ่งของขวาง
             </label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio"
+            <input class="form-check-input form-status-radio" type="radio"
                    name="status_1_2" id="status_1_2_fail"
-                   value="fail">
-            <label class="form-check-label" for="status_1_2_fail">
+                   value="fail" data-item-code="1_2">
+            <label class="form-check-label" for="status_1_2_fail" data-item-code="1_2">
               ไม่ผ่าน - มีมุมอับ และพื้นที่สกปรก
             </label>
           </div>
@@ -156,15 +156,15 @@ $request_id = $request->id;
         <!-- สถานะผ่าน / ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio"
-                   name="status_1_3" id="status_1_3_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_3" id="status_1_3_pass" value="pass" data-item-code="1_3">
             <label class="form-check-label" for="status_1_3_pass">
               ผ่าน - โครงสร้างเรือ การออกแบบมีความเหมาะสม แบ่งสัดส่วนชัดเจน
             </label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio"
-                   name="status_1_3" id="status_1_3_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_3" id="status_1_3_fail" value="fail" data-item-code="1_3">
             <label class="form-check-label" for="status_1_3_fail">
               ไม่ผ่าน
             </label>
@@ -219,15 +219,15 @@ $request_id = $request->id;
         <!-- สถานะผ่าน / ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio"
-                   name="status_1_4" id="status_1_4_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_4" id="status_1_4_pass" value="pass" data-item-code="1_4">
             <label class="form-check-label" for="status_1_4_pass">
               ผ่าน - มีพื้นที่รับวัตถุดิบ การคัดเลือก การขนถ่าย และเก็บรักษาสัตว์น้ำเพียงพอและเหมาะสม
             </label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio"
-                   name="status_1_4" id="status_1_4_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_4" id="status_1_4_fail" value="fail" data-item-code="1_4">
             <label class="form-check-label" for="status_1_4_fail">
               ไม่ผ่าน
             </label>
@@ -281,15 +281,15 @@ $request_id = $request->id;
         <!-- สถานะผ่าน / ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_1_5" id="status_1_5_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_5" id="status_1_5_pass" value="pass" data-item-code="1_5">
             <label class="form-check-label" for="status_1_5_pass">
               ผ่าน - พื้นที่ผิวเรียบ เกลี้ยง ไม่มีเสียหาย และกรณีทาสี สีไม่หลุดล่อน
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_1_5" id="status_1_5_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_5" id="status_1_5_fail" value="fail" data-item-code="1_5">
             <label class="form-check-label" for="status_1_5_fail">
               ไม่ผ่าน
             </label>
@@ -344,15 +344,15 @@ $request_id = $request->id;
         <!-- radio ผ่าน / ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_1_6" id="status_1_6_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_6" id="status_1_6_pass" value="pass" data-item-code="1_6">
             <label class="form-check-label" for="status_1_6_pass">
               ผ่าน - พื้นที่สะอาด ทำความสะอาดด้วยน้ำสะอาด และไม่มีแมลงหรือสัตว์อื่น ๆ บนเรือ
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_1_6" id="status_1_6_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_6" id="status_1_6_fail" value="fail" data-item-code="1_6">
             <label class="form-check-label" for="status_1_6_fail">
               ไม่ผ่าน
             </label>
@@ -407,15 +407,15 @@ $request_id = $request->id;
         <!-- radio ผ่าน / ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_1_7" id="status_1_7_pass" value="pass">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_7" id="status_1_7_pass" value="pass" data-item-code="1_7">
             <label class="form-check-label" for="status_1_7_pass">
               ผ่าน - มีการจัดพื้นที่ขยะเป็นสัดส่วน มีภาชนะเก็บขยะ และไม่พบเศษอาหารในพื้นที่ปฏิบัติงาน
             </label>
           </div>
           <div class="form-check mb-2">
-            <input class="form-check-input" type="radio"
-                   name="status_1_7" id="status_1_7_fail" value="fail">
+            <input class="form-check-input form-status-radio" type="radio"
+                   name="status_1_7" id="status_1_7_fail" value="fail" data-item-code="1_7">
             <label class="form-check-label" for="status_1_7_fail">
               ไม่ผ่าน
             </label>
@@ -483,62 +483,7 @@ $(document).ready(function () {
 });
 </script>
 
-<script>
-$(document).ready(function () {
-  $('.form-status-radio-1_4').on('change', function () {
-    const isFail = $(this).val() === 'fail';
-    const target = '#fail_group_1_4';
-    if (isFail) {
-      $(target).slideDown();
-    } else {
-      $(target).slideUp();
-    }
-  });
-});
-</script>
 
-<script>// js ข้อ 5
-$(document).ready(function () {
-  $('.form-status-radio-1_5').on('change', function () {
-    const isFail = $(this).val() === 'fail';
-    const target = '#fail_group_1_5';
-    if (isFail) {
-      $(target).slideDown();
-    } else {
-      $(target).slideUp();
-    }
-  });
-});
-</script>
-
-
-<script>// js ข้อ 6
-$(document).ready(function () {
-  $('.form-status-radio-1_6').on('change', function () {
-    const isFail = $(this).val() === 'fail';
-    const target = '#fail_group_1_6';
-    if (isFail) {
-      $(target).slideDown();
-    } else {
-      $(target).slideUp();
-    }
-  });
-});
-</script>
-
-<script>
-$(document).ready(function () {
-  $('.form-status-radio-1_7').on('change', function () {
-    const isFail = $(this).val() === 'fail';
-    const target = '#fail_group_1_7';
-    if (isFail) {
-      $(target).slideDown();
-    } else {
-      $(target).slideUp();
-    }
-  });
-});
-</script>
 
 <script>
 $(document).ready(function () {

@@ -6,7 +6,7 @@ class Fisherman extends DatabaseObject {
         'id', 'username', 'password', 'full_name', 'email', 'google_id', 'facebook_id', 'line_id',
         'citizen_id', 'is_active', 'is_approved', 'approved_by', 'approved_at',
         'login_token', 'token_expiry',
-        'created_by', 'updated_by', 'created_at', 'updated_at'
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
@@ -24,10 +24,13 @@ class Fisherman extends DatabaseObject {
     public $approved_at;
     public $login_token;
     public $token_expiry;
-    public $created_by;
-    public $updated_by;
+    
     public $created_at;
     public $updated_at;
+    public $created_by;
+    public $updated_by;
+    public $created_ip;
+    public $updated_ip;
 
     public function __construct($args = []) {
         $this->username = $args['username'] ?? '';

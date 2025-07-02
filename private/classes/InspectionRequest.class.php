@@ -19,9 +19,8 @@ class InspectionRequest extends DatabaseObject {
         'inspect_date_end',
         'confirmed_inspect_date',
         'confirm_agreement',
-        'created_by',
-        'created_at',
-        'status'
+        'status',
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
@@ -36,9 +35,14 @@ class InspectionRequest extends DatabaseObject {
     public $inspect_date_end;
     public $confirmed_inspect_date;
     public $confirm_agreement = false;
-    public $created_by;
-    public $created_at;
     public $status;
+
+    public $created_at;
+    public $updated_at;
+    public $created_by;
+    public $updated_by;
+    public $created_ip;
+    public $updated_ip;
 
     // Optional: เพิ่ม method แปลงวันที่/แสดงชื่อจังหวัดได้ภายหลัง
     public static function find_active_by_ship($ship_code) {
