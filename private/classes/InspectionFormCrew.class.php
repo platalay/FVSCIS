@@ -61,25 +61,57 @@ class InspectionFormCrew extends DatabaseObject {
         // ยังไม่มี → สร้างใหม่
         $new = new self();
         $new->request_id = $request_id;
-        $new->status_3_1 = 'pass';
-        $new->status_3_2 = 'pass';
-        $new->status_3_3 = 'pass';
-        $new->status_3_4 = 'pass';
-        $new->status_3_5 = 'pass';
         $new->save();
         return $new;
     }
 
     // ฟังก์ชันที่ใช้สำหรับ autosave update field ใด field หนึ่ง
     public static function autosave($request_id, $field_name, $value) {
-        $allowed_fields = array_flip(static::$db_columns);
+            $allowed_fields = array_flip(static::$db_columns);
 
-        if (!isset($allowed_fields[$field_name])) {
-            throw new Exception("Field '$field_name' is not allowed for update.");
+            if (!isset($allowed_fields[$field_name])) {
+                throw new Exception("Field '$field_name' is not allowed for update.");
+            }
+
+            $crew = self::find_or_create($request_id);
+            $crew->$field_name = $value;
+            $crew->save();
+
+            // ✅ ตรวจสอบความครบถ้วน
+            $valid = true;
+            for ($i = 1; $i <= 5; $i++) {
+                $status = $crew->{"status_3_{$i}"};
+                if (!$status) {
+                    $valid = false; break;
+                }
+                if ($status === 'fail') {
+                    $hasFailReason = false;
+                    // ตรวจ checkbox
+                    for ($j = 1; $j <= 4; $j++) {
+                        $failField = "fail_3_{$i}_{$j}";
+                        if (property_exists($crew, $failField) && $crew->$failField) {
+                            $hasFailReason = true; break;
+                        }
+                    }
+                    // ตรวจ remark
+                    $remark = $crew->{"remark_3_{$i}"};
+                    if ($remark) {
+                        $hasFailReason = true;
+                    }
+
+                    if (!$hasFailReason) {
+                        $valid = false; break;
+                    }
+                }
+            }
+
+            if ($valid) {
+                $statusRow = InspectionFormStatus::find_by_request_id($request_id);
+                $statusRow->form_crew_status = 1;
+                $statusRow->save();
+            }
+
+            return true;
         }
 
-        $crew = self::find_or_create($request_id);
-        $crew->$field_name = $value;
-        return $crew->save();
-    }
 }

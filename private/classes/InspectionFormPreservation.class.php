@@ -80,13 +80,60 @@ class InspectionFormPreservation extends DatabaseObject {
         return $new_record;
     }
 
-    // ✅ autosave แบบ generic รองรับทุกฟิลด์
-    public static function autosave($request_id, $field, $value) {
-        $record = self::find_or_create($request_id);
-        if (property_exists($record, $field)) {
-            $record->$field = $value;
-            return $record->save();
+    public static function autosave($request_id, $field_name, $value) {
+        $allowed_fields = array_flip(static::$db_columns);
+
+        if (!isset($allowed_fields[$field_name])) {
+            throw new Exception("Field '$field_name' is not allowed for update.");
         }
-        return false;
+
+        $preservation = self::find_or_create($request_id);
+        $preservation->$field_name = $value;
+        $preservation->save();
+
+        // ✅ ตรวจสอบความครบถ้วนของทุกข้อ
+        $valid = true;
+
+        // ปรับจำนวนข้อให้ตรงตามคลาสของคุณ (สมมติ 5 ข้อ)
+        for ($i = 1; $i <= 5; $i++) {
+            $status = $preservation->{"status_5_{$i}"};  // ปรับเป็น prefix ของ preservation
+            if (!$status) {
+                $valid = false;
+                break;
+            }
+
+            if ($status === 'fail') {
+                $hasFailReason = false;
+
+                // ตรวจ checkbox
+                for ($j = 1; $j <= 4; $j++) {
+                    $failField = "fail_5_{$i}_{$j}";
+                    if (property_exists($preservation, $failField) && $preservation->$failField) {
+                        $hasFailReason = true;
+                        break;
+                    }
+                }
+
+                // ตรวจ remark
+                $remark = $preservation->{"remark_5_{$i}"};
+                if ($remark) {
+                    $hasFailReason = true;
+                }
+
+                if (!$hasFailReason) {
+                    $valid = false;
+                    break;
+                }
+            }
+        }
+
+        if ($valid) {
+            $statusRow = InspectionFormStatus::find_by_request_id($request_id);
+            $statusRow->form_preservation_status = 1;
+            $statusRow->save();
+        }
+
+        return true;
     }
+
 }

@@ -59,10 +59,61 @@ class InspectionFormWaterAndIce extends DatabaseObject {
     // ✅ autosave สำหรับบันทึกอัตโนมัติทีละช่อง
     public static function autosave($request_id, $field, $value) {
         $record = self::find_or_create($request_id);
-        if (property_exists($record, $field)) {
-            $record->$field = $value;
-            return $record->save();
+
+        if (!property_exists($record, $field)) {
+            return false;
         }
-        return false;
+
+        $record->$field = $value;
+        $record->save();
+
+        // ✅ เริ่มตรวจสอบความครบถ้วน
+        $is_complete = true;
+
+        for ($i = 1; $i <= 4; $i++) {
+            $status = $record->{"status_4_{$i}"} ?? '';
+
+            // ถ้าไม่ได้เลือกสถานะเลย
+            if (empty($status)) {
+                $is_complete = false;
+                break;
+            }
+
+            // ถ้าเลือก fail ต้องมีเหตุผล
+            if ($status === 'fail') {
+                $has_reason = false;
+
+                $remark = trim($record->{"remark_4_{$i}"} ?? '');
+                if (!empty($remark)) {
+                    $has_reason = true;
+                }
+
+                for ($j = 1; $j <= 4; $j++) {
+                    $fail_field = "fail_4_{$i}_{$j}";
+                    if (!empty($record->$fail_field)) {
+                        $has_reason = true;
+                        break;
+                    }
+                }
+
+                if (!$has_reason) {
+                    $is_complete = false;
+                    break;
+                }
+            }
+        }
+
+        // 🔧 อัปเดต InspectionFormStatus
+        $status_record = InspectionFormStatus::find_by_request_id($request_id);
+        error_log(json_encode($status_record));
+        if ($status_record) {
+            $status_record->form_water_ice_status = $is_complete ? 1 : 0;
+            $status_record->save();
+        }
+
+        return true;
     }
+
+
+
 }

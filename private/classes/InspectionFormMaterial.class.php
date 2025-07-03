@@ -68,35 +68,56 @@ class InspectionFormMaterial extends DatabaseObject {
         return $new_record;
     }
 
-    public static function autosave($request_id, $field, $value) {
-        $record = self::find_or_create($request_id);
-        if (property_exists($record, $field)) {
-            $record->$field = $value;
-            $record->save();
+    public static function autosave($request_id, $field_name, $value) {
+        $allowed_fields = array_flip(static::$db_columns);
 
-            // 🔄 ตรวจสอบความครบถ้วนของ status_1_1 ถึง status_1_7
-            $all_status_fields = [
-                'status_2_1', 'status_2_2', 'status_2_3', 'status_2_4',
-                'status_2_5', 'status_2_6'
-            ];
+        if (!isset($allowed_fields[$field_name])) {
+            throw new Exception("Field '$field_name' is not allowed for update.");
+        }
 
-            $is_complete = true;
-            foreach ($all_status_fields as $status_field) {
-                if (empty($record->$status_field)) {
-                    $is_complete = false;
-                    break;
+        $material = self::find_or_create($request_id);
+        $material->$field_name = $value;
+        $material->save();
+
+        // ✅ ตรวจสอบความครบถ้วนของทุก status
+        $valid = true;
+        for ($i = 1; $i <= 6; $i++) {
+            $status = $material->{"status_2_{$i}"};
+            if (!$status) {
+                $valid = false; break;
+            }
+
+            if ($status === 'fail') {
+                $hasFailReason = false;
+
+                // ตรวจ checkbox
+                for ($j = 1; $j <= 4; $j++) {
+                    $failField = "fail_2_{$i}_{$j}";
+                    if (property_exists($material, $failField) && $material->$failField) {
+                        $hasFailReason = true; break;
+                    }
+                }
+
+                // ตรวจ remark
+                $remark = $material->{"remark_2_{$i}"};
+                if ($remark) {
+                    $hasFailReason = true;
+                }
+
+                if (!$hasFailReason) {
+                    $valid = false; break;
                 }
             }
-
-            // 🔧 อัปเดตฟิลด์ใน InspectionFormStatus
-            $status_record = InspectionFormStatus::find_by_request_id($request_id);
-            if ($status_record) {
-                $status_record->form_material_status = $is_complete ? 1 : 0;
-                $status_record->save();
-            }
-
-            return true;
         }
-        return false;
+
+        if ($valid) {
+            $statusRow = InspectionFormStatus::find_by_request_id($request_id);
+            $statusRow->form_material_status = 1;
+            $statusRow->save();
+        }
+
+        return true;
     }
+
+
 }

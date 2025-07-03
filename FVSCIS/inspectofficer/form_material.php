@@ -11,7 +11,7 @@ $request_id = $request->id;
 <!-- Begin Page Content -->
 <div class="container-fluid">
   <h1 class="h3 mb-4 text-gray-800">ด้านวัสดุ อุปกรณ์ และเครื่องมือในเรือประมง (structer)
-    <a href="form_inspect.php?id=<?= htmlspecialchars($request->id) ?>" class="btn btn-secondary">
+    <a href="form_inspect.php?id=<?= htmlspecialchars($request->id) ?>" class="btn btn-secondary" id="btn-back">
   ← กลับไปหน้าฟอร์มตรวจสอบ
   </a>
   </h1>
@@ -32,7 +32,7 @@ $request_id = $request->id;
   </h2>
   <div id="collapse2_1" class="accordion-collapse collapse" aria-labelledby="heading2_1" data-bs-parent="#inspectionAccordion">
     <div class="accordion-body">
-      <form id="form-2-1">
+      <form id="form-2-1" class="form-inspect" data-item-code="2_1">
         <input type="hidden" name="request_id" value="<?= htmlspecialchars($request_id) ?>">
 
         <!-- radio ผ่าน/ไม่ผ่าน -->
@@ -215,7 +215,7 @@ $request_id = $request->id;
   </h2>
   <div id="collapse2_4" class="accordion-collapse collapse" aria-labelledby="heading2_4" data-bs-parent="#inspectionAccordion">
     <div class="accordion-body">
-      <form id="form-2-4">
+      <form id="form-2-4" class="form-inspect" data-item-code="2_4">
         <input type="hidden" name="request_id" value="<?= htmlspecialchars($request_id) ?>">
 
         <!-- radio ผ่าน/ไม่ผ่าน -->
@@ -353,7 +353,7 @@ $request_id = $request->id;
   </h2>
   <div id="collapse2_6" class="accordion-collapse collapse" aria-labelledby="heading2_6" data-bs-parent="#inspectionAccordion">
     <div class="accordion-body">
-      <form id="form-2-6">
+      <form id="form-2-6" class="form-inspect" data-item-code="2_6">
         <input type="hidden" name="request_id" value="<?= htmlspecialchars($request_id) ?>">
 
         <!-- radio ผ่าน/ไม่ผ่าน -->
@@ -425,97 +425,13 @@ $request_id = $request->id;
 <?php
 include("../../private/shared/footerofficer.php");
 ?>
-
-<script>
-$(document).ready(function () {
-  const requestId = "<?= $request_id ?>";
-
-  // ✅ โหลดข้อมูลเมื่อเริ่มต้น
-  loadMaterialData(requestId);
-
-  // ✅ กด radio แล้ว toggle กล่อง fail + autosave + clear checkbox ถ้าเลือก "ผ่าน"
-  $('input[type="radio"]').on('change', function () {
-    const field = $(this).attr('name'); // เช่น status_2_1
-    const value = $(this).val();        // pass หรือ fail
-    const itemCode = field.replace('status_', ''); // เช่น 2_1
-    const failGroup = $('#fail_group_' + itemCode);
-
-    if (value === 'fail') {
-      failGroup.slideDown();
-    } else {
-      failGroup.slideUp();
-
-      // เคลียร์ checkbox ทุกอันในกลุ่ม
-      failGroup.find('input[type="checkbox"]').each(function () {
-        if (this.checked) {
-          this.checked = false;
-          autosave(requestId, this.id, 0);
-        }
-      });
-    }
-
-    autosave(requestId, field, value);
-  });
-
-  // ✅ checkbox → autosave
-  $('input[type="checkbox"]').on('change', function () {
-    const field = this.id;
-    const value = this.checked ? 1 : 0;
-    autosave(requestId, field, value);
-  });
-
-  // ✅ textarea → autosave
-  $('textarea').on('input', function () {
-    const field = this.id;
-    const value = $(this).val();
-    autosave(requestId, field, value);
-  });
-
-  // ✅ ฟังก์ชัน autosave กลาง
-  function autosave(requestId, field, value) {
-    $.ajax({
-      url: 'ajax/autosave_material.php',
-      method: 'POST',
-      data: { request_id: requestId, field: field, value: value },
-      success: function () {
-        console.log('✅ autosaved:', field, '=', value);
-      },
-      error: function () {
-        console.error('❌ autosave failed:', field);
-      }
-    });
-  }
-
-  // ✅ โหลดข้อมูลเดิมกลับเข้า form
-  function loadMaterialData(requestId) {
-    $.post('ajax/load_material_all.php', { request_id: requestId }, function (res) {
-      if (res.success) {
-        const data = res.data;
-        for (let field in data) {
-          const value = data[field];
-
-          // Radio
-          if (field.startsWith('status_')) {
-            $(`input[name="${field}"][value="${value}"]`).prop('checked', true).trigger('change');
-          }
-
-          // Checkbox
-          if (field.startsWith('fail_') && value === "1") {
-            $(`#${field}`).prop('checked', true);
-          }
-
-          // Textarea
-          if (field.startsWith('remark_')) {
-            $(`#${field}`).val(value);
-          }
-        }
-      } else {
-        alert('โหลดข้อมูลไม่สำเร็จ: ' + res.message);
-      }
-    }, 'json');
-  }
-});
-</script>
+<!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    const autosaveUrl = 'ajax/autosave_material.php';
+    const loadAllUrl  = 'ajax/load_material_all.php';
+    </script>
+    <script src="../js/checkform.js"></script>
 
 
 <?

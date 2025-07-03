@@ -16,76 +16,100 @@ $check = '✅ ';
 ?>
 
 <!-- Begin Page Content -->
-<div class="container-fluid">
+<div class="container-fluid  p-3">
  <div class="card o-hidden border-0 shadow-lg">
             <div class="card-body p-0">
             <div class="row">
             
             <!-- โครงสร้างเรือ -->
-<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_structure.php?request=<?php echo $request->id; ?>"
-       style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
+<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center  p-3">
+    <a href="form_structure.php?request=<?= $request->id ?>"
+       class="text-decoration-none"
+       style="transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
        title="ด้านโครงสร้างของเรือประมง">
-        <img src="../img/boat.png" style="max-height: 100px; display: block;" alt="โครงสร้างเรือ">
-        <div style="margin-top: 8px; font-size: 14px; color: #000;">
+        <img src="../img/boat.png"
+             class="img-fluid"
+             style="max-height: 100px;"
+             alt="โครงสร้างเรือ">
+        <div class="mt-2" style="font-size: 14px; color: #000;">
             <?= $form->form_structure_status == 1 ? $check : '' ?>โครงสร้างเรือ
         </div>
     </a>
 </div>
 
+
 <!-- วัสดุอุปกรณ์ -->
-<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_material.php?request=<?php echo $request->id; ?>"
-       style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
+<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center  p-3">
+    <a href="form_material.php?request=<?= $request->id ?>"
+       class="text-decoration-none"
+       style="transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
        title="ด้านวัสดุ อุปกรณ์ และเครื่องมือในเรือประมง">
-        <img src="../img/material.png" style="max-height: 200px; display: block;" alt="วัสดุอุปกรณ์">
-        <div style="margin-top: 8px; font-size: 14px; color: #000;">
+        <img src="../img/material.png"
+             class="img-fluid"
+             style="max-height: 200px;"
+             alt="วัสดุอุปกรณ์">
+        <div class="mt-2" style="font-size: 14px; color: #000;">
             <?= $form->form_material_status == 1 ? $check : '' ?>วัสดุและอุปกรณ์
         </div>
     </a>
 </div>
 
+
 <!-- บุคลากร -->
-<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_crew.php?request=<?php echo $request->id; ?>"
-       style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
+<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center  p-3">
+    <a href="form_crew.php?request=<?= $request->id ?>"
+       class="text-decoration-none"
+       style="transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
        title="ด้านบุคลากรประจำเรือ">
-        <img src="../img/fisher_man.png" style="max-height: 150px; display: block;" alt="บุคลากร">
-        <div style="margin-top: 8px; font-size: 14px; color: #000;">
+        <img src="../img/fisher_man.png"
+             class="img-fluid"
+             style="max-height: 150px;"
+             alt="บุคลากร">
+        <div class="mt-2" style="font-size: 14px; color: #000;">
             <?= $form->form_crew_status == 1 ? $check : '' ?>บุคลากรบนเรือ
         </div>
     </a>
 </div>
 
+
 <!-- น้ำจืดและน้ำแข็ง -->
-<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_waterice.php?request=<?php echo $request->id; ?>"
-       style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
+<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center  p-3">
+    <a href="form_waterice.php?request=<?= $request->id ?>"
+       class="text-decoration-none"
+       style="transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
        title="ด้านน้ำจืดที่ใช้ในเรือและน้ำแข็งสำหรับเก็บรักษาสัตว์น้ำ">
-        <img src="../img/waterandice.png" style="max-height: 150px; display: block;" alt="น้ำและน้ำแข็ง">
-        <div style="margin-top: 8px; font-size: 14px; color: #000;">
+        <img src="../img/waterandice.png"
+             class="img-fluid"
+             style="max-height: 150px;"
+             alt="น้ำและน้ำแข็ง">
+        <div class="mt-2" style="font-size: 14px; color: #000;">
             <?= $form->form_water_ice_status == 1 ? $check : '' ?>น้ำจืดและน้ำแข็ง
         </div>
     </a>
 </div>
 
+
 <!-- การเก็บรักษาสัตว์น้ำ -->
-<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center">
-    <a href="form_preservation.php?request=<?php echo $request->id; ?>"
-       style="padding: 0; border: 0; background: transparent; text-decoration: none; display: inline-block; transition: transform 0.2s;"
+<div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center  p-3">
+    <a href="form_preservation.php?request=<?= $request->id ?>"
+       class="text-decoration-none"
+       style="transition: transform 0.2s;"
        onmouseover="this.style.transform='scale(1.05)';"
        onmouseout="this.style.transform='scale(1)';"
        title="ด้านการเก็บรักษาสัตว์น้ำ">
-        <img src="../img/preservation.png" style="max-height: 150px; display: block;" alt="การเก็บรักษา">
-        <div style="margin-top: 8px; font-size: 14px; color: #000;">
+        <img src="../img/preservation.png"
+             class="img-fluid"
+             style="max-height: 150px;"
+             alt="การเก็บรักษา">
+        <div class="mt-2" style="font-size: 14px; color: #000;">
             <?= $form->form_preservation_status == 1 ? $check : '' ?>การเก็บรักษาสัตว์น้ำ
         </div>
     </a>
@@ -93,29 +117,45 @@ $check = '✅ ';
 
 
 
-                <div class="col-lg-2 d-flex align-items-center justify-content-center">
-                  <?php if (
-                      $form->form_structure_status &&
-                      $form->form_material_status &&
-                      $form->form_crew_status &&
-                      $form->form_water_ice_status &&
-                      $form->form_preservation_status &&
-                      !$form->document_locked
-                  ): ?>
-                      <div class="text-center mt-1">
-                          <a href="generate_pdf.php?token=<?= h($form->document_token); ?>"
-                            class="btn btn-primary btn-lg">
-                            <img src="../img/pdf.png" style="max-height: 100px; display: block;" alt="pdf">
-                          </a>
-                      </div>
-                  <?php else: ?>
-                      <div class="text-center mt-1">
-                          <button class="btn btn-secondary btn-lg" disabled>
-                              <img src="../img/pdf.png" style="max-height: 100px; display: block;" alt="pdf">
-                          </button>
-                      </div>
-                  <?php endif; ?>
-                </div>
+
+                <div class="col-lg-2 d-flex flex-column align-items-center justify-content-center text-center  p-3">
+                <?php if (
+                    $form->form_structure_status &&
+                    $form->form_material_status &&
+                    $form->form_crew_status &&
+                    $form->form_water_ice_status &&
+                    $form->form_preservation_status &&
+                    !$form->document_locked
+                ): ?>
+                    <div class="text-center mt-1">
+                        <a href="generate_pdf.php?token=<?= h($form->document_token); ?>"
+                        class="btn btn-primary btn-lg"
+                        style="transition: transform 0.2s;"
+                        onmouseover="this.style.transform='scale(1.05)';"
+                        onmouseout="this.style.transform='scale(1)';"
+                        title="สร้าง PDF">
+                            <img src="../img/pdf.png"
+                                class="img-fluid"
+                                style="max-height: 100px;"
+                                alt="PDF">
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="text-center mt-1">
+                        <button class="btn btn-secondary btn-lg" disabled
+                                title="กรอกข้อมูลให้ครบก่อน">
+                            <img src="../img/pdf.png"
+                                class="img-fluid"
+                                style="max-height: 100px;"
+                                alt="PDF">
+                        </button>
+                        <div class="mt-2" style="font-size: 14px; color: #000;">
+                            สร้างเอกสารผลตรวจ
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+
 
 
               </div>
@@ -126,14 +166,17 @@ $check = '✅ ';
 <?php
 include("../../private/shared/footerofficer.php");
 ?>
- <script>
-        document.addEventListener('DOMContentLoaded', function () {
-          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-          tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-            new bootstrap.Tooltip(tooltipTriggerEl)
-          })
-        });
-      </script> 
+<!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+            }); 
+        </script> 
 <?php
 include("../../private/shared/footerall.php");
 ?>

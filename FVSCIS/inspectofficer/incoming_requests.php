@@ -50,24 +50,28 @@ $Officer = Officer::find_by_id($session->user_id());
                                     ?>
                                         <tr style="font-size: 14px;">
                                             <td>
-                                            <!-- ปุ่มดูรายละเอียด -->
-                                            <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
-                                                    data-bs-target="#modalRequestDetail"
-                                                    onclick="loadRequestDetail(<?= h($req->id) ?>)">
-                                                <i class="fas fa-search"></i>
-                                            </button>
-
-                                            <!-- ปุ่มฟอร์มตรวจ (เงื่อนไขตาม confirmed_inspect_date) -->
-                                            <?php if (!empty($req->confirmed_inspect_date)) : ?>
-                                                <a href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>" class="btn btn-success btn-sm ms-1" title="ฟอร์มตรวจ">
-                                                    <i class="fas fa-file-signature"></i>
-                                                </a>
-                                            <?php else : ?>
-                                                <button class="btn btn-secondary btn-sm ms-1" title="ยังไม่สามารถกรอกฟอร์มตรวจได้" disabled>
-                                                    <i class="fas fa-file-signature"></i>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <!-- ปุ่มดูรายละเอียด -->
+                                                <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                                        data-bs-target="#modalRequestDetail"
+                                                        onclick="loadRequestDetail(<?= h($req->id) ?>)">
+                                                    <i class="fas fa-search"></i>
                                                 </button>
-                                            <?php endif; ?>
-                                        </td>
+
+                                                <!-- ปุ่มฟอร์มตรวจ -->
+                                                <?php if (!empty($req->confirmed_inspect_date)) : ?>
+                                                    <a href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>"
+                                                    class="btn btn-success btn-sm" title="ฟอร์มตรวจ">
+                                                        <i class="fas fa-file-signature"></i>
+                                                    </a>
+                                                <?php else : ?>
+                                                    <button class="btn btn-secondary btn-sm" title="ยังไม่สามารถกรอกฟอร์มตรวจได้" disabled>
+                                                        <i class="fas fa-file-signature"></i>
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
+                                            </td>
+
 
                                             <td><?= h($req->ship_code) ?></td>
                                             <td><?= h($req->port_license_no) ?></td>

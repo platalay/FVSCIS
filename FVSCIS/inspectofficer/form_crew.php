@@ -11,7 +11,7 @@ $request_id = $request->id;
 <!-- Begin Page Content -->
 <div class="container-fluid">
   <h1 class="h3 mb-4 text-gray-800">ด้านบุคลากรประจำเรือ (crew)
-  <a href="form_inspect.php?id=<?= htmlspecialchars($request->id) ?>" class="btn btn-secondary">
+  <a href="form_inspect.php?id=<?= htmlspecialchars($request->id) ?>" class="btn btn-secondary" id="btn-back">
   ← กลับไปหน้าฟอร์มตรวจสอบ
   </a>
   </h1>
@@ -31,21 +31,21 @@ $request_id = $request->id;
   </h2>
   <div id="collapse3_1" class="accordion-collapse collapse" aria-labelledby="heading3_1" data-bs-parent="#inspectionAccordion">
     <div class="accordion-body">
-      <form id="form-3-1">
+      <form id="form-3-1" class="form-inspect" data-item-code="3_1">
         <input type="hidden" name="request_id" value="<?= htmlspecialchars($request_id) ?>">
 
         <!-- radio ผ่าน / ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
             <input class="form-check-input form-status-radio" type="radio"
-                   name="status_3_1" id="status_3_1_pass" value="pass">
+                   name="status_3_1" id="status_3_1_pass" value="pass" data-item-code="3_1">
             <label class="form-check-label" for="status_3_1_pass">
               ผ่าน - ไม่มีบุคลากรสุขภาพไม่แข็งแรง / มีใบรับรอง
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input form-status-radio" type="radio"
-                   name="status_3_1" id="status_3_1_fail" value="fail">
+                   name="status_3_1" id="status_3_1_fail" value="fail"  data-item-code="3_1">
             <label class="form-check-label" for="status_3_1_fail">
               ไม่ผ่าน
             </label>
@@ -56,28 +56,32 @@ $request_id = $request->id;
         <div id="fail_group_3_1" class="border p-3 mb-3 bg-light" style="display: none;">
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="fail_3_1_1">
+                    data-item-code="3_1"
+                   id="fail_3_1_1" name="fail_3_1_1">
             <label class="form-check-label" for="fail_3_1_1">
               ไม่มีใบตรวจสุขภาพของกระทรวงแรงงานสำหรับคนต่างชาติ
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="fail_3_1_2">
+                    data-item-code="3_1"
+                   id="fail_3_1_2" name="fail_3_1_2">
             <label class="form-check-label" for="fail_3_1_2">
               ไม่มีใบรับรองแพทย์ (คนไทย)
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="fail_3_1_3">
+            data-item-code="3_1"
+                   id="fail_3_1_3" name="fail_3_1_3">
             <label class="form-check-label" for="fail_3_1_3">
               มีแผลเปิดหรือแผลติดเชื้อ
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input checklist-item" type="checkbox"
-                   id="fail_3_1_4">
+            data-item-code="3_1"
+                   id="fail_3_1_4" name="fail_3_1_4">
             <label class="form-check-label" for="fail_3_1_4">
               มีอาการไอ จาม มีน้ำมูก ฯลฯ หรือแสดงอาการของโรค
             </label>
@@ -302,96 +306,13 @@ $request_id = $request->id;
 include("../../private/shared/footerofficer.php");
 ?>
 
-<script>
-$(document).ready(function () {
-  const requestId = "<?= $request_id ?>";
-
-  // ✅ โหลดข้อมูลเมื่อเริ่มต้น
-  loadMaterialData(requestId);
-
-  // ✅ กด radio แล้ว toggle กล่อง fail + autosave + clear checkbox ถ้าเลือก "ผ่าน"
-  $('input[type="radio"]').on('change', function () {
-    const field = $(this).attr('name'); // เช่น status_2_1
-    const value = $(this).val();        // pass หรือ fail
-    const itemCode = field.replace('status_', ''); // เช่น 2_1
-    const failGroup = $('#fail_group_' + itemCode);
-
-    if (value === 'fail') {
-      failGroup.slideDown();
-    } else {
-      failGroup.slideUp();
-
-      // เคลียร์ checkbox ทุกอันในกลุ่ม
-      failGroup.find('input[type="checkbox"]').each(function () {
-        if (this.checked) {
-          this.checked = false;
-          autosave(requestId, this.id, 0);
-        }
-      });
-    }
-
-    autosave(requestId, field, value);
-  });
-
-  // ✅ checkbox → autosave
-  $('input[type="checkbox"]').on('change', function () {
-    const field = this.id;
-    const value = this.checked ? 1 : 0;
-    autosave(requestId, field, value);
-  });
-
-  // ✅ textarea → autosave
-  $('textarea').on('input', function () {
-    const field = this.id;
-    const value = $(this).val();
-    autosave(requestId, field, value);
-  });
-
-  // ✅ ฟังก์ชัน autosave กลาง
-  function autosave(requestId, field, value) {
-    $.ajax({
-      url: 'ajax/autosave_crew.php',
-      method: 'POST',
-      data: { request_id: requestId, field: field, value: value },
-      success: function () {
-        console.log('✅ autosaved:', field, '=', value);
-      },
-      error: function () {
-        console.error('❌ autosave failed:', field);
-      }
-    });
-  }
-
-  // ✅ โหลดข้อมูลเดิมกลับเข้า form
-  function loadMaterialData(requestId) {
-    $.post('ajax/load_crew_all.php', { request_id: requestId }, function (res) {
-      if (res.success) {
-        const data = res.data;
-        for (let field in data) {
-          const value = data[field];
-
-          // Radio
-          if (field.startsWith('status_')) {
-            $(`input[name="${field}"][value="${value}"]`).prop('checked', true).trigger('change');
-          }
-
-          // Checkbox
-          if (field.startsWith('fail_') && value === "1") {
-            $(`#${field}`).prop('checked', true);
-          }
-
-          // Textarea
-          if (field.startsWith('remark_')) {
-            $(`#${field}`).val(value);
-          }
-        }
-      } else {
-        alert('โหลดข้อมูลไม่สำเร็จ: ' + res.message);
-      }
-    }, 'json');
-  }
-});
-</script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    const autosaveUrl = 'ajax/autosave_crew.php';
+    const loadAllUrl  = 'ajax/load_crew_all.php';
+    </script>
+    <script src="../js/checkform.js"></script>
 
 <?
 include("../../private/shared/footerall.php");

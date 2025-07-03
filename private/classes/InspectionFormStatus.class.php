@@ -53,12 +53,19 @@ class InspectionFormStatus extends DatabaseObject {
         $sql = "SELECT COUNT(*) as count FROM " . static::$table_name;
         $sql .= " WHERE YEAR(created_at) = '{$year}'";
         $sql .= " AND department_code = '{$escaped_code}'";
-        $sql .= " AND parent_id IS NULL";  // ✅ นับเฉพาะต้นฉบับเท่านั้น
+        $sql .= " AND (parent_id IS NULL OR parent_id = 0)";  // ✅ นับเฉพาะต้นฉบับเท่านั้น
+        error_log($sql);
         $result = self::$database->query($sql);
+
+        $row = $result->fetch_assoc();
+        $count = $row['count'] ?? 0;  // ถ้า NULL ให้เป็น 0
+
         $running = str_pad($count + 1, 5, '0', STR_PAD_LEFT);
         $department_code_two = str_pad($department_code, 2, '0', STR_PAD_LEFT);
+
         return "efvscis-{$year}-{$department_code_two}-{$running}";
     }
+
 
     public static function generate_uuid_v4() {
         return sprintf(
@@ -83,6 +90,7 @@ class InspectionFormStatus extends DatabaseObject {
     }
 
     public static function find_or_create($vessel_id, $inspection_date, $inspector_id, $department_code, $request_id) {
+        global $session;
         $vessel_id = self::$database->escape_string($vessel_id);
         $inspection_date = self::$database->escape_string($inspection_date);
         $inspector_id = self::$database->escape_string($inspector_id);
@@ -103,6 +111,7 @@ class InspectionFormStatus extends DatabaseObject {
 
         // 2. ยังไม่มี → สร้างใหม่
         $new = new self();
+        $new->request_id = $request_id;
         $new->vessel_id = $vessel_id;
         $new->inspection_date = $inspection_date;
         $new->inspector_id = $inspector_id;
@@ -113,7 +122,7 @@ class InspectionFormStatus extends DatabaseObject {
         $new->create_at = date('Y-m-d H:i:s');
         $new->document_token = self::generate_uuid_v4();
         $new->is_active = 1;
-        $new->create();
+        $new->save();
 
         // ✅ เพิ่มบันทึก log
         $log = new InspectionLog();

@@ -11,7 +11,7 @@ $request_id = $request->id;
 <!-- Begin Page Content -->
 <div class="container-fluid">
   <h1 class="h3 mb-4 text-gray-800">ด้านน้ำจืดที่ใช้ในเรือและน้ำแข็งสำหรับเก็บรักษาสัตว์น้ำ (water and ice)
-    <a href="form_inspect.php?id=<?= htmlspecialchars($request->id) ?>" class="btn btn-secondary">
+    <a href="form_inspect.php?id=<?= htmlspecialchars($request->id) ?>" class="btn btn-secondary" id="btn-back">
   ← กลับไปหน้าฟอร์มตรวจสอบ
   </a>
   </h1>
@@ -31,7 +31,7 @@ $request_id = $request->id;
   </h2>
   <div id="collapse4_1" class="accordion-collapse collapse" aria-labelledby="heading4_1" data-bs-parent="#inspectionAccordion">
     <div class="accordion-body">
-      <form id="form-4-1">
+      <form id="form-4-1" class="form-inspect" data-item-code="4_1">
         <input type="hidden" name="request_id" value="<?= htmlspecialchars($request_id) ?>">
 
         <!-- radio ผ่าน/ไม่ผ่าน -->
@@ -184,7 +184,7 @@ $request_id = $request->id;
   </h2>
   <div id="collapse4_3" class="accordion-collapse collapse" aria-labelledby="heading4_3" data-bs-parent="#inspectionAccordion">
     <div class="accordion-body">
-      <form id="form-4-3">
+      <form id="form-4-3"  class="form-inspect" data-item-code="4_3">
         <input type="hidden" name="request_id" value="<?= htmlspecialchars($request_id) ?>">
 
         <!-- radio ผ่าน/ไม่ผ่าน -->
@@ -261,23 +261,21 @@ $request_id = $request->id;
   </h2>
   <div id="collapse4_4" class="accordion-collapse collapse" aria-labelledby="heading4_4" data-bs-parent="#inspectionAccordion">
     <div class="accordion-body">
-      <form id="form-4-4">
+      <form id="form-4-4" >
         <input type="hidden" name="request_id" value="<?= htmlspecialchars($request_id) ?>">
 
         <!-- radio ผ่าน/ไม่ผ่าน -->
         <div class="mb-3">
           <div class="form-check mb-2">
             <input class="form-check-input form-status-radio" type="radio"
-                   name="status_4_4" id="status_4_4_pass" value="pass"
-                   data-item-code="4_4">
+                   name="status_4_4" id="status_4_4_pass" value="pass" data-item-code="4_4">
             <label class="form-check-label" for="status_4_4_pass">
               ผ่าน - มีฝาปิดมิดชิด
             </label>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input form-status-radio" type="radio"
-                   name="status_4_4" id="status_4_4_fail" value="fail"
-                   data-item-code="4_4">
+                   name="status_4_4" id="status_4_4_fail" value="fail" data-item-code="4_4">
             <label class="form-check-label" for="status_4_4_fail">
               ไม่ผ่าน - ไม่มีฝาปิด หรือฝาปิดชำรุด
             </label>
@@ -309,168 +307,13 @@ $request_id = $request->id;
 <?php
 include("../../private/shared/footerofficer.php");
 ?>
-<script>
-$(document).ready(function () {
-  // ✅ autosave radio ทุกข้อ
-  $('input[type="radio"]').on('change', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('name');
-    const value = $(this).val();
-
-    // 👉 toggle checklist group ถ้ามี
-    const groupId = '#fail_group_' + field.replace('status_', '');
-    if ($(groupId).length) {
-      $(groupId).toggle(value === 'fail');
-    }
-
-    autosave(requestId, field, value);
-  });
-
-  // ✅ autosave checkbox ทุกข้อ
-  $('input[type="checkbox"]').on('change', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('id');
-    const value = $(this).is(':checked') ? 1 : 0;
-    autosave(requestId, field, value);
-  });
-
-  // ✅ autosave textarea ทุกข้อ
-  $('textarea').on('input', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('id');
-    const value = $(this).val();
-    autosave(requestId, field, value);
-  });
-
-  // 🔁 core autosave
-  function autosave(requestId, field, value) {
-    $.ajax({
-      url: 'ajax/autosave_structure.php',
-      method: 'POST',
-      data: {
-        request_id: requestId,
-        field: field,
-        value: value
-      },
-      success: function (res) {
-        console.log('✅ autosaved:', field, '=', value);
-      },
-      error: function () {
-        console.error('❌ autosave failed:', field);
-      }
-    });
-  }
-});
-</script>
-
-
-<script>
-  $(document).ready(function () {
-    const requestId = <?= json_encode($request_id) ?>;
-
-    $.post('ajax/load_waterice_all.php', { request_id: requestId }, function (res) {
-      if (!res.success) return;
-
-      const data = res.data;
-      console.log(data);
-
-      // 🧠 วนทุก field ที่ได้มา
-      for (const [key, value] of Object.entries(data)) {
-        if (value === null || value === "") continue;
-
-        // ✅ radio (status_1_x)
-        if (key.startsWith('status_')) {
-          $(`input[name="${key}"][value="${value}"]`).prop('checked', true);
-
-          // ถ้าเป็น fail → แสดงกล่อง checklist
-          if (value === 'fail') {
-            const code = key.replace('status_', '');
-            $(`#fail_group_${code}`).show();
-          }
-        }
-
-        // ✅ checkbox (fail_1_x_x)
-        else if (key.startsWith('fail_') && value == '1') {
-          $(`input[id="${key}"]`).prop('checked', true);
-        }
-
-        // ✅ textarea (remark_1_x)
-        else if (key.startsWith('remark_')) {
-          $(`#${key}`).val(value);
-        }
-      }
-    }, 'json');
-  });
-</script>
-
-
-<script>
-$(document).ready(function () {
-
-  // ✅ แก้ปัญหาเมื่อเลือก "ผ่าน" ต้อง uncheck checkbox ทั้งหมดใน fail group
-  $('input[type="radio"].form-status-radio').on('change', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const itemCode = $(this).data('item-code'); // เช่น 2_1, 2_4
-    const field = $(this).attr('name'); // เช่น status_2_1
-    const value = $(this).val(); // pass / fail
-    const failGroup = $('#fail_group_' + itemCode);
-
-    // 👉 toggle group
-    if (value === 'fail') {
-      failGroup.slideDown();
-    } else {
-      failGroup.slideUp();
-
-      // ✅ ยกเลิก checkbox ทั้งหมดในกลุ่ม และ autosave = 0
-      failGroup.find('input[type="checkbox"]').each(function () {
-        if ($(this).is(':checked')) {
-          $(this).prop('checked', false);
-          const checkboxId = $(this).attr('id');
-          autosave(requestId, checkboxId, 0);
-        }
-      });
-    }
-
-    autosave(requestId, field, value);
-  });
-
-  // ✅ autosave checkbox ทุกข้อ
-  $('input[type="checkbox"]').on('change', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('id');
-    const value = $(this).is(':checked') ? 1 : 0;
-    autosave(requestId, field, value);
-  });
-
-  // ✅ autosave textarea ทุกข้อ
-  $('textarea').on('input', function () {
-    const requestId = $(this).closest('form').find('input[name="request_id"]').val();
-    const field = $(this).attr('id');
-    const value = $(this).val();
-    autosave(requestId, field, value);
-  });
-
-  // 🔁 autosave core
-  function autosave(requestId, field, value) {
-    $.ajax({
-      url: 'ajax/autosave_waterice.php',
-      method: 'POST',
-      data: {
-        request_id: requestId,
-        field: field,
-        value: value
-      },
-      success: function () {
-        console.log('✅ autosaved:', field, '=', value);
-      },
-      error: function () {
-        console.error('❌ autosave failed:', field);
-      }
-    });
-  }
-
-});
-</script>
+<!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    const autosaveUrl = 'ajax/autosave_waterice.php';
+    const loadAllUrl  = 'ajax/load_waterice_all.php';
+    </script>
+    <script src="../js/checkform.js"></script>
 
 
 <?

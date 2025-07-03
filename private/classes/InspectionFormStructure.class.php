@@ -79,36 +79,59 @@ class InspectionFormStructure extends DatabaseObject {
     }
 
     // ✅ autosave รองรับการบันทึกฟิลด์เดี่ยวแบบอัตโนมัติ
-    public static function autosave($request_id, $field, $value) {
-        $record = self::find_or_create($request_id);
-        if (property_exists($record, $field)) {
-            $record->$field = $value;
-            $record->save();
+        public static function autosave($request_id, $field, $value) {
+            $record = self::find_or_create($request_id);
+            if (property_exists($record, $field)) {
+                $record->$field = $value;
+                $record->save();
 
-            // 🔄 ตรวจสอบความครบถ้วนของ status_1_1 ถึง status_1_7
-            $all_status_fields = [
-                'status_1_1', 'status_1_2', 'status_1_3', 'status_1_4',
-                'status_1_5', 'status_1_6', 'status_1_7'
-            ];
+                // ✅ ตรวจสอบความครบถ้วน
+                $is_complete = true;
 
-            $is_complete = true;
-            foreach ($all_status_fields as $status_field) {
-                if (empty($record->$status_field)) {
-                    $is_complete = false;
-                    break;
+                for ($i = 1; $i <= 7; $i++) {
+                    $status = $record->{"status_1_{$i}"};
+                    if (!$status) {
+                        $is_complete = false;
+                        break;
+                    }
+
+                    if ($status === 'fail') {
+                        $has_reason = false;
+
+                        // ✅ ตรวจ checkbox
+                        for ($j = 1; $j <= 4; $j++) {
+                            $fail_field = "fail_1_{$i}_{$j}";
+                            if (property_exists($record, $fail_field) && $record->$fail_field) {
+                                $has_reason = true;
+                                break;
+                            }
+                        }
+
+                        // ✅ ตรวจ remark
+                        $remark = $record->{"remark_1_{$i}"};
+                        if (!empty($remark)) {
+                            $has_reason = true;
+                        }
+
+                        if (!$has_reason) {
+                            $is_complete = false;
+                            break;
+                        }
+                    }
                 }
+
+                // 🔧 อัปเดตฟิลด์ใน InspectionFormStatus
+                $status_record = InspectionFormStatus::find_by_request_id($request_id);
+                if ($status_record) {
+                    $status_record->form_structure_status = $is_complete ? 1 : 0;
+                    $status_record->save();
+                }
+
+                return true;
             }
 
-            // 🔧 อัปเดตฟิลด์ใน InspectionFormStatus
-            $status_record = InspectionFormStatus::find_by_request_id($request_id);
-            if ($status_record) {
-                $status_record->form_structure_status = $is_complete ? 1 : 0;
-                $status_record->save();
-            }
-
-            return true;
+            return false;
         }
-        return false;
-    }
+
 
 }
