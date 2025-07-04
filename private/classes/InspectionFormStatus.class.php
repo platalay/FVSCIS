@@ -54,7 +54,6 @@ class InspectionFormStatus extends DatabaseObject {
         $sql .= " WHERE YEAR(created_at) = '{$year}'";
         $sql .= " AND department_code = '{$escaped_code}'";
         $sql .= " AND (parent_id IS NULL OR parent_id = 0)";  // ✅ นับเฉพาะต้นฉบับเท่านั้น
-        error_log($sql);
         $result = self::$database->query($sql);
 
         $row = $result->fetch_assoc();
@@ -159,6 +158,7 @@ class InspectionFormStatus extends DatabaseObject {
 
         $sql = "SELECT * FROM " . static::$table_name;
         $sql .= " WHERE request_id = '{$escaped}'";
+        error_log($sql);
         $result = static::find_by_sql($sql);
         return !empty($result) ? array_shift($result) : null;
     }

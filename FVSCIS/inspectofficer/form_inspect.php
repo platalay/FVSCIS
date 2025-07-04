@@ -158,9 +158,121 @@ $check = '✅ ';
 
 
 
-              </div>
             </div>
-          </div>
+            </div>
+            </div>
+
+            <div class="accordion mt-4" id="inspectionAccordion1">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    แบบประเมินสุขอนามัย
+                </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#inspectionAccordion1">
+                <div class="accordion-body">
+                    <div class="card o-hidden border-0 shadow-lg">
+                    <div class="card-body p-4">
+                        <div class="row">
+                        <?php include("form_inspect_table.php"); ?>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+
+            <div class="accordion mt-4" id="inspectionAccordion2">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    แบบประเมินสุขอนามัย
+                </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#inspectionAccordion2">
+                <div class="accordion-body">
+                    <div class="card o-hidden border-0 shadow-lg">
+                    <div class="card-body p-4">
+                        <div class="row">
+                        <?php include("form_inspect_table.php"); ?>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="accordion mt-4" id="inspectionAccordion3">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    แบบประเมินสุขอนามัย
+                </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#inspectionAccordion3">
+                <div class="accordion-body">
+                    <div class="card o-hidden border-0 shadow-lg">
+                    <div class="card-body p-4">
+                        <div class="row">
+                        <?php include("form_inspect_table.php"); ?>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="accordion mt-4" id="inspectionAccordion4">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                    แบบประเมินสุขอนามัย
+                </button>
+                </h2>
+                <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#inspectionAccordion4">
+                <div class="accordion-body">
+                    <div class="card o-hidden border-0 shadow-lg">
+                    <div class="card-body p-4">
+                        <div class="row">
+                        <?php include("form_inspect_table.php"); ?>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+
+            <div class="accordion mt-4" id="inspectionAccordion5">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                    แบบประเมินสุขอนามัย
+                </button>
+                </h2>
+                <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#inspectionAccordion5">
+                <div class="accordion-body">
+                    <div class="card o-hidden border-0 shadow-lg">
+                    <div class="card-body p-4">
+                        <div class="row">
+                        <?php include("form_inspect_table.php"); ?>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+
+
+
+            
 </div>
 
 <?php
