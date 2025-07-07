@@ -13,6 +13,7 @@ $form = InspectionFormStatus::find_or_create(
     $request->id
 );
 $check = '✅ ';
+$cross = '❌ ';
 ?>
 
 <!-- Begin Page Content -->

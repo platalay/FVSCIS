@@ -1,5 +1,5 @@
 <?php
-
+$data = InspectionFormStructure::find_by_request_id($request->id);
 ?>
 <table class="table table-bordered table-striped mt-4">
   <thead class="table-light">
@@ -18,7 +18,7 @@
     </tr>
     <tr>
       <td>๑.๑ ห้องเก็บรักษาสัตว์น้ำต้องอยู่ในสภาพที่สะอาด มีขนาดเหมาะสมเพียงพอ ในกรณีมีขอรับหนังสือรับรอง (สธ.๓๓ ฉบับชั่วคราว) ต้องมีเครื่องเย็นหรือมีน้ำแข็งในเรือประมง</td>
-      <td class="text-center"><input type="checkbox"></td>
+      <td class="text-center"><?= $data->status_1_1 == 1 ? $check : $cross ?></td>
       <td><input type="text" class="form-control"></td>
     </tr>
     <tr>

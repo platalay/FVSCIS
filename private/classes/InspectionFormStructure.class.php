@@ -133,5 +133,15 @@ class InspectionFormStructure extends DatabaseObject {
             return false;
         }
 
+        public static function find_by_request_id($request_id) {
+            $escaped = self::$database->escape_string($request_id);
+
+            $sql = "SELECT * FROM " . static::$table_name;
+            $sql .= " WHERE request_id = '{$escaped}'";
+            error_log($sql);
+            $result = static::find_by_sql($sql);
+            return !empty($result) ? array_shift($result) : null;
+        }
+
 
 }

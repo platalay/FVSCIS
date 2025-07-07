@@ -6,6 +6,7 @@ include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
 $request = InspectionRequest::find_by_id($_GET["request"]);
 $request_id = $request->id;
+$fail_items = InspectionFailItem::find_by_section(1);
 ?>
 
 <!-- Begin Page Content -->
@@ -21,7 +22,15 @@ $request_id = $request->id;
   
   
 <!-- ข้อ 1 -->
-<!-- ข้อ 1.1 -->
+<?php
+// จัดกลุ่ม checklist สำหรับข้อ 1_1
+$grouped_fail_items = [];
+foreach ($fail_items as $item) {
+    $parts = explode('_', $item->field_name); // fail_1_1_1 → [fail, 1, 1, 1]
+    $group_key = $parts[1] . '_' . $parts[2]; // 1_1
+    $grouped_fail_items[$group_key][] = $item;
+}
+?>
 <div class="accordion-item">
   <h2 class="accordion-header" id="heading1_1">
     <button class="accordion-button collapsed bg-primary text-white" type="button"
@@ -50,34 +59,25 @@ $request_id = $request->id;
         </div>
 
         <!-- Checklist (แสดงเมื่อไม่ผ่าน) -->
+        <?php if (!empty($grouped_fail_items['1_1'])): ?>
         <div id="fail_group_1_1" class="border p-3 mb-3 bg-light" style="display: none;">
+          <?php foreach ($grouped_fail_items['1_1'] as $fail_item): ?>
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox"
-                   id="fail_1_1_1" name="fail_1_1_1">
-            <label class="form-check-label" for="fail_1_1_1">
-              ผนังห้องผุกร่อน ชำรุด มีสนิม ผนังห้องด้านบนสภาพปรก
+                   id="<?= htmlspecialchars($fail_item->field_name) ?>"
+                   name="<?= htmlspecialchars($fail_item->field_name) ?>">
+            <label class="form-check-label" for="<?= htmlspecialchars($fail_item->field_name) ?>">
+              <?= htmlspecialchars($fail_item->label_text) ?>
             </label>
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox"
-                   id="fail_1_1_2" name="fail_1_1_2">
-            <label class="form-check-label" for="fail_1_1_2">
-              ห้องมีขนาดไม่เพียงพอ เช่น มีสัตว์น้ำกองอยู่นอกห้อง
-            </label>
-          </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox"
-                   id="fail_1_1_3" name="fail_1_1_3">
-            <label class="form-check-label" for="fail_1_1_3">
-              พบเศษซากสัตว์น้ำที่ค้างในห้อง
-            </label>
-          </div>
+          <?php endforeach; ?>
         </div>
+        <?php endif; ?>
 
         <!-- หมายเหตุ -->
         <div class="mb-3">
           <label for="remark_1_1" class="form-label">หมายเหตุ (ถ้ามี):</label>
-          <textarea class="form-control" id="remark_1_1" placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
+          <textarea class="form-control" id="remark_1_1" name="remark_1_1" placeholder="พิมพ์ข้อสังเกตเพิ่มเติม..."></textarea>
         </div>
       </form>
     </div>
