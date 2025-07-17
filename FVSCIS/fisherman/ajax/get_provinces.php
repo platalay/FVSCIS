@@ -2,7 +2,7 @@
 require_once('../../../private/initialize.php');
 
 // ดึงข้อมูลจังหวัดทั้งหมดจากคลาส Province
-$provinces = Province::find_all();
+$provinces = Province::find_all_coastal();
 
 header('Content-Type: application/json');
 

@@ -80,60 +80,89 @@ class InspectionFormPreservation extends DatabaseObject {
         return $new_record;
     }
 
-    public static function autosave($request_id, $field_name, $value) {
-        $allowed_fields = array_flip(static::$db_columns);
+    // ✅ autosave รองรับการบันทึกฟิลด์เดี่ยวแบบอัตโนมัติ
+       public static function autosave($request_id, $field, $value) {
+            $record = self::find_or_create($request_id);
 
-        if (!isset($allowed_fields[$field_name])) {
-            throw new Exception("Field '$field_name' is not allowed for update.");
-        }
+            if (property_exists($record, $field)) {
+                $record->$field = $value;
+                $record->save();
 
-        $preservation = self::find_or_create($request_id);
-        $preservation->$field_name = $value;
-        $preservation->save();
+                // ✅ หลังจาก save แล้ว เรียกฟังก์ชัน check_complete
+                self::check_complete($request_id);
 
-        // ✅ ตรวจสอบความครบถ้วนของทุกข้อ
-        $valid = true;
-
-        // ปรับจำนวนข้อให้ตรงตามคลาสของคุณ (สมมติ 5 ข้อ)
-        for ($i = 1; $i <= 5; $i++) {
-            $status = $preservation->{"status_5_{$i}"};  // ปรับเป็น prefix ของ preservation
-            if (!$status) {
-                $valid = false;
-                break;
+                return true;
             }
 
-            if ($status === 'fail') {
-                $hasFailReason = false;
+            return false;
+        }
 
-                // ตรวจ checkbox
-                for ($j = 1; $j <= 4; $j++) {
-                    $failField = "fail_5_{$i}_{$j}";
-                    if (property_exists($preservation, $failField) && $preservation->$failField) {
-                        $hasFailReason = true;
+        public static function check_complete($request_id) {
+            $record = self::find_or_create($request_id);
+            $is_complete = true;
+
+            // 1️⃣ วนหาทุก property ที่เป็น status_1_*
+            foreach (get_object_vars($record) as $property => $value) {
+                if (preg_match('/^status_1_\d+$/', $property)) {
+                    $code = substr($property, 7); // เอาเลขเช่น 1,2,3,4,.. จาก status_1_3
+
+                    $status = $record->$property;
+
+                    if (!$status) {
+                        $is_complete = false;
                         break;
                     }
-                }
 
-                // ตรวจ remark
-                $remark = $preservation->{"remark_5_{$i}"};
-                if ($remark) {
-                    $hasFailReason = true;
-                }
+                    if ($status === 'fail') {
+                        $has_reason = false;
+                        $has_any_checkbox = false;
 
-                if (!$hasFailReason) {
-                    $valid = false;
-                    break;
+                        // วนหา fail_1_{code}_{j}
+                        foreach (get_object_vars($record) as $fail_prop => $fail_value) {
+                            if (preg_match("/^fail_1_{$code}_\d+$/", $fail_prop)) {
+                                $has_any_checkbox = true;
+
+                                if (!empty($fail_value)) {
+                                    $has_reason = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // remark_1_{code}
+                        $remark_field = "remark_1_{$code}";
+                        $remark = $record->$remark_field ?? '';
+
+                        if (!empty($remark)) {
+                            $has_reason = true;
+                        }
+
+                        if ($has_any_checkbox && !$has_reason) {
+                            $is_complete = false;
+                            break;
+                        }
+                    }
                 }
             }
+
+            // 2️⃣ อัปเดต InspectionFormStatus
+            $status_record = InspectionFormStatus::find_by_request_id($request_id);
+            if ($status_record) {
+                $status_record->form_preservation_status = $is_complete ? 1 : 0;
+                $status_record->save();
+            }
+
+            return $is_complete;
         }
 
-        if ($valid) {
-            $statusRow = InspectionFormStatus::find_by_request_id($request_id);
-            $statusRow->form_preservation_status = 1;
-            $statusRow->save();
-        }
+        public static function find_by_request_id($request_id) {
+            $escaped = self::$database->escape_string($request_id);
 
-        return true;
-    }
+            $sql = "SELECT * FROM " . static::$table_name;
+            $sql .= " WHERE request_id = '{$escaped}'";
+            error_log($sql);
+            $result = static::find_by_sql($sql);
+            return !empty($result) ? array_shift($result) : null;
+        }
 
 }

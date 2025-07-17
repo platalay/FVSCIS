@@ -1,6 +1,6 @@
 <?php
 require_once('../private/initialize.php');
-$Departments=Department::find_all();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -146,16 +146,28 @@ $Departments=Department::find_all();
             <label for="email" class="form-label">อีเมล</label>
             <input type="email" class="form-control" id="email" name = "Officer[email]" value="<?= $_SESSION['email'] ?>" required>
           </div>
-
+          <?php
+          // ส่วน HTML + PHP
+          $Departmentgroups = DepartmentGroup::find_all();
+          ?>
           <div class="mb-3">
-            <label for="department_id" class="form-label">เลือกหน่วยงาน</label>
-            <select class="form-control" name="Officer[departments_id]" id="department_id"  required>
-              <option value="" selected data-default>select department</option>
-              <?php foreach ($Departments as $Department): ?>
-                <option value="<?= $Department->id ?>"><?= $Department->name ?></option>
+            <label for="department_group" class="form-label">เลือกกลุ่มหน่วยงาน</label>
+            <select class="form-control" name="Officer[departments_group]" id="department_group" required>
+              <option value="" selected data-default>select department group</option>
+              <?php foreach ($Departmentgroups as $Departmentgroup): ?>
+                <option value="<?= $Departmentgroup->id ?>"><?= htmlspecialchars($Departmentgroup->name) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
+
+          <div class="mb-3">
+            <label for="department_id" class="form-label">เลือกหน่วยงาน</label>
+            <select class="form-control" name="Officer[departments_id]" id="department_id" required>
+              <option value="" selected data-default>select department</option>
+            </select>
+          </div>
+
+          
 
           <div class="mb-3">
             <label for="UserType" class="form-label">สิทธิ์การใช้งาน</label>
@@ -240,6 +252,36 @@ $Departments=Department::find_all();
         });
       </script> 
       
+      <script>
+      $(document).ready(function () {
+        $('#department_group').on('change', function () {
+          const groupId = $(this).val();
+          $('#department_id').html('<option value="">loading...</option>');
+          if (groupId) {
+            $.ajax({
+              url: 'ajax/get_departments_by_group.php',
+              method: 'POST',
+              data: { group_id: groupId },
+              dataType: 'json',
+              success: function (res) {
+                let options = '<option value="" selected data-default>select department</option>';
+                if (res.length > 0) {
+                  res.forEach(function (dep) {
+                    options += `<option value="${dep.id}">${dep.name}</option>`;
+                  });
+                }
+                $('#department_id').html(options);
+              },
+              error: function () {
+                $('#department_id').html('<option value="">error loading departments</option>');
+              }
+            });
+          } else {
+            $('#department_id').html('<option value="" selected data-default>select department</option>');
+          }
+        });
+      });
+      </script>
       
         <script>
         $(document).ready(function() {

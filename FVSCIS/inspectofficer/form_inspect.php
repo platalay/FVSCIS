@@ -1,6 +1,6 @@
 <?php
 require_once('../../private/initialize.php');
-$session->require_role(['inspectofficer']);
+$session->require_role(['Signer']);
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
@@ -163,11 +163,75 @@ $cross = '❌ ';
             </div>
             </div>
 
+
+
+                <?php
+                $result = InspectionEvaluation::check_vessel_pass($request->id, 'commercial');
+
+                if (
+                    $form->form_structure_status &&
+                    $form->form_material_status &&
+                    $form->form_crew_status &&
+                    $form->form_water_ice_status &&
+                    $form->form_preservation_status &&
+                    !$form->document_locked
+                ):
+                ?>
+
+                <div class="mt-4">
+                    <div class="card o-hidden border-0 shadow-lg">
+                        <div class="card-body p-4 text-center">
+                            <?php if ($result === true): ?>
+                                <div class="alert alert-success fs-5">
+                                  เรือที่ได้รับใบอนุญาต  ✅ ผ่านเกณฑ์ ได้รับหนังสือรับรอง
+                                </div>
+                            <?php else: ?>
+                                <div class="alert alert-danger fs-5">
+                                  เรือที่ได้รับใบอนุญาต  ❌ <?= htmlspecialchars($result) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <?php endif; ?>
+
+                <?php
+                $result = InspectionEvaluation::check_vessel_pass($request->id, 'non_permitted');
+
+                if (
+                    $form->form_structure_status &&
+                    $form->form_material_status &&
+                    $form->form_crew_status &&
+                    $form->form_water_ice_status &&
+                    $form->form_preservation_status &&
+                    !$form->document_locked
+                ):
+                ?>
+
+                <div class="mt-4">
+                    <div class="card o-hidden border-0 shadow-lg">
+                        <div class="card-body p-4 text-center">
+                            <?php if ($result === true): ?>
+                                <div class="alert alert-success fs-5">
+                                   เรือที่ยังไม่ได้รับใบอนุญาต ✅ ผ่านเกณฑ์ ได้รับหนังสือรับรอง
+                                </div>
+                            <?php else: ?>
+                                <div class="alert alert-danger fs-5">
+                                   เรือที่ยังไม่ได้รับใบอนุญาต ❌ <?= htmlspecialchars($result) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <?php endif; ?>
+
             <div class="accordion mt-4" id="inspectionAccordion1">
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                    แบบประเมินสุขอนามัย
+                    ผลการประเมินหมวด 1: ด้านโครงสร้างของเรือประมง
                 </button>
                 </h2>
                 <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#inspectionAccordion1">
@@ -175,7 +239,29 @@ $cross = '❌ ';
                     <div class="card o-hidden border-0 shadow-lg">
                     <div class="card-body p-4">
                         <div class="row">
-                        <?php include("form_inspect_table.php"); ?>
+                        <?php include("table_structure.php"); ?>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+
+            <div class="accordion mt-4" id="inspectionAccordion1">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    ผลการประเมินหมวด 1: ด้านโครงสร้างของเรือประมง
+                </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#inspectionAccordion1">
+                <div class="accordion-body">
+                    <div class="card o-hidden border-0 shadow-lg">
+                    <div class="card-body p-4">
+                        <div class="row">
+                        <?php include("table_structure.php"); ?>
                         </div>
                     </div>
                     </div>
@@ -189,7 +275,7 @@ $cross = '❌ ';
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                    แบบประเมินสุขอนามัย
+                    ผลการประเมินหมวด 2: ด้านวัสดุ อุปกรณ์ และเครื่องมือในเรือประมง
                 </button>
                 </h2>
                 <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#inspectionAccordion2">
@@ -197,7 +283,7 @@ $cross = '❌ ';
                     <div class="card o-hidden border-0 shadow-lg">
                     <div class="card-body p-4">
                         <div class="row">
-                        <?php include("form_inspect_table.php"); ?>
+                        <?php include("table_material.php"); ?>
                         </div>
                     </div>
                     </div>
@@ -210,7 +296,7 @@ $cross = '❌ ';
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                    แบบประเมินสุขอนามัย
+                    ผลการประเมินหมวด 3 ด้านบุคลากรประจำเรือ
                 </button>
                 </h2>
                 <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#inspectionAccordion3">
@@ -218,7 +304,7 @@ $cross = '❌ ';
                     <div class="card o-hidden border-0 shadow-lg">
                     <div class="card-body p-4">
                         <div class="row">
-                        <?php include("form_inspect_table.php"); ?>
+                        <?php include("table_crew.php"); ?>
                         </div>
                     </div>
                     </div>
@@ -231,7 +317,7 @@ $cross = '❌ ';
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-                    แบบประเมินสุขอนามัย
+                    ผลการประเมินหมวด 4: ด้านน้ำจืดและน้ำแข็ง
                 </button>
                 </h2>
                 <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#inspectionAccordion4">
@@ -239,7 +325,7 @@ $cross = '❌ ';
                     <div class="card o-hidden border-0 shadow-lg">
                     <div class="card-body p-4">
                         <div class="row">
-                        <?php include("form_inspect_table.php"); ?>
+                        <?php include("table_waterice.php"); ?>
                         </div>
                     </div>
                     </div>
@@ -253,7 +339,7 @@ $cross = '❌ ';
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
-                    แบบประเมินสุขอนามัย
+                    ผลการประเมินหมวด 5: ด้านการเก็บรักษาสัตว์น้ำ
                 </button>
                 </h2>
                 <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#inspectionAccordion5">
@@ -261,7 +347,7 @@ $cross = '❌ ';
                     <div class="card o-hidden border-0 shadow-lg">
                     <div class="card-body p-4">
                         <div class="row">
-                        <?php include("form_inspect_table.php"); ?>
+                        <?php include("table_preservation.php"); ?>
                         </div>
                     </div>
                     </div>

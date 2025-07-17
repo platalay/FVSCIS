@@ -139,7 +139,7 @@ $Departments = Department::find_all();
                     <!-- Modal: เพิ่มหน่วยงาน -->
                     <?php
                     require_once('../../private/initialize.php');
-                    $provinces = Province::find_all();
+                    $provinces = Province::find_all_coastal();
                     $department_groups = DepartmentGroup::find_all();
                     ?>
 
@@ -249,7 +249,8 @@ $Departments = Department::find_all();
                             <label>จังหวัด</label>
                             <select name="department[province]" id="edit-province" class="form-select">
                                 <option value="">-- เลือกจังหวัด --</option>
-                                <?php foreach (Province::find_all() as $province): ?>
+                                <?php foreach (Province::find_all_coastal() as $province): ?>
+                                <?php error_log("province id={$province->id} name={$province->name}"); ?>
                                 <option value="<?php echo h($province->id); ?>"><?php echo h($province->name); ?></option>
                                 <?php endforeach; ?>
                             </select>

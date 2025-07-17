@@ -135,7 +135,7 @@ class Session {
       case 1: return 'admin';
       case 2: return 'headquarter';
       case 3: return 'inspectofficer';
-      case 5: return 'signer';
+      case 4: return 'signer';
       default: return 'unknown';
     }
   }

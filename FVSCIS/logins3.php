@@ -96,26 +96,43 @@ require_once('../private/initialize.php');
                   <label for="email" class="form-label">อีเมล</label>
                   <input type="email" class="form-control" name="officer[email]" id="email">
                 </div>
-                <div class="col-md-6">
-                  <label for="edit_departments_id" class="form-label">หน่วยงาน</label>
-                  <?php $departments = Department::find_all();?>
-                  <select name="officer[departments_id]" id="edit_departments_id" class="form-select">
-                  <option value="">-- กรุณาเลือกกลุ่มหน่วยงาน --</option>
-                  <?php foreach($departments as $group): ?>
-                      <option value="<?php echo $group->id; ?>"><?php echo $group->name; ?></option>
-                  <?php endforeach; ?>
+                
+                <?php
+                // ส่วน HTML + PHP
+                $Departmentgroups = DepartmentGroup::find_all();
+                ?>
+                <div class="mb-3">
+                  <label for="department_group" class="form-label">เลือกกลุ่มหน่วยงาน</label>
+                  <select class="form-control" name="officer[departments_group]" id="department_group" required>
+                    <option value="" selected data-default>select department group</option>
+                    <?php foreach ($Departmentgroups as $Departmentgroup): ?>
+                      <option value="<?= $Departmentgroup->id ?>"><?= htmlspecialchars($Departmentgroup->name) ?></option>
+                    <?php endforeach; ?>
                   </select>
-                  </div>
-                  <div class="col-md-6">
+                </div>
+
+                <div class="mb-3">
+                  <label for="department_id" class="form-label">เลือกหน่วยงาน</label>
+                  <select class="form-control" name="officer[departments_id]" id="departments_id" required>
+                    <option value="" selected data-default>select department</option>
+                  </select>
+                </div>
+                
+                <div class="col-md-6">
                   <label for="edit_usertype_id" class="form-label">สิทธิ์การใช้งาน</label>
                   <?php $UserTypes = UserType::find_all();?>
                   <select class="form-select" name="officer[usertype_id]" id="edit_usertype_id">
                       <option value="">-- กรุณาเลือกกลุ่มหน่วยงาน --</option>
-                      <?php foreach($UserTypes as $UserType): ?>
+                      <?php foreach($UserTypes as $UserType): 
+                        if($UserType->id != 5 && $UserType->id != 1){
+                      ?>
+
                           <option value="<?php echo $UserType->id; ?>"><?php echo $UserType->name_th; ?></option>
-                      <?php endforeach; ?>
+                      <?php 
+                        }
+                        endforeach; ?>
                   </select>
-                  </div>
+                </div>
               </div>
             </div>
 
@@ -200,6 +217,38 @@ require_once('../private/initialize.php');
         });
       </script>    
       
+
+      <script>
+      $(document).ready(function () {
+        $('#department_group').on('change', function () {
+          const groupId = $(this).val();
+          $('#departments_id').html('<option value="">loading...</option>');
+          if (groupId) {
+            $.ajax({
+              url: 'ajax/get_departments_by_group.php',
+              method: 'POST',
+              data: { group_id: groupId },
+              dataType: 'json',
+              success: function (res) {
+                let options = '<option value="" selected data-default>select department</option>';
+                if (res.length > 0) {
+                  res.forEach(function (dep) {
+                    options += `<option value="${dep.id}">${dep.name}</option>`;
+                  });
+                }
+                $('#departments_id').html(options);
+              },
+              error: function () {
+                $('#departments_id').html('<option value="">error loading departments</option>');
+              }
+            });
+          } else {
+            $('#departments_id').html('<option value="" selected data-default>select department</option>');
+          }
+        });
+      });
+      </script>
+
       <script>
         $(document).ready(function () {
           $('#usernameFisherman').on('blur', function () {

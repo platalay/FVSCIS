@@ -56,19 +56,34 @@ class InspectionFormWaterAndIce extends DatabaseObject {
         return $new;
     }
 
-    // ✅ autosave สำหรับบันทึกอัตโนมัติทีละช่อง
-     // ✅ autosave รองรับการบันทึกฟิลด์เดี่ยวแบบอัตโนมัติ
-        public static function autosave($request_id, $field, $value) {
+    // ✅ autosave รองรับการบันทึกฟิลด์เดี่ยวแบบอัตโนมัติ
+       public static function autosave($request_id, $field, $value) {
             $record = self::find_or_create($request_id);
+
             if (property_exists($record, $field)) {
                 $record->$field = $value;
                 $record->save();
 
-                // ✅ ตรวจสอบความครบถ้วน
-                $is_complete = true;
+                // ✅ หลังจาก save แล้ว เรียกฟังก์ชัน check_complete
+                self::check_complete($request_id);
 
-                for ($i = 1; $i <= 4; $i++) {
-                    $status = $record->{"status_4_{$i}"};
+                return true;
+            }
+
+            return false;
+        }
+
+        public static function check_complete($request_id) {
+            $record = self::find_or_create($request_id);
+            $is_complete = true;
+
+            // 1️⃣ วนหาทุก property ที่เป็น status_1_*
+            foreach (get_object_vars($record) as $property => $value) {
+                if (preg_match('/^status_1_\d+$/', $property)) {
+                    $code = substr($property, 7); // เอาเลขเช่น 1,2,3,4,.. จาก status_1_3
+
+                    $status = $record->$property;
+
                     if (!$status) {
                         $is_complete = false;
                         break;
@@ -76,41 +91,55 @@ class InspectionFormWaterAndIce extends DatabaseObject {
 
                     if ($status === 'fail') {
                         $has_reason = false;
+                        $has_any_checkbox = false;
 
-                        // ✅ ตรวจ checkbox
-                        for ($j = 1; $j <= 4; $j++) {
-                            $fail_field = "fail_4_{$i}_{$j}";
-                            if (property_exists($record, $fail_field) && $record->$fail_field) {
-                                $has_reason = true;
-                                break;
+                        // วนหา fail_1_{code}_{j}
+                        foreach (get_object_vars($record) as $fail_prop => $fail_value) {
+                            if (preg_match("/^fail_1_{$code}_\d+$/", $fail_prop)) {
+                                $has_any_checkbox = true;
+
+                                if (!empty($fail_value)) {
+                                    $has_reason = true;
+                                    break;
+                                }
                             }
                         }
 
-                        // ✅ ตรวจ remark
-                        $remark = $record->{"remark_4_{$i}"};
+                        // remark_1_{code}
+                        $remark_field = "remark_1_{$code}";
+                        $remark = $record->$remark_field ?? '';
+
                         if (!empty($remark)) {
                             $has_reason = true;
                         }
 
-                        if (!$has_reason) {
+                        if ($has_any_checkbox && !$has_reason) {
                             $is_complete = false;
                             break;
                         }
                     }
                 }
-
-                // 🔧 อัปเดตฟิลด์ใน InspectionFormStatus
-                $status_record = InspectionFormStatus::find_by_request_id($request_id);
-                if ($status_record) {
-                    $status_record->form_water_ice_status = $is_complete ? 1 : 0;
-                    $status_record->save();
-                }
-                return true;
             }
 
-            return false;
+            // 2️⃣ อัปเดต InspectionFormStatus
+            $status_record = InspectionFormStatus::find_by_request_id($request_id);
+            if ($status_record) {
+                $status_record->form_water_ice_status = $is_complete ? 1 : 0;
+                $status_record->save();
+            }
+
+            return $is_complete;
         }
 
 
+        public static function find_by_request_id($request_id) {
+            $escaped = self::$database->escape_string($request_id);
+
+            $sql = "SELECT * FROM " . static::$table_name;
+            $sql .= " WHERE request_id = '{$escaped}'";
+            error_log($sql);
+            $result = static::find_by_sql($sql);
+            return !empty($result) ? array_shift($result) : null;
+        }
 
 }

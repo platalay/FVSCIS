@@ -66,52 +66,89 @@ class InspectionFormCrew extends DatabaseObject {
     }
 
     // ฟังก์ชันที่ใช้สำหรับ autosave update field ใด field หนึ่ง
-    public static function autosave($request_id, $field_name, $value) {
-            $allowed_fields = array_flip(static::$db_columns);
+    // ✅ autosave รองรับการบันทึกฟิลด์เดี่ยวแบบอัตโนมัติ
+       public static function autosave($request_id, $field, $value) {
+            $record = self::find_or_create($request_id);
 
-            if (!isset($allowed_fields[$field_name])) {
-                throw new Exception("Field '$field_name' is not allowed for update.");
+            if (property_exists($record, $field)) {
+                $record->$field = $value;
+                $record->save();
+
+                // ✅ หลังจาก save แล้ว เรียกฟังก์ชัน check_complete
+                self::check_complete($request_id);
+
+                return true;
             }
 
-            $crew = self::find_or_create($request_id);
-            $crew->$field_name = $value;
-            $crew->save();
+            return false;
+        }
 
-            // ✅ ตรวจสอบความครบถ้วน
-            $valid = true;
-            for ($i = 1; $i <= 5; $i++) {
-                $status = $crew->{"status_3_{$i}"};
-                if (!$status) {
-                    $valid = false; break;
-                }
-                if ($status === 'fail') {
-                    $hasFailReason = false;
-                    // ตรวจ checkbox
-                    for ($j = 1; $j <= 4; $j++) {
-                        $failField = "fail_3_{$i}_{$j}";
-                        if (property_exists($crew, $failField) && $crew->$failField) {
-                            $hasFailReason = true; break;
+        public static function check_complete($request_id) {
+            $record = self::find_or_create($request_id);
+            $is_complete = true;
+
+            // 1️⃣ วนหาทุก property ที่เป็น status_1_*
+            foreach (get_object_vars($record) as $property => $value) {
+                if (preg_match('/^status_1_\d+$/', $property)) {
+                    $code = substr($property, 7); // เอาเลขเช่น 1,2,3,4,.. จาก status_1_3
+
+                    $status = $record->$property;
+
+                    if (!$status) {
+                        $is_complete = false;
+                        break;
+                    }
+
+                    if ($status === 'fail') {
+                        $has_reason = false;
+                        $has_any_checkbox = false;
+
+                        // วนหา fail_1_{code}_{j}
+                        foreach (get_object_vars($record) as $fail_prop => $fail_value) {
+                            if (preg_match("/^fail_1_{$code}_\d+$/", $fail_prop)) {
+                                $has_any_checkbox = true;
+
+                                if (!empty($fail_value)) {
+                                    $has_reason = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // remark_1_{code}
+                        $remark_field = "remark_1_{$code}";
+                        $remark = $record->$remark_field ?? '';
+
+                        if (!empty($remark)) {
+                            $has_reason = true;
+                        }
+
+                        if ($has_any_checkbox && !$has_reason) {
+                            $is_complete = false;
+                            break;
                         }
                     }
-                    // ตรวจ remark
-                    $remark = $crew->{"remark_3_{$i}"};
-                    if ($remark) {
-                        $hasFailReason = true;
-                    }
-
-                    if (!$hasFailReason) {
-                        $valid = false; break;
-                    }
                 }
             }
 
-            if ($valid) {
-                $statusRow = InspectionFormStatus::find_by_request_id($request_id);
-                $statusRow->form_crew_status = 1;
-                $statusRow->save();
+            // 2️⃣ อัปเดต InspectionFormStatus
+            $status_record = InspectionFormStatus::find_by_request_id($request_id);
+            if ($status_record) {
+                $status_record->form_crew_status = $is_complete ? 1 : 0;
+                $status_record->save();
             }
 
-            return true;
+            return $is_complete;
+        }
+
+        public static function find_by_request_id($request_id) {
+            $escaped = self::$database->escape_string($request_id);
+
+            $sql = "SELECT * FROM " . static::$table_name;
+            $sql .= " WHERE request_id = '{$escaped}'";
+            error_log($sql);
+            $result = static::find_by_sql($sql);
+            return !empty($result) ? array_shift($result) : null;
         }
 
 }

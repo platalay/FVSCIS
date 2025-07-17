@@ -37,7 +37,7 @@ try {
     // 3. ตรวจสอบข้อมูลที่จำเป็นว่าห้ามว่าง
     if ($username === '' || $password === '' || $confirm_password === '' || 
         $full_name === '' || $departments_id === 0 || $usertype_id === 0) {
-        throw new Exception("กรุณากรอกข้อมูลให้ครบทุกช่องที่จำเป็น");  // Please fill all required fields
+        throw new Exception("กรุณากรอกข้อมูลให้ครบทุกช่องที่จำเป็น ". $departments_id);  // Please fill all required fields
     }
 
     // 4. ตรวจสอบว่ารหัสผ่านและยืนยันรหัสผ่านตรงกัน
