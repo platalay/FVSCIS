@@ -109,4 +109,16 @@
     }
   }
 
+  function checkStatus($data, $field, $check, $cross, $pending) {
+      if ($data && isset($data->$field)) {
+          if ($data->$field === 'pass') {
+              return $check;
+          } elseif ($data->$field === 'fail') {
+              return $cross;
+          }
+      }
+      // ถ้าไม่มีข้อมูล หรือเป็นค่าอื่น → ถือว่ายังไม่ตรวจ
+      return $pending;
+  }
+
 ?>

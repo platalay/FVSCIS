@@ -45,5 +45,11 @@ class Department extends DatabaseObject {
         return static::find_by_sql($sql);
     } 
     
+    static public function find_by_province($province) {
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE province ='" . self::$database->escape_string($province) . "'";
+        return static::find_by_sql($sql);
+    } 
+
 }
 ?>

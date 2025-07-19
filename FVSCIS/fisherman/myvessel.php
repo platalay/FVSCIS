@@ -100,33 +100,6 @@ $fisherman=Fisherman::find_by_username($session->username);
                                 autocomplete="tel"
                                 placeholder="เช่น 0891234567">
                             </div>
-
-                            <div class="mb-3">
-                                <label for="department_id" class="form-label">หน่วยงานที่ยื่นคำขอ</label>
-                                <select name="request[department_id]" id="department_id" class="form-select" required>
-                                <option value="">-- เลือกหน่วยงาน --</option>
-                                    <?php 
-                                        $Departments = Department::find_all();
-                                        foreach ($Departments as $Department): ?>
-                                            <option value="<?= $Department->id ?>" data-province-id="<?= $Department->province ?>">
-                                                <?= $Department->name ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                            </div>
-
-                            <!-- วันที่ต้องการตรวจ -->
-                            <div class="row mb-3">
-                                <div class="col">
-                                <label for="inspect_date_start" class="form-label">วันที่เริ่มต้องการตรวจ</label>
-                                <input type="date" name="request[inspect_date_start]" id="inspect_date_start" class="form-control" required>
-                                </div>
-                                <div class="col">
-                                <label for="inspect_date_end" class="form-label">ถึงวันที่</label>
-                                <input type="date" name="request[inspect_date_end]" id="inspect_date_end" class="form-control" required>
-                                </div>
-                            </div>
-
                             <!-- เลือกจังหวัด อำเภอ ตำบล ท่าเรือ -->
                             <div class="row mb-3">
                                 <div class="col-md-3">
@@ -152,6 +125,32 @@ $fisherman=Fisherman::find_by_username($session->username);
                                 <select name="request[port_license_no]" id="port_license_no" class="form-select" required>
                                     <option value="">-- เลือกท่าเรือ --</option>
                                 </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="department_id" class="form-label">หน่วยงานที่ยื่นคำขอ</label>
+                                <select name="request[department_id]" id="department_id" class="form-select" required>
+                                <option value="">-- เลือกหน่วยงาน --</option>
+                                    <?php 
+                                        $Departments = Department::find_all();
+                                        foreach ($Departments as $Department): ?>
+                                            <option value="<?= $Department->id ?>" data-province-id="<?= $Department->province ?>">
+                                                <?= $Department->name ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                            </div>
+
+                            <!-- วันที่ต้องการตรวจ -->
+                            <div class="row mb-3">
+                                <div class="col">
+                                <label for="inspect_date_start" class="form-label">วันที่เริ่มต้องการตรวจ</label>
+                                <input type="date" name="request[inspect_date_start]" id="inspect_date_start" class="form-control" required>
+                                </div>
+                                <div class="col">
+                                <label for="inspect_date_end" class="form-label">ถึงวันที่</label>
+                                <input type="date" name="request[inspect_date_end]" id="inspect_date_end" class="form-control" required>
                                 </div>
                             </div>
 
@@ -290,6 +289,16 @@ $fisherman=Fisherman::find_by_username($session->username);
                                 dataType: 'html',
                                 success: function (html) {
                                     $('#port_amphur_id').html(html);
+                                }
+                            });
+                            // โหลดหน่วยงานในจังหวัด
+                            $.ajax({
+                                url: 'ajax/get_departments_by_province.php',
+                                type: 'GET',
+                                data: { province_id: provinceId },
+                                dataType: 'html',
+                                success: function (html) {
+                                    $('#department_id').html(html);
                                 }
                             });
                         }

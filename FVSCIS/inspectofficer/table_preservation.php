@@ -46,7 +46,7 @@ $inspection_items = [
       <td class="text-center">
         <?php
           $status_field = 'status_' . $code;
-          echo ($data->$status_field == 'pass') ? $check : $cross;
+          echo checkStatus($data, $status_field, $check, $cross, $pending);
         ?>
       </td>
 

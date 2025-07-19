@@ -3,7 +3,7 @@ $data = InspectionFormCrew::find_by_request_id($request->id);
 
 $check = '✔';
 $cross = '✖';
-
+$pending = '⏳';
 // ดึง checklist เฉพาะกลุ่ม 3
 $fail_items = InspectionFailItem::find_by_section(3);
 
@@ -42,7 +42,7 @@ $inspection_items = [
       <td class="text-center">
         <?php
           $status_field = 'status_' . $code;
-          echo ($data->$status_field == 'pass') ? $check : $cross;
+          echo checkStatus($data, $status_field, $check, $cross, $pending);
         ?>
       </td>
 

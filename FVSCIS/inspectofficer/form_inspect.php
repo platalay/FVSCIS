@@ -1,6 +1,6 @@
 <?php
 require_once('../../private/initialize.php');
-$session->require_role(['Signer']);
+$session->require_role(['inspectofficer']);
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
@@ -14,6 +14,7 @@ $form = InspectionFormStatus::find_or_create(
 );
 $check = '✅ ';
 $cross = '❌ ';
+$pending = '⏳';
 ?>
 
 <!-- Begin Page Content -->

@@ -38,7 +38,7 @@ class Province extends DatabaseObject {
     }
 
     public static function find_all_coastal() {
-        $sql = "SELECT * FROM province WHERE id IN (1,2,7,8,9,15,16,25,30,32,35,49,50,58,59,60,61,62,83,12,68,39,22)";
+        $sql = "SELECT * FROM province WHERE id IN (1,2,7,8,9,15,16,25,30,32,35,42,49,50,58,59,60,61,62,83,12,68,39,22)";
         return self::find_by_sql($sql);
     }
 }
