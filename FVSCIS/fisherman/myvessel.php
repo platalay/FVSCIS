@@ -41,16 +41,33 @@ $fisherman=Fisherman::find_by_username($session->username);
                                     $my_vessels = Elicense::find_full_by_citizen_id($el_db, $fisherman->citizen_id);
                                     $index = 1;
                                     foreach ($my_vessels as $vessel) :
+                                        $inspection = InspectionRequest::find_active_by_ship($vessel->ship_code);
+                                        $is_pending = false;
+                                        $status_text = '';
+
+                                        if ($inspection) {
+                                            if ($inspection->status !== 'completed' && $inspection->status !== 'cancelled') {
+                                                $is_pending = true;
+                                                $status_text = 'อยู่ระหว่างดำเนินการ ต้องรอให้ครบขั้นตอนก่อนหรือยกเลิก';
+                                            }
+                                        }
                                     ?>
                                     <tr style="font-size: 14px;">
                                         <td class="text-center">
-                                        <!-- Trigger example: -->
-                                        <form onsubmit="event.preventDefault(); openRequestModal('<?= h($vessel->ship_code) ?>');">
-                                        <button type="submit" class="btn btn-success btn-sm" id="<?= h($vessel->ship_code) ?>">
-                                            <i class="fas fa-clipboard-check"></i>
-                                        </button>
-                                        </form>
-
+                                            <form onsubmit="event.preventDefault(); <?php if (!$is_pending): ?>openRequestModal('<?= h($vessel->ship_code) ?>');<?php endif; ?>">
+                                                <button 
+                                                    type="submit" 
+                                                    class="btn btn-sm <?= $is_pending ? 'btn-secondary' : 'btn-success' ?>" 
+                                                    id="<?= h($vessel->ship_code) ?>" 
+                                                    <?= $is_pending ? 'disabled' : '' ?> 
+                                                    title="<?= h($status_text) ?>"
+                                                >
+                                                    <i class="fas fa-clipboard-check"></i>
+                                                    <?php if ($is_pending): ?>
+                                                        <span class="ms-1">รอดำเนินการ</span>
+                                                    <?php endif; ?>
+                                                </button>
+                                            </form>
                                         </td>
                                         <td><?= h($vessel->ship_code) ?></td>
                                         <td><?= h($vessel->vessel_name) ?></td>

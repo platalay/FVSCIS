@@ -45,14 +45,45 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                     <?php
                                     else:
                                         foreach ($requests as $req) :
+                                            $row_class = '';
+                                            switch ($req->status) {
+                                                case InspectionRequest::STATUS_COMPLETED:
+                                                    $row_class = 'table-success';  // เขียว
+                                                    break;
+                                                case InspectionRequest::STATUS_CANCELLED:
+                                                    $row_class = 'table-danger';  // แดง
+                                                    break;
+                                            }
+
                                     ?>
-                                        <tr style="font-size: 14px;">
+                                        <tr class="<?= $row_class ?>" style="font-size: 14px;">
                                             <td class="text-center">
-                                                <?php if ($req->status === 'pending'): ?>
-                                                    <button class="btn btn-primary btn-sm btn-confirm-date" 
+                                                <?php if ($req->status === InspectionRequest::STATUS_PENDING): ?>
+
+                                                    <?php if ($req->confirmed_inspect_date === '0000-00-00'): ?>
+                                                        <button class="btn btn-danger btn-sm btn-cancel-request" 
+                                                                data-id="<?= h($req->id) ?>" 
+                                                                title="ยกเลิกคำขอ">
+                                                            <i class="fas fa-times-circle"></i>
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <button class="btn btn-primary btn-sm btn-confirm-date" 
+                                                                data-id="<?= h($req->id) ?>" 
+                                                                title="ยืนยันวันตรวจ">
+                                                            <i class="fas fa-calendar-check"></i>
+                                                        </button>
+                                                    <?php endif; ?>
+
+                                                <?php elseif ($req->status === InspectionRequest::STATUS_INSPECTING): ?>
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-spinner fa-spin"></i> กำลังตรวจ
+                                                    </span>
+
+                                                <?php elseif (!in_array($req->status, [InspectionRequest::STATUS_COMPLETED, InspectionRequest::STATUS_INSPECTING])): ?>
+                                                    <button class="btn btn-danger btn-sm btn-cancel-request" 
                                                             data-id="<?= h($req->id) ?>" 
-                                                            title="ยืนยันวันตรวจ">
-                                                        <i class="fas fa-calendar-check"></i>
+                                                            title="ยกเลิกคำขอ">
+                                                        <i class="fas fa-times-circle"></i>
                                                     </button>
                                                 <?php endif; ?>
                                             </td>

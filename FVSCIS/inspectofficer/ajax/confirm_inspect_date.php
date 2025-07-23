@@ -9,7 +9,7 @@ try {
     $original_date_hidden = $_POST['original_confirmed_date'] ?? '';
 
     // ✅ Debug log (ใช้เฉพาะตอนทดสอบ)
-    error_log("[CONFIRM] request_id = $request_id, confirmed_date = $confirmed_date, original_date = $original_date_hidden");
+    //////error_log("[CONFIRM] request_id = $request_id, confirmed_date = $confirmed_date, original_date = $original_date_hidden");
 
     // 🔒 ตรวจสอบข้อมูลที่ส่งมาว่าครบถ้วน
     if (!$request_id || !$confirmed_date) {

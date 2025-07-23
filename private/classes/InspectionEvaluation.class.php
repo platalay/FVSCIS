@@ -16,7 +16,7 @@ class InspectionEvaluation
         $crew         = InspectionFormCrew::find_by_request_id($request_id);
         $water_ice    = InspectionFormWaterAndIce::find_by_request_id($request_id);
         $preservation = InspectionFormPreservation::find_by_request_id($request_id);
-
+        $request = InspectionRequest::find_by_id($request_id);
         
 
         // กำหนดข้อบังคับหลัก และจำนวนผ่านขั้นต่ำ ตามโหมด
@@ -43,6 +43,8 @@ class InspectionEvaluation
         // ตรวจข้อบังคับหลัก
         foreach ($required as $key => $val) {
             if ($val !== 'pass') {
+                $request->status = InspectionRequest::STATUS_FAILED;
+                $request->save();
                 return "ไม่ผ่านเกณฑ์เพราะข้อบังคับ {$key} ไม่ผ่าน (ค่า: {$val})";
             }
         }
@@ -69,6 +71,14 @@ class InspectionEvaluation
         }
 
         if ($pass_count >= $min_pass) {
+            if ($min_pass >= 14) {
+                $request->status = InspectionRequest::STATUS_COMPLETED;
+            } elseif ($min_pass >= 10) {
+                $request->status = InspectionRequest::STATUS_CONDITIONAL;
+            } else {
+                $request->status = InspectionRequest::STATUS_FAILED;
+            }
+            $request->save();
             return true; // ผ่าน
         }
 

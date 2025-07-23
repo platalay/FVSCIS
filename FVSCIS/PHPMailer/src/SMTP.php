@@ -304,7 +304,7 @@ class SMTP
             case 'error_log':
                 //Don't output, just log
                 /** @noinspection ForgottenDebugOutputInspection */
-                error_log($str);
+                ////error_log($str);
                 break;
             case 'html':
                 //Cleans up output a bit for a better looking, HTML-safe output

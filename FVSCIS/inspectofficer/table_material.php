@@ -3,6 +3,8 @@ $data = InspectionFormMaterial::find_by_request_id($request->id);
 
 $check = '✔';
 $cross = '✖';
+$pending = '⏳';
+
 $fail_items = InspectionFailItem::find_by_section(2);
 // จัดกลุ่ม checklist ของหมวด 2
 $grouped_fail_items = [];

@@ -117,6 +117,7 @@ include("../../private/shared/footerofficer.php");
     const autosaveUrl = 'ajax/autosave_crew.php';
     const loadAllUrl  = 'ajax/load_crew_all.php';
     </script>
+    <script src="../js/fvscis.js"></script> 
     <script src="../js/checkform.js"></script>
 
 <?

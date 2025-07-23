@@ -27,14 +27,14 @@ try {
 
     // ✅ 3. สร้าง log
     $log = new InspectionLog();
-    $log->inspection_request_id = $request->id;
+    $log->inspection_request_id = $req->id;
     $log->action_id             = $action->id;
     $log->note                  = 'ชาวประมงยืนยันวันตรวจเรือ';
     $log->performed_by          = $session->user_id() ?? 0; // รหัสผู้ใช้
     $log->performed_at          = date('Y-m-d H:i:s'); // ✅ ใส่เวลาแบบ real-time
-    $log->target_department_id  = $department_id;
+    $log->target_department_id  = $req->department_id;
     $log->target_usertype_id    = 3; // สมมุติว่า 3 = officer
-    $log->port_license_no       = $port_license;
+    $log->port_license_no       = $req->port_license;
     $log->save();
 
     // ✅ 4. แจ้งเตือนเจ้าหน้าที่กลุ่มที่รับผิดชอบ
@@ -46,15 +46,15 @@ try {
     foreach ($officers as $officer) {
         Notification::create_notification(
             $officer->id,
-            'officer',
+            'inspectofficer',
             $message,
             'info',
             $ref_type,
             $ref_id,
-            $log->id
+            $log->id ?? null
         );
     }
-    Notification::mark_related_as_read('inspection_scheduled', $request->id);
+    Notification::mark_related_as_read('inspection_scheduled', $req->id);
     echo json_encode(['success' => true]);
 } catch (Exception $ex) {
     echo json_encode(['success' => false, 'message' => $ex->getMessage()]);

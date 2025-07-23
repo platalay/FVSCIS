@@ -3,6 +3,7 @@ $data = InspectionFormPreservation::find_by_request_id($request->id);
 
 $check = '✔';
 $cross = '✖';
+$pending = '⏳';
 
 // ดึง checklist เฉพาะหมวด 5
 $fail_items = InspectionFailItem::find_by_section(5);

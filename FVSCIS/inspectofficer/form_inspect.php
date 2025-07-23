@@ -368,7 +368,8 @@ include("../../private/shared/footerofficer.php");
 ?>
 <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    <script src="../js/fvscis.js"></script> 
+    <script src="../js/checkform.js"></script>                            
         <script>
             document.addEventListener('DOMContentLoaded', function () {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))

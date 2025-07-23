@@ -3,6 +3,7 @@ $data = InspectionFormWaterAndIce::find_by_request_id($request->id);
 
 $check = '✔';
 $cross = '✖';
+$pending = '⏳';
 
 // ดึง checklist เฉพาะหมวด 4
 $fail_items = InspectionFailItem::find_by_section(4);

@@ -51,5 +51,12 @@ class Department extends DatabaseObject {
         return static::find_by_sql($sql);
     } 
 
+    static public function get_department_group_id($department_id) {
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE id = '" . self::$database->escape_string($department_id) . "'";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? $result[0] : null;
+    }
+
 }
 ?>

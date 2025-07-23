@@ -14,5 +14,8 @@ include("../../private/shared/topbaruser.php");
 
 <?php
 include("../../private/shared/footeruser.php");
+?>
+<script src="../js/fvscis.js"></script>
+<?php
 include("../../private/shared/footerall.php");
 ?>

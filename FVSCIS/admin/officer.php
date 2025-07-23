@@ -226,55 +226,81 @@ include("../../private/shared/footeradmin.php");
 
                                         
             <script>
-            $(document).ready(function () {
-                if (!$.fn.DataTable) {
-                    console.error("DataTables plugin not loaded");
-                    return;
-                }
+        $(document).ready(function () {
+            if (!$.fn.DataTable) {
+                console.error("DataTables plugin not loaded");
+                return;
+            }
 
-                var table = $('#dataTable').DataTable();
+            var table = $('#dataTable').DataTable();
 
-                // ✅ ช่องค้นหาด้านบน
-                $('#topSearch').on('keyup', function () {
-                    table.search(this.value).draw();
-                });
-                
-                $('#EditOfficerForm').on('submit', function (e) {
+            $('#topSearch').on('keyup', function () {
+                table.search(this.value).draw();
+            });
+
+            $('#EditOfficerForm').on('submit', function (e) {
                 e.preventDefault();
-                        $.ajax({
-                            url: 'ajax/update_officer.php',
-                            type: 'POST',
-                            data: $(this).serialize(),
-                            dataType: 'json',
-                            success: function (response) {
-                                if (response.success) {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'บันทึกสำเร็จ',
-                                        showConfirmButton: false,
-                                        timer: 1500
-                                    }).then(() => {
-                                        location.reload();
-                                    });
-                                } else {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'ไม่สามารถบันทึกข้อมูลได้',
-                                        text: response.message
-                                    });
-                                }
-                            },
-                            error: function (xhr) {
+
+                const form = $(this);
+                const formData = form.serializeArray();
+
+                submitOfficer(formData);
+            });
+
+            function submitOfficer(formData) {
+                $.ajax({
+                    url: 'ajax/update_officer.php',
+                    type: 'POST',
+                    data: $.param(formData),
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'บันทึกสำเร็จ',
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            // ตรวจว่าเป็นข้อความเตือน overwrite หรือไม่
+                            if (response.message.includes('กลุ่มนี้มีผู้อนุมัติอยู่แล้ว')) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'พบผู้อนุมัติซ้ำ',
+                                    text: response.message,
+                                    showCancelButton: true,
+                                    confirmButtonText: 'แทนที่',
+                                    cancelButtonText: 'ยกเลิก'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        // เพิ่ม force=1 แล้วส่งอีกรอบ
+                                        formData.push({ name: 'force', value: '1' });
+                                        submitOfficer(formData);
+                                    }
+                                });
+                            } else {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'เกิดข้อผิดพลาด',
-                                    text: xhr.responseText
+                                    title: 'ไม่สามารถบันทึกข้อมูลได้',
+                                    text: response.message
                                 });
                             }
+                        }
+                    },
+                    error: function (xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: xhr.responseText
                         });
-                    });
-            });
+                    }
+                });
+            }
+        });
         </script>
+
         
         <script>
         function editOfficer(id) {

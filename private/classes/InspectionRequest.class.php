@@ -2,15 +2,19 @@
 
 class InspectionRequest extends DatabaseObject {
     const STATUS_PENDING    = 'pending';
-    const STATUS_INSPECTING = 'inspecting';
-    const STATUS_COMPLETED  = 'completed';
     const STATUS_CANCELLED  = 'cancelled';
+    const STATUS_INSPECTING = 'inspecting';
+    const STATUS_PASSED     = 'passed';
+    const STATUS_FAILED     = 'failed';
+    const STATUS_CONDITIONAL = 'conditional';
+    const STATUS_COMPLETED  = 'completed'; 
     protected static $table_name = "inspection_requests";
     protected static $db_columns = [
         'id',
         'ship_code',
         'contact_phone',
         'department_id',
+        'department_group_id',
         'port_province_id',
         'port_amphur_id',
         'port_tambon_id',
@@ -20,6 +24,8 @@ class InspectionRequest extends DatabaseObject {
         'confirmed_inspect_date',
         'confirm_agreement',
         'status',
+        'is_submitted',
+        'submitted_at',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
@@ -27,6 +33,7 @@ class InspectionRequest extends DatabaseObject {
     public $ship_code;
     public $contact_phone;
     public $department_id;
+    public $department_group_id;
     public $port_province_id;
     public $port_amphur_id;
     public $port_tambon_id;
@@ -36,7 +43,9 @@ class InspectionRequest extends DatabaseObject {
     public $confirmed_inspect_date;
     public $confirm_agreement = false;
     public $status;
-
+    public $is_submitted;
+    public $submitted_at;
+    
     public $created_at;
     public $updated_at;
     public $created_by;

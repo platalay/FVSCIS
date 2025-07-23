@@ -116,6 +116,7 @@ include("../../private/shared/footerofficer.php");
     const autosaveUrl = 'ajax/autosave_waterice.php';
     const loadAllUrl  = 'ajax/load_waterice_all.php';
     </script>
+    <script src="../js/fvscis.js"></script> 
     <script src="../js/checkform.js"></script>
 
 

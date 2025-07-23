@@ -13,5 +13,8 @@ include("../../private/shared/topbarofficer.php");
 
 <?php
 include("../../private/shared/footerofficer.php");
+?>
+<script src="../js/fvscis.js"></script>  
+<?php
 include("../../private/shared/footerall.php");
 ?>

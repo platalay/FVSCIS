@@ -3,6 +3,7 @@ $data = InspectionFormStructure::find_by_request_id($request->id);
 
 $check = '✔';
 $cross = '✖';
+$pending = '⏳';
 
 $fail_list = [
     '1_1' => ['fail_1_1_1', 'fail_1_1_2'], // สมมติ checklist ของข้อ 1.1

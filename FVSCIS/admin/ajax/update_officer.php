@@ -54,7 +54,32 @@ if ($old_is_approved == 0 && $officer->is_approved == 1) {
 }
 
 // บันทึกลงฐานข้อมูล
+$force = $_POST['force'] ?? 0;
+
 if ($officer->save()) {
+
+    if ($officer->usertype_id == 4 && !empty($officer->departments_id)) {
+        $department = Department::get_department_group_id($officer->departments_id);
+
+        if ($department) {
+            $group = DepartmentGroup::find_by_id($department->parent_department);
+
+            if ($group) {
+                if (!empty($group->officer_id) && !$force) {
+                    // มี signer อยู่แล้วและไม่บังคับ
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'กลุ่มนี้มีผู้อนุมัติอยู่แล้ว ต้องการแทนที่หรือไม่?'
+                    ]);
+                    exit;
+                }
+
+                $group->officer_id = $officer->id;
+                $group->save();
+            }
+        }
+    }
+
     echo json_encode(['success' => true]);
 } else {
     echo json_encode(['success' => false, 'message' => 'เกิดข้อผิดพลาดขณะบันทึก']);

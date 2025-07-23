@@ -111,8 +111,8 @@ class DatabaseObject {
     if ($result) {
     $this->id = self::$database->insert_id;
     } else {
-        error_log("[SQL-FAIL] " . $sql);
-        error_log("[MySQL ERROR] " . self::$database->error);
+        ////error_log("[SQL-FAIL] " . $sql);
+        ////error_log("[MySQL ERROR] " . self::$database->error);
     }
     return $result;
   }
