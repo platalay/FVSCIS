@@ -162,6 +162,13 @@ class InspectionFormStatus extends DatabaseObject {
         $result = static::find_by_sql($sql);
         return !empty($result) ? array_shift($result) : null;
     }
+
+    public static function find_by_token($token) {
+        $escaped = self::$database->escape_string($token);
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE document_token = '{$escaped}' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : null;
+    }
 }
 
 ?>

@@ -131,15 +131,16 @@ $pending = '⏳';
                 ): ?>
                     <div class="text-center mt-1">
                         <a href="generate_pdf.php?token=<?= h($form->document_token); ?>"
-                        class="btn btn-primary btn-lg"
+                        class="btn btn-outline-danger btn-lg"
                         style="transition: transform 0.2s;"
                         onmouseover="this.style.transform='scale(1.05)';"
                         onmouseout="this.style.transform='scale(1)';"
-                        title="สร้าง PDF">
+                        target="_blank"
+                        title="ดูใบรับรอง PDF">
                             <img src="../img/pdf.png"
                                 class="img-fluid"
                                 style="max-height: 100px;"
-                                alt="PDF">
+                                alt="เปิดใบรับรอง PDF">
                         </a>
                     </div>
                 <?php else: ?>
@@ -249,27 +250,6 @@ $pending = '⏳';
             </div>
             </div>
 
-
-            <div class="accordion mt-4" id="inspectionAccordion1">
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="headingOne">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                    ผลการประเมินหมวด 1: ด้านโครงสร้างของเรือประมง
-                </button>
-                </h2>
-                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#inspectionAccordion1">
-                <div class="accordion-body">
-                    <div class="card o-hidden border-0 shadow-lg">
-                    <div class="card-body p-4">
-                        <div class="row">
-                        <?php include("table_structure.php"); ?>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-                </div>
-            </div>
-            </div>
 
 
             <div class="accordion mt-4" id="inspectionAccordion2">
