@@ -27,7 +27,7 @@ if ($request && empty($request->is_submitted)) {
 }
 
 // ✅ สร้างลิงก์ตรวจสอบ
-$url = BASE_URL . 'verify.php?token=' . urlencode($token);
+$url = 'https://fvscis.fisheries.go.th/verify.php?token=' . urlencode($token);
 
 // ✅ สร้าง QR code ชั่วคราว
 $tempFile = tempnam(sys_get_temp_dir(), 'qrcode_') . '.png';

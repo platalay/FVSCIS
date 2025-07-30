@@ -85,16 +85,27 @@ $Officer = Officer::find_by_id($session->user_id());
                                                         echo '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
                                                         break;
                                                     case InspectionRequest::STATUS_INSPECTING:
-                                                        echo '<span class="badge bg-primary">กำลังตรวจ</span>';
+                                                        echo '<span class="badge bg-primary">อยู่ระหว่างตรวจ</span>';
+                                                        break;
+                                                    case InspectionRequest::STATUS_PASSED:
+                                                        echo '<span class="badge bg-success">ผ่านการตรวจ</span>';
+                                                        break;
+                                                    case InspectionRequest::STATUS_FAILED:
+                                                        echo '<span class="badge bg-danger">ไม่ผ่านการตรวจ</span>';
+                                                        break;
+                                                    case InspectionRequest::STATUS_CONDITIONAL:
+                                                        echo '<span class="badge bg-info text-dark">ผ่านแบบมีเงื่อนไข</span>';
                                                         break;
                                                     case InspectionRequest::STATUS_COMPLETED:
-                                                        echo '<span class="badge bg-success">ตรวจเสร็จแล้ว</span>';
+                                                        echo '<a href="certificate_preview.php?id=' . h($req->id) . '" target="_blank" class="badge bg-success text-decoration-none">
+                                                                    <i class="fas fa-file-image"></i> อนุมัติ
+                                                                </a>';
                                                         break;
                                                     case InspectionRequest::STATUS_CANCELLED:
-                                                        echo '<span class="badge bg-danger">ยกเลิก</span>';
+                                                        echo '<span class="badge bg-secondary">ยกเลิก</span>';
                                                         break;
                                                     default:
-                                                        echo '<span class="badge bg-secondary">ไม่ทราบ</span>';
+                                                        echo '<span class="badge bg-dark">ไม่ทราบ</span>';
                                                 }
                                                 ?>
                                             </td>
@@ -160,9 +171,12 @@ $Officer = Officer::find_by_id($session->user_id());
                             const req = data.request;
                             const statusMap = {
                                 pending: 'รอดำเนินการ',
-                                inspecting: 'กำลังตรวจ',
-                                completed: 'ตรวจเสร็จแล้ว',
-                                cancelled: 'ยกเลิก'
+                                cancelled: 'ยกเลิก',
+                                inspecting: 'อยู่ระหว่างตรวจ',
+                                passed: 'ผ่านการตรวจ',
+                                failed: 'ไม่ผ่านการตรวจ',
+                                conditional: 'ผ่านแบบมีเงื่อนไข',
+                                completed: 'อนุมัติ'
                             };
 
                             let html = `

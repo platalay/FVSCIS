@@ -37,7 +37,8 @@ $Officer = Officer::find_by_id($session->user_id());
                                 <tbody>
                                     <?php
                                     // ✅ ดึงเฉพาะคำขอที่ department_id ตรงกับเจ้าหน้าที่
-                                    $requests = InspectionRequest::find_by_department_id($Officer->departments_id); 
+                                    $DepartmentgroupObj = DepartmentGroup::find_one_by_officer_id($Officer->id);
+                                    $requests = InspectionRequest::find_by_department_group_id($DepartmentgroupObj->id); 
 
                                     if (empty($requests)) :
                                     ?>
@@ -52,23 +53,11 @@ $Officer = Officer::find_by_id($session->user_id());
                                             <td>
                                             <div class="d-flex align-items-center gap-1">
                                                 <!-- ปุ่มดูรายละเอียด -->
-                                                <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
-                                                        data-bs-target="#modalRequestDetail"
+                                                <button type="button" title="อนุมัติ" class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                                        data-bs-target="#modalApproveRequest"
                                                         onclick="loadRequestDetail(<?= h($req->id) ?>)">
-                                                    <i class="fas fa-search"></i>
+                                                    <i class="fas fa-file-signature"></i>
                                                 </button>
-
-                                                <!-- ปุ่มฟอร์มตรวจ -->
-                                                <?php if ($req->confirmed_inspect_date !== '0000-00-00'): ?>
-                                                    <a href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>"
-                                                    class="btn btn-success btn-sm" title="ฟอร์มตรวจ">
-                                                        <i class="fas fa-file-signature"></i>
-                                                    </a>
-                                                <?php else : ?>
-                                                    <button class="btn btn-secondary btn-sm" title="ยังไม่สามารถกรอกฟอร์มตรวจได้" disabled>
-                                                        <i class="fas fa-file-signature"></i>
-                                                    </button>
-                                                <?php endif; ?>
                                             </div>
                                             </td>
 
@@ -85,18 +74,30 @@ $Officer = Officer::find_by_id($session->user_id());
                                                         echo '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
                                                         break;
                                                     case InspectionRequest::STATUS_INSPECTING:
-                                                        echo '<span class="badge bg-primary">กำลังตรวจ</span>';
+                                                        echo '<span class="badge bg-primary">อยู่ระหว่างตรวจ</span>';
+                                                        break;
+                                                    case InspectionRequest::STATUS_PASSED:
+                                                        echo '<span class="badge bg-success">ผ่านการตรวจ</span>';
+                                                        break;
+                                                    case InspectionRequest::STATUS_FAILED:
+                                                        echo '<span class="badge bg-danger">ไม่ผ่านการตรวจ</span>';
+                                                        break;
+                                                    case InspectionRequest::STATUS_CONDITIONAL:
+                                                        echo '<span class="badge bg-info text-dark">ผ่านแบบมีเงื่อนไข</span>';
                                                         break;
                                                     case InspectionRequest::STATUS_COMPLETED:
-                                                        echo '<span class="badge bg-success">ตรวจเสร็จแล้ว</span>';
+                                                        echo '<a href="certificate_preview.php?id=' . h($req->id) . '" target="_blank" class="badge bg-success text-decoration-none">
+                                                                    <i class="fas fa-file-image"></i> อนุมัติ
+                                                                </a>';
                                                         break;
                                                     case InspectionRequest::STATUS_CANCELLED:
-                                                        echo '<span class="badge bg-danger">ยกเลิก</span>';
+                                                        echo '<span class="badge bg-secondary">ยกเลิก</span>';
                                                         break;
                                                     default:
-                                                        echo '<span class="badge bg-secondary">ไม่ทราบ</span>';
+                                                        echo '<span class="badge bg-dark">ไม่ทราบ</span>';
                                                 }
                                                 ?>
+
                                             </td>
                                         </tr>
                                     <?php endforeach; endif; ?>
@@ -107,29 +108,36 @@ $Officer = Officer::find_by_id($session->user_id());
 
 
                     </div>
-                    <!-- modalRequestDetail -->   
-                    <div class="modal fade" id="modalRequestDetail" tabindex="-1" aria-hidden="true">
+                    <!-- modalApproveRequest -->
+                    <div class="modal fade" id="modalApproveRequest" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg modal-dialog-centered">
                         <div class="modal-content">
-                        <form id="confirmInspectionForm">
+                        <form id="approveInspectionForm">
                             <div class="modal-header">
-                            <h5 class="modal-title">รายละเอียดคำขอตรวจเรือ</h5>
+                            <h5 class="modal-title">อนุมัติคำขอตรวจเรือ</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                            <div class="modal-body" id="modalRequestBody">
-                            <!-- 📌 JS จะโหลดข้อมูลมาใส่ตรงนี้ -->
+                            <div class="modal-body" id="modalApproveBody">
+                            <!-- ✅ รายละเอียดคำขอจะโหลดมาใส่ตรงนี้โดย JS -->
                             </div>
-                            <div class="modal-footer">
-                            <input type="hidden" name="request_id" id="confirm_request_id">
-                            <input type="hidden" name="original_confirmed_date" id="original_confirmed_date">
-                            <input type="date" name="confirmed_date" class="form-control" required>
-                            <button type="button" class="btn btn-primary" id="btnConfirmDate">ยืนยันวันตรวจ</button>
+                            <div class="modal-footer flex-column align-items-stretch">
+                            <input type="hidden" name="request_id" id="approve_request_id">
+
+                            <div class="mb-3">
+                                <label for="approval_note" class="form-label">หมายเหตุ (ถ้ามี)</label>
+                                <textarea class="form-control" name="approval_note" id="approval_note" rows="2"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100" id="btnApproveRequest">
+                                ✅ อนุมัติคำขอและออกใบรับรอง
+                            </button>
                             </div>
                         </form>
                         </div>
                     </div>
                     </div>
-                    <!-- modalRequestDetail -->                               
+                    <!-- /modalApproveRequest -->
+                              
                                
 </div><!-- <div class="container-fluid"> -->
 
@@ -160,9 +168,12 @@ $Officer = Officer::find_by_id($session->user_id());
                             const req = data.request;
                             const statusMap = {
                                 pending: 'รอดำเนินการ',
-                                inspecting: 'กำลังตรวจ',
-                                completed: 'ตรวจเสร็จแล้ว',
-                                cancelled: 'ยกเลิก'
+                                cancelled: 'ยกเลิก',
+                                inspecting: 'อยู่ระหว่างตรวจ',
+                                passed: 'ผ่านการตรวจ',
+                                failed: 'ไม่ผ่านการตรวจ',
+                                conditional: 'ผ่านแบบมีเงื่อนไข',
+                                completed: 'อนุมัติ'
                             };
 
                             let html = `
@@ -170,38 +181,50 @@ $Officer = Officer::find_by_id($session->user_id());
                                 <p><strong>ทะเบียนเรือ:</strong> ${req.ship_code || '-'}</p>
                                 <p><strong>ช่วงวันที่ขอตรวจ:</strong> ${req.inspect_date_start} ถึง ${req.inspect_date_end}</p>
                                 <p><strong>ใบอนุญาตท่า:</strong> ${req.port_license_no || '-'}</p>
-                                <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}`;
+                                <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}</p>
+                            `;
 
-                            if (req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00') {
-                                const displayDate = new Date(req.confirmed_inspect_date).toLocaleDateString('th-TH', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric'
-                                });
-                                html += `<br><span class="text-success"><i class="fas fa-calendar-check"></i> มีการนัดหมายวันที่ ${displayDate} แล้ว</span>`;
-                            } else {
-                                html += `<br><span class="text-danger"><i class="fas fa-exclamation-circle"></i> ยังไม่มีการนัดหมายวันตรวจ</span>`;
+                            const rawDate = req.actual_inspect_date ? req.actual_inspect_date.split(' ')[0] : null;
+                            let displayDate = 'ไม่พบวันที่';
+
+                            if (rawDate  && rawDate !== '0000-00-00') {
+                                const parsed = new Date(rawDate);
+                                if (!isNaN(parsed)) {
+                                    displayDate = parsed.toLocaleDateString('th-TH', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric'
+                                    });
+                                }
                             }
 
-                            html += `</p>`;
+                            html += `<p><strong>วันที่ตรวจแล้วเสร็จ:</strong> <span class="text-success"><i class="fas fa-calendar-check"></i> ${displayDate}</span></p>`;
 
-                            $('#modalRequestBody').html(html);
+                            // วันที่อนุมัติ
+                            const rawApproveDate = req.approved_at ? req.approved_at.split(' ')[0] : null;
+                            let displayApproveDate = 'ยังไม่อนุมัติ';
 
-                            // ✅ รอ DOM render ก่อนค่อย set ค่าใน input
-                            setTimeout(() => {
-                                $('#confirm_request_id').val(req.id);
-                                $('input[name="confirmed_date"]').attr('min', req.inspect_date_start);
-                                $('input[name="confirmed_date"]').val(
-                                    req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00'
-                                        ? req.confirmed_inspect_date
-                                        : ''
-                                );
-                                $('input[name="original_confirmed_date"]').val(
-                                    req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00'
-                                        ? req.confirmed_inspect_date
-                                        : ''
-                                );
-                            }, 100); // ให้เวลา render 100 มิลลิวินาที
+                            if (rawApproveDate && rawApproveDate !== '0000-00-00') {
+                                const parsed = new Date(rawApproveDate);
+                                if (!isNaN(parsed)) {
+                                    displayApproveDate = parsed.toLocaleDateString('th-TH', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric'
+                                    });
+                                }
+                            }
+                            html += `<p><strong>วันที่อนุมัติ:</strong> <span class="text-primary"><i class="fas fa-user-check"></i> ${displayApproveDate}</span></p>`;
+
+                            $('#modalApproveBody').html(html);
+                            $('#approve_request_id').val(req.id);
+                            // ✅ ปิดปุ่มอนุมัติถ้าสถานะเป็น completed
+                            if (req.status === 'completed') {
+                                $('#btnApproveRequest').prop('disabled', true).addClass('btn-secondary').removeClass('btn-success');
+                            } else {
+                                $('#btnApproveRequest').prop('disabled', false).addClass('btn-success').removeClass('btn-secondary');
+                            }
+
                         },
                         error: function () {
                             Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้', 'error');
@@ -211,45 +234,37 @@ $Officer = Officer::find_by_id($session->user_id());
                 </script>
 
 
-            <script>
-            $(document).ready(function () {
-            $('#btnConfirmDate').on('click', function () {
-                const formData = $('#confirmInspectionForm').serialize();
-                $.ajax({
-                url: 'ajax/confirm_inspect_date.php',
-                method: 'POST',
-                data: formData,
-                dataType: 'json',
-                success: function (response) {
-                    if (response.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'สำเร็จ',
-                        text: response.message,
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        location.reload(); // หรือปิด modal แล้วรีโหลดเฉพาะตาราง
+                <script>
+                            $('#approveInspectionForm').on('submit', function (e) {
+                    e.preventDefault();
+
+                    const formData = {
+                        request_id: $('#approve_request_id').val(),
+                        approval_note: $('#approval_note').val()
+                    };
+
+                    $.ajax({
+                        url: 'ajax/approve_request.php',
+                        method: 'POST',
+                        data: formData,
+                        dataType: 'json',
+                        success: function (res) {
+                            if (res.success) {
+                                Swal.fire('สำเร็จ', 'อนุมัติคำขอและออกใบรับรองเรียบร้อยแล้ว', 'success')
+                                    .then(() => {
+                                        location.reload(); // หรือจะปิด modal แล้วรีเฟรชเฉพาะตารางก็ได้
+                                    });
+                            } else {
+                                Swal.fire('ผิดพลาด', res.message || 'ไม่สามารถอนุมัติได้', 'error');
+                            }
+                        },
+                        error: function () {
+                            Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
+                        }
                     });
-                    } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'เกิดข้อผิดพลาด',
-                        text: response.message
-                    });
-                    }
-                },
-                error: function () {
-                    Swal.fire({
-                    icon: 'error',
-                    title: 'การเชื่อมต่อล้มเหลว',
-                    text: 'ไม่สามารถติดต่อ server ได้'
-                    });
-                }
                 });
-            });
-            });
-            </script>
+                </script>
+
 <?php 
 include("../../private/shared/footerall.php");
 ?>
