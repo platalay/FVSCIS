@@ -15,5 +15,14 @@ class DepartmentGroup extends DatabaseObject {
         $this->note = $args['note'] ?? '';
         $this->officer_id = $args['officer_id'] ?? null;
     }
+
+    public static function find_one_by_officer_id($officer_id) {
+        $officer_id = self::$database->escape_string($officer_id);
+        $sql = "SELECT * FROM " . static::$table_name;
+        $sql .= " WHERE officer_id = '{$officer_id}'";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : null;
+    }
+
 }
 ?>

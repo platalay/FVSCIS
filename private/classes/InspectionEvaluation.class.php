@@ -28,14 +28,14 @@ class InspectionEvaluation
                 '4_1' => $water_ice->status_4_1 ?? '',
                 '5_1' => $preservation->status_5_1 ?? '',
             ];
-            $min_pass = 14;
+            
         } elseif ($mode === 'non_permitted') {
             $required = [
                 '1_1' => $structure->status_1_1 ?? '',
                 '2_1' => $material->status_2_1 ?? '',
                 '3_1' => $crew->status_3_1 ?? '',
             ];
-            $min_pass = 10;
+            
         } else {
             return 'โหมดไม่ถูกต้อง';
         }
@@ -70,19 +70,26 @@ class InspectionEvaluation
             }
         }
 
-        if ($pass_count >= $min_pass) {
-            if ($min_pass >= 14) {
-                $request->status = InspectionRequest::STATUS_COMPLETED;
-            } elseif ($min_pass >= 10) {
+            $today = date('Y-m-d');
+
+            // กำหนด actual_inspect_date ถ้ายังไม่เคยตั้ง
+            if (empty($request->actual_inspect_date) || $request->actual_inspect_date === '0000-00-00') {
+                $request->actual_inspect_date = $today;
+            }
+
+            if ($pass_count >= 14) {
+                $request->status = InspectionRequest::STATUS_PASSED;
+                $request->save();
+                return true;
+            } elseif ($pass_count >= 10) {
                 $request->status = InspectionRequest::STATUS_CONDITIONAL;
+                $request->save();
+                return true;
             } else {
                 $request->status = InspectionRequest::STATUS_FAILED;
+                $request->save();
+                return "ไม่ผ่านเกณฑ์เพราะจำนวนข้อผ่านน้อยกว่า 10 ข้อ (ได้ {$pass_count})";
             }
-            $request->save();
-            return true; // ผ่าน
-        }
-
-        return "ไม่ผ่านเกณฑ์เพราะจำนวนข้อผ่านน้อยกว่า {$min_pass} ข้อ (ได้ {$pass_count})";
     }
 }
 ?>

@@ -26,7 +26,8 @@ class InspectionRequest extends DatabaseObject {
         'status',
         'is_submitted',
         'submitted_at',
-        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
+        'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip',
+        'approved_by', 'approved_at', 'expire_at', 'approval_note', 'approved_ip', 'actual_inspect_date'
     ];
 
     public $id;
@@ -52,6 +53,13 @@ class InspectionRequest extends DatabaseObject {
     public $updated_by;
     public $created_ip;
     public $updated_ip;
+    public $approved_by;
+    public $approved_at; 
+    public $expire_at;
+    public $approval_note;
+    public $approved_ip;
+    public $actual_inspect_date;
+
 
     // Optional: เพิ่ม method แปลงวันที่/แสดงชื่อจังหวัดได้ภายหลัง
     public static function find_active_by_ship($ship_code) {
@@ -73,6 +81,15 @@ class InspectionRequest extends DatabaseObject {
     {
         $department_id = self::$database->escape_string($department_id);
         $sql = "SELECT * FROM " . static::$table_name . " WHERE department_id = '{$department_id}' ORDER BY created_at DESC";
+        return static::find_by_sql($sql);
+    }
+
+    public static function find_by_department_group_id($group_id) {
+        $group_id = self::$database->escape_string($group_id);
+        $sql = "SELECT * FROM " . static::$table_name;
+        $sql .= " WHERE department_group_id = '{$group_id}'";
+        $sql .= " AND is_submitted = 1";
+        $sql .= " ORDER BY created_at DESC";
         return static::find_by_sql($sql);
     }
 
