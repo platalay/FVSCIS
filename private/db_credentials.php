@@ -7,8 +7,13 @@
 define('BASE_URL', 'http://localhost/FVSCIS/');
 
 define("DB_SERVER", "localhost");
+<<<<<<< HEAD
 define("DB_USER", "root");
 define("DB_PASS", "dofP@ssw0rd?");
+=======
+define("DB_USER", "fvuser");
+define("DB_PASS", "Ppmttm093419*");
+>>>>>>> 5bb2b00 (ติดตั้งใหม่)
 define("DB_NAME", "fvscis");
 
 
