@@ -1,11 +1,9 @@
 <?php
 require_once('../../private/initialize.php');
 $session->require_role(['fisherman']);
-
 include("../../private/shared/headeruser.php");
 include("../../private/shared/sidebaruser.php");
-include("../../private/shared/topbaruser.php");
-?>
+include("../../private/shared/topbaruser.php"); ?>
 
 <!-- Begin Page Content -->
 <div class="container-fluid">
