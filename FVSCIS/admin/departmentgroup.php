@@ -28,6 +28,7 @@ include("../../private/shared/topbaradmin.php");
                                         <th>ลำดับ</th>
                                         <th>ชื่อหน่วยงาน (กลุ่ม)</th>
                                         <th>หมายเหตุ</th>
+                                        <th>ผู้มีอำนาจลงนาม</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
@@ -37,6 +38,7 @@ include("../../private/shared/topbaradmin.php");
                                         <th>ลำดับ</th>
                                         <th>ชื่อหน่วยงาน (กลุ่ม)</th>
                                         <th>หมายเหตุ</th>
+                                        <th>ผู้มีอำนาจลงนาม</th>
                                         </tr>
                                     </tfoot>
                                     <tbody>
@@ -69,6 +71,10 @@ include("../../private/shared/topbaradmin.php");
                                     </td>
                                     <td><?php echo h($DepartmentGroup->name); ?></td>
                                     <td><?php echo h($DepartmentGroup->note); ?></td>
+                                    <?php
+                                    $signer = Officer::find_by_id($DepartmentGroup->officer_id);
+                                    ?>
+                                    <td><?= h($signer->full_name ?? '-') ?></td>
                                     </tr> <?php } ?>
                                     </tbody>
                                 </table>
@@ -97,6 +103,15 @@ include("../../private/shared/topbaradmin.php");
                             <div class="mb-3">
                                 <label for="dg-note" class="form-label">หมายเหตุ</label>
                                 <textarea class="form-control" name="DepartmentGroup[note]" id="dg-note"></textarea>
+                            </div>
+                            <div class="mb-3">
+                            <label for="dg-officer_id" class="form-label">ผู้มีอำนาจลงนาม</label>
+                            <select class="form-select" name="DepartmentGroup[officer_id]" id="dg-officer_id">
+                                <option value="">-- เลือกเจ้าหน้าที่ --</option>
+                                <?php foreach (Officer::find_all_select_options_by_usertype() as $officer): ?>
+                                <option value="<?= h($officer['id']) ?>"><?= h($officer['full_name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                             </div>
                             </div>
                             <div class="modal-footer">
@@ -209,6 +224,7 @@ include("../../private/shared/topbaradmin.php");
         $('#dg-id').val(data.id);
         $('#dg-name').val(data.name);
         $('#dg-note').val(data.note);
+        $('#dg-officer_id').val(data.officer_id);
         $('#departmentGroupModal').modal('show');
       },
       error: function () {

@@ -27,6 +27,7 @@ $Departments = Department::find_all();
                                         <th>ลำดับ</th>
                                         <th>ชื่อหน่วยงาน</th>
                                         <th>หน่วยงานหลัก</th>
+                                        <th>หน่วยงานดูแลข้อมูล</th>
                                         <th>เลขที่</th>
                                         <th>อาคาร</th>
                                         <th>ซอย</th>
@@ -47,6 +48,7 @@ $Departments = Department::find_all();
                                         <th>ลำดับ</th>
                                         <th>ชื่อหน่วยงาน</th>
                                         <th>หน่วยงานหลัก</th>
+                                        <th>หน่วยงานดูแลข้อมูล</th>
                                         <th>เลขที่</th>
                                         <th>อาคาร</th>
                                         <th>ซอย</th>
@@ -86,7 +88,19 @@ $Departments = Department::find_all();
                                     <td><?php echo h($Department->name); ?></td>
                                     <td><?php 
                                     $department_groups = DepartmentGroup::find_by_id($Department->parent_department);
-                                    echo h($department_groups->name); 
+                                    if ($department_groups) {
+                                        echo h($department_groups->name);
+                                    } else {
+                                        echo '-'; 
+                                    }
+                                    ?></td>
+                                    <td><?php 
+                                    $department_groups = DepartmentGroup::find_by_id($Department->data_owner_id);
+                                    if ($department_groups) {
+                                        echo h($department_groups->name);
+                                    } else {
+                                        echo '-';
+                                    }
                                     ?></td>
                                     <td><?php echo h($Department->address_no); ?></td>
                                     <td><?php echo h($Department->building); ?></td>
@@ -165,6 +179,19 @@ $Departments = Department::find_all();
                                     <?php endforeach; ?>
                                     </select>
                                 </div>
+                                <div class="mb-3"><label>หน่วยงานดูแลข้อมูล</label>
+                                <select name="department[data_owner_id]" id="edit-data_owner_id" class="form-select">
+                                    <option value="">-- เลือกหน่วยงานดูแลข้อมูล --</option>
+                                    <option value="2">ศูนย์วิจัยและพัฒนาประมงทะเลระยอง</option>
+                                    <option value="4">ศูนย์วิจัยและพัฒนาประมงทะเลสมุทรปราการ</option>
+                                    <option value="5">ศูนย์วิจัยและพัฒนาประมงทะเลชุมพร</option>
+                                    <option value="6">ศูนย์วิจัยและพัฒนาประมงทะเลสงขลา</option>
+                                    <option value="7">ศูนย์วิจัยและพัฒนาประมงทะเลภูเก็ต</option>
+                                    <option value="8">ศูนย์วิจัยและพัฒนาประมงทะเลระนอง</option>
+                                    <option value="9">ศูนย์วิจัยและพัฒนาประมงทะเลสตูล</option>
+                                    <option value="33">ศูนย์วิจัยและพัฒนาประมงทะเลนราธิวาส</option>
+                                </select>
+                                </div>
                                 <div class="mb-3"><label>เลขที่</label><input type="text" class="form-control" name="department[address_no]"></div>
                                 <div class="mb-3"><label>อาคาร</label><input type="text" class="form-control" name="department[building]"></div>
                                 <div class="mb-3"><label>ซอย</label><input type="text" class="form-control" name="department[alley]"></div>
@@ -237,6 +264,19 @@ $Departments = Department::find_all();
                                 <!-- <option value="2">กลุ่มวิจัยและพัฒนา</option> -->
                             </select>
                             </div>
+                            <div class="mb-3"><label>หน่วยงานดูแลข้อมูล</label>
+                                <select name="department[data_owner_id]" id="edit-data_owner_id" class="form-select">
+                                <option value="">-- เลือกหน่วยงานดูแลข้อมูล --</option>
+                                <option value="2">ศูนย์วิจัยและพัฒนาประมงทะเลระยอง</option>
+                                <option value="4">ศูนย์วิจัยและพัฒนาประมงทะเลสมุทรปราการ</option>
+                                <option value="5">ศูนย์วิจัยและพัฒนาประมงทะเลชุมพร</option>
+                                <option value="6">ศูนย์วิจัยและพัฒนาประมงทะเลสงขลา</option>
+                                <option value="7">ศูนย์วิจัยและพัฒนาประมงทะเลภูเก็ต</option>
+                                <option value="8">ศูนย์วิจัยและพัฒนาประมงทะเลระนอง</option>
+                                <option value="9">ศูนย์วิจัยและพัฒนาประมงทะเลสตูล</option>
+                                <option value="33">ศูนย์วิจัยและพัฒนาประมงทะเลนราธิวาส</option>
+                            </select>
+                            </div>
                             <div class="mb-3"><label>เลขที่</label><input type="text" class="form-control" name="department[address_no]" id="edit-address_no"></div>
                             <div class="mb-3"><label>อาคาร</label><input type="text" class="form-control" name="department[building]" id="edit-building"></div>
                             <div class="mb-3"><label>ซอย</label><input type="text" class="form-control" name="department[alley]" id="edit-alley"></div>
@@ -303,8 +343,6 @@ include("../../private/shared/footeradmin.php");
             $(document).ready(function () {
                 // ✅ เริ่มต้น DataTable
                 var table = $('#dataTable').DataTable();
-
-                // ✅ ช่องค้นหาด้านบน
                 $('#topSearch').on('keyup', function () {
                     table.search(this.value).draw();
                 });
@@ -412,7 +450,7 @@ include("../../private/shared/footeradmin.php");
                         $('#edit-fax').val(data.fax);
                         $('#edit-email').val(data.email);
                         $('#edit-note').val(data.note);
-
+                        $('#edit-data_owner_id').val(data.data_owner_id);
                         // โหลดจังหวัด
                         $.ajax({
                             url: 'ajax/get_provinces.php',

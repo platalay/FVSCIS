@@ -2,7 +2,7 @@
 class Department extends DatabaseObject {
 
     static protected $table_name = "departments";
-    static protected $db_columns = ['id', 'name', 'parent_department', 'address_no', 'building', 'alley', 'village_no', 'road', 'subdistrict', 'district', 'province', 'postal_code', 'phone', 'fax', 'email', 'note'];
+    static protected $db_columns = ['id', 'name', 'parent_department', 'address_no', 'building', 'alley', 'village_no', 'road', 'subdistrict', 'district', 'province', 'postal_code', 'phone', 'fax', 'email', 'note', 'data_owner_id'];
 
     public $id;
     public $name;
@@ -20,6 +20,7 @@ class Department extends DatabaseObject {
     public $fax;
     public $email;
     public $note;
+    public $data_owner_id;
 
     public function __construct($args=[]) {
         $this->name = $args['name'] ?? '';
@@ -37,6 +38,7 @@ class Department extends DatabaseObject {
         $this->fax = $args['fax'] ?? '';
         $this->email = $args['email'] ?? '';
         $this->note = $args['note'] ?? '';
+        $this->data_owner_id = $args['data_owner_id'] ?? '';
         }
     
     static public function find_by_department_group_id($department_group_id) {

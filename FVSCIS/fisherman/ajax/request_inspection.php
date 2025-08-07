@@ -43,6 +43,7 @@ try {
     $request->department_id       = $department_id;
     $result = Department::get_department_group_id($request->department_id);
     $request->department_group_id = $result->parent_department;
+    $request->data_owner_id = $result->data_owner_id;
     $request->port_province_id    = $province_id;
     $request->port_amphur_id      = $amphur_id;
     $request->port_tambon_id      = $tambon_id;

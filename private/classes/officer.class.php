@@ -58,6 +58,25 @@ class Officer extends DatabaseObject {
         $this->usertype_id = $args['usertype_id'] ?? NULL;
     }
 
+    public static function find_all_select_options_by_usertype($usertype_id = 4) {
+        $usertype_id = self::$database->escape_string($usertype_id);
+
+        $sql = "SELECT id, full_name FROM " . static::$table_name;
+        $sql .= " WHERE usertype_id = '{$usertype_id}' AND is_active = 1";
+        $sql .= " ORDER BY full_name ASC";
+
+        $result = self::$database->query($sql);
+        $object_array = [];
+
+        while($record = $result->fetch_assoc()) {
+            $object_array[] = $record;
+        }
+
+        $result->free();
+        return $object_array;
+    }
+
+
     static public function find_by_email($email) {
         $sql = "SELECT * FROM " . static::$table_name . " ";
         $sql .= "WHERE email = '" . self::$database->escape_string($email) . "' ";
