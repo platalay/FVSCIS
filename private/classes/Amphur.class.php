@@ -32,11 +32,7 @@ class Amphur extends DatabaseObject {
         $sql = "SELECT * FROM " . static::$table_name . " ";
         $sql .= "WHERE province_id='" . self::$database->escape_string($province_id) . "'";
         $obj_array = static::find_by_sql($sql);
-        if (!empty($obj_array)) {
-            return $obj_array;
-        } else {
-            return false;
-        }
+        return is_array($obj_array) ? $obj_array : [];
     }
 }
 ?>

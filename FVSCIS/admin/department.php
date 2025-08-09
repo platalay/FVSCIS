@@ -180,16 +180,17 @@ $Departments = Department::find_all();
                                     </select>
                                 </div>
                                 <div class="mb-3"><label>หน่วยงานดูแลข้อมูล</label>
-                                <select name="department[data_owner_id]" id="edit-data_owner_id" class="form-select">
+                                <select name="department[data_owner_id]" id="add-data_owner_id" class="form-select">
                                     <option value="">-- เลือกหน่วยงานดูแลข้อมูล --</option>
                                     <option value="2">ศูนย์วิจัยและพัฒนาประมงทะเลระยอง</option>
+                                    <option value="3">ศูนย์วิจัยและพัฒนาประมงทะเลนราธิวาส</option>
                                     <option value="4">ศูนย์วิจัยและพัฒนาประมงทะเลสมุทรปราการ</option>
                                     <option value="5">ศูนย์วิจัยและพัฒนาประมงทะเลชุมพร</option>
                                     <option value="6">ศูนย์วิจัยและพัฒนาประมงทะเลสงขลา</option>
                                     <option value="7">ศูนย์วิจัยและพัฒนาประมงทะเลภูเก็ต</option>
                                     <option value="8">ศูนย์วิจัยและพัฒนาประมงทะเลระนอง</option>
                                     <option value="9">ศูนย์วิจัยและพัฒนาประมงทะเลสตูล</option>
-                                    <option value="33">ศูนย์วิจัยและพัฒนาประมงทะเลนราธิวาส</option>
+                                    
                                 </select>
                                 </div>
                                 <div class="mb-3"><label>เลขที่</label><input type="text" class="form-control" name="department[address_no]"></div>
@@ -268,13 +269,14 @@ $Departments = Department::find_all();
                                 <select name="department[data_owner_id]" id="edit-data_owner_id" class="form-select">
                                 <option value="">-- เลือกหน่วยงานดูแลข้อมูล --</option>
                                 <option value="2">ศูนย์วิจัยและพัฒนาประมงทะเลระยอง</option>
+                                <option value="3">ศูนย์วิจัยและพัฒนาประมงทะเลนราธิวาส</option>
                                 <option value="4">ศูนย์วิจัยและพัฒนาประมงทะเลสมุทรปราการ</option>
                                 <option value="5">ศูนย์วิจัยและพัฒนาประมงทะเลชุมพร</option>
                                 <option value="6">ศูนย์วิจัยและพัฒนาประมงทะเลสงขลา</option>
                                 <option value="7">ศูนย์วิจัยและพัฒนาประมงทะเลภูเก็ต</option>
                                 <option value="8">ศูนย์วิจัยและพัฒนาประมงทะเลระนอง</option>
                                 <option value="9">ศูนย์วิจัยและพัฒนาประมงทะเลสตูล</option>
-                                <option value="33">ศูนย์วิจัยและพัฒนาประมงทะเลนราธิวาส</option>
+                                
                             </select>
                             </div>
                             <div class="mb-3"><label>เลขที่</label><input type="text" class="form-control" name="department[address_no]" id="edit-address_no"></div>
