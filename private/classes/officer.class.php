@@ -8,6 +8,18 @@ class Officer extends DatabaseObject {
         'departments_id', 'usertype_id',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
+    
+    private const ID_MAP = [
+        2 => 2,
+        3 => 4,
+        4 => 5,
+        5 => 6,
+        6 => 7,
+        7 => 8,
+        8 => 9,
+        9 => 3,
+    ];
+
 
     public $id;
     public $username;
@@ -57,6 +69,11 @@ class Officer extends DatabaseObject {
         $this->departments_id = $args['departments_id'] ?? NULL;
         $this->usertype_id = $args['usertype_id'] ?? NULL;
     }
+
+    public static function map_departments_id(int $departments_id): ?int {
+        return self::ID_MAP[$departments_id] ?? null;
+    }
+
 
     public static function find_all_select_options_by_usertype($usertype_id = 4) {
         $usertype_id = self::$database->escape_string($usertype_id);

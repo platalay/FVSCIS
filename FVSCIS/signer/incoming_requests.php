@@ -1,10 +1,11 @@
 <?php
 require_once('../../private/initialize.php');
 $session->require_role(['signer']);
+$Officer = Officer::find_by_id($session->user_id());
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
-$Officer = Officer::find_by_id($session->user_id());
+
 ?>
 
 <!-- Begin Page Content -->

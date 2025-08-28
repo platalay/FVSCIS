@@ -24,5 +24,29 @@ class DepartmentGroup extends DatabaseObject {
         return !empty($result) ? array_shift($result) : null;
     }
 
+    /**
+    * คืนชื่อกลุ่มหน่วยงานจาก id (ไม่พบคืน null)
+    */
+    public static function get_name_by_id(int|string $id): ?string {
+        if ($id === null || $id === '') { 
+            return null; 
+        }
+
+        // ถ้ามี find_by_id ในฐานคลาส ใช้ให้สม่ำเสมอ
+        if (method_exists(get_called_class(), 'find_by_id')) {
+            $grp = static::find_by_id((int)$id);
+            return $grp ? $grp->name : null;
+        }
+
+        // กรณีไม่มี find_by_id ให้ fallback เป็น SQL
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE id = '" . self::$database->escape_string((string)$id) . "' ";
+        $sql .= "LIMIT 1";
+        $result = static::find_by_sql($sql);
+        $grp = !empty($result) ? array_shift($result) : null;
+
+        return $grp ? $grp->name : null;
+    }
+
 }
 ?>

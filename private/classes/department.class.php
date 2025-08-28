@@ -60,5 +60,30 @@ class Department extends DatabaseObject {
         return !empty($result) ? $result[0] : null;
     }
 
+    /**
+    * คืนชื่อหน่วยงานจาก id
+    * @param int|string $id
+    * @return string|null  ชื่อหน่วยงาน หรือ null ถ้าไม่พบ
+    */
+    static public function get_name_by_id($id) {
+        if ($id === null || $id === '') { return null; }
+
+        // ถ้ามีเมธอด find_by_id ในฐานคลาส ให้ใช้เพื่อความสม่ำเสมอ
+        if (method_exists(get_called_class(), 'find_by_id')) {
+            $dept = static::find_by_id((int)$id);
+            return $dept ? $dept->name : null;
+        }
+
+        // กรณีไม่มี find_by_id ให้ fallback เป็น SQL ปกติ
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE id = '" . self::$database->escape_string((string)$id) . "' ";
+        $sql .= "LIMIT 1";
+        $result = static::find_by_sql($sql);
+        $dept = !empty($result) ? array_shift($result) : null;
+
+        return $dept ? $dept->name : null;
+    }
+
+
 }
 ?>

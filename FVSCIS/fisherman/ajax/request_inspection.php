@@ -12,6 +12,7 @@ try {
 
     // ✳️ ตรวจสอบข้อมูลจำเป็น
     $ship_code      = trim($data['ship_code'] ?? '');
+    $vessel_name    = trim($data['vessel_name'] ?? '');
     $contact_phone  = trim($data['contact_phone'] ?? '');
     $department_id  = trim($data['department_id'] ?? '');
     $province_id    = trim($data['port_province_id'] ?? '');
@@ -39,6 +40,7 @@ try {
     // ✅ 1. บันทึกคำขอ
     $request = new InspectionRequest();
     $request->ship_code           = $ship_code;
+    $request->vessel_name         = $vessel_name;
     $request->contact_phone       = $contact_phone;
     $request->department_id       = $department_id;
     $result = Department::get_department_group_id($request->department_id);

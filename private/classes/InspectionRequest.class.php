@@ -12,6 +12,7 @@ class InspectionRequest extends DatabaseObject {
     protected static $db_columns = [
         'id',
         'ship_code',
+        'vessel_name',
         'contact_phone',
         'department_id',
         'department_group_id',
@@ -32,6 +33,7 @@ class InspectionRequest extends DatabaseObject {
 
     public $id;
     public $ship_code;
+    public $vessel_name;
     public $contact_phone;
     public $department_id;
     public $department_group_id;

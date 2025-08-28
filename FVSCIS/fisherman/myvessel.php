@@ -182,6 +182,7 @@ $fisherman=Fisherman::find_by_username($session->username);
 
                             <!-- Hidden ship code -->
                             <input type="hidden" name="ship_code" id="hidden_ship_code">
+                            <input type="hidden" name="request[vessel_name]" id="hidden_vessel_name">
                             </div>
 
                             <div class="modal-footer">
@@ -216,7 +217,7 @@ $fisherman=Fisherman::find_by_username($session->username);
                     document.getElementById('modal-vessel-ton').innerText = data.vessel_ton_gross + ' ตันกรอส';
                     document.getElementById('modal-fishing-area').innerText = data.fishing_area;
                     document.getElementById('hidden_ship_code').value = data.ship_code;
-
+                    document.getElementById('hidden_vessel_name').value = data.vessel_name;
                     const modal = new bootstrap.Modal(document.getElementById('requestInspectionModal'));
                     modal.show();
                 } else {

@@ -7,7 +7,7 @@ class FvSanitationCertificationOld extends DatabaseObject
         'id', 'vessel_name', 'ship_code', 'vessel_mark', 'license_number',
         'gear_type', 'owner_name', 'certificate_number',
         'request_date', 'signature_date', 'effective_date', 'expiration_date',
-        'vessel_status', 'evaluation_agency', 'temporary_reason', 'responsible_unit', 'certificate_status', 'remark'
+        'vessel_status', 'evaluation_agency', 'signing_unit', 'temporary_reason', 'responsible_unit', 'certificate_status', 'remark'
     ];
 
     public $id;
@@ -23,9 +23,10 @@ class FvSanitationCertificationOld extends DatabaseObject
     public $effective_date;
     public $expiration_date;
     public $vessel_status;
-    public $evaluation_agency;
+    public $evaluation_agency;//Department
+    public $signing_unit;//DepartmentGroup
     public $temporary_reason;
-    public $responsible_unit;
+    public $responsible_unit;//DepartmentGroup
     public $certificate_status;
     public $remark;
 
@@ -37,5 +38,34 @@ class FvSanitationCertificationOld extends DatabaseObject
         $sql .= "LIMIT 1";
         $result_array = static::find_by_sql($sql);
         return !empty($result_array) ? array_shift($result_array) : null;
+    }
+
+    public static function find_one_by_ship_code($ship_code)
+    {
+        return static::find_by_ship_code($ship_code);
+    }
+
+    public static function find_all_by_signing_unit($signing_unit)
+    {
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE signing_unit = '" . self::$database->escape_string($signing_unit) . "' ";
+        $sql .= "ORDER BY id DESC";
+        return static::find_by_sql($sql);
+    }
+
+    public static function find_all_by_evaluation_agency($evaluation_agency)
+    {
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE evaluation_agency = '" . self::$database->escape_string($evaluation_agency) . "' ";
+        $sql .= "ORDER BY id DESC";
+        return static::find_by_sql($sql);
+    }
+
+    public static function find_all_by_responsible_unit($responsible_unit)
+    {
+        $sql = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE responsible_unit = '" . self::$database->escape_string($responsible_unit) . "' ";
+        $sql .= "ORDER BY id DESC";
+        return static::find_by_sql($sql);
     }
 }
