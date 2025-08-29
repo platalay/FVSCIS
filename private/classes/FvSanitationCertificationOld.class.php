@@ -40,6 +40,19 @@ class FvSanitationCertificationOld extends DatabaseObject
         return !empty($result_array) ? array_shift($result_array) : null;
     }
 
+    public function __construct($args = [])
+    {
+        foreach (static::$db_columns as $col) {
+            if ($col === 'id') continue;                       // ไม่ให้แก้ id
+            if (!property_exists($this, $col)) continue;       // กัน key แปลกปลอม
+            $val = $args[$col] ?? ($this->$col ?? null);
+            // แปลงค่าว่างให้เป็น null กัน '0000-00-00'
+            if (is_string($val)) $val = trim($val);
+            $this->$col = ($val === '') ? null : $val;
+        }
+    }
+
+    
     public static function find_one_by_ship_code($ship_code)
     {
         return static::find_by_ship_code($ship_code);

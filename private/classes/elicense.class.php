@@ -37,6 +37,8 @@ class Elicense {
   public $max_catching;
   public $vessel_type;
   public $fishing_area;
+  public $geargroup;
+  public $geartype;
 
   public $tool_group = [];
 
@@ -149,6 +151,8 @@ class Elicense {
               fl.date_expire,
               fl.fishing_period_amount,
               fl.fishing_period,
+              ftg1.name as geargroup,
+              ft1.name as geartype,
               CASE
                 WHEN fl.vessel_ton_gross > 0 AND fl.vessel_ton_gross < 10 THEN 'SS'
                 WHEN fl.vessel_ton_gross >= 10 AND fl.vessel_ton_gross < 30 THEN 'S'
@@ -173,6 +177,9 @@ class Elicense {
             LEFT JOIN public.fishing_vessel fv ON fv.id = fl.vessel_id
             LEFT JOIN public.fishing_marking fm ON fm.id = fl.fishing_marking_id
             LEFT JOIN public.fishing_vms fvms ON fvms.id = fv.vms_id
+            LEFT JOIN public.fishing_tool_line ftl1 on ftl1.id = (select ftl.id from fishing_tool_line ftl where ftl.fishing_license_id = fl.id order by ftl.id asc offset 0 limit 1)
+            LEFT JOIN public.fishing_tool_group ftg1 on ftg1.id = ftl1.fishing_tool_category_id
+            LEFT JOIN public.fishing_tool ft1 on ft1.id = ftl1.fishing_tool_id
             WHERE fl.fishery_year = '2567'
               AND fl.state = 'active'
               AND fl.license_type_id = 1
@@ -186,6 +193,80 @@ class Elicense {
     if (!$rows) return false;
 
     return array_map(fn($row) => new Elicense($row), $rows);
+  }
+
+
+    public static function find_one_by_ship_code(PDO $pdo, string $ship_code, string $fishery_year = '2567') {
+      $sql = "SELECT
+                am.name AS amphur_request,
+                pr.name AS province_request,
+                rpn.display_name,
+                rpn.number,
+                rpn.phone,
+                rpn.street,
+                rpn.moo,
+                tmn.name AS tambon_name,
+                amn.name AS amphur_name,
+                prn.name AS province_name,
+                rpn.zip,
+                fv.ship_code,
+                fl.license_no,
+                fl.vessel_name,
+                fl.vessel_ton_gross,
+                fl.vessel_engine_power,
+                fl.vessel_width,
+                fl.vessel_length,
+                fl.vessel_depth,
+                fl.state,
+                fl.date_effective,
+                fl.date_expire,
+                fl.fishing_period_amount,
+                fl.fishing_period,
+                ftg1.name as geargroup,
+                ft1.name as geartype,
+                CASE
+                  WHEN fl.vessel_ton_gross > 0 AND fl.vessel_ton_gross < 10 THEN 'SS'
+                  WHEN fl.vessel_ton_gross >= 10 AND fl.vessel_ton_gross < 30 THEN 'S'
+                  WHEN fl.vessel_ton_gross >= 30 AND fl.vessel_ton_gross < 60 THEN 'M'
+                  WHEN fl.vessel_ton_gross >= 60 AND fl.vessel_ton_gross < 150 THEN 'L'
+                  WHEN fl.vessel_ton_gross >= 150 THEN 'X'
+                END AS vessel_size,
+                fm.name AS fishing_mark,
+                CASE WHEN fvms.status::integer = 1 THEN 'เปิด' ELSE 'ปิด' END AS vms_status,
+                fvms.serial_no AS vms_serial_no,
+                fl.max_catching,
+                fl.vessel_type,
+                fl.fishing_area
+              FROM public.fishing_license fl
+              LEFT JOIN public.elicense_office ef ON ef.id = fl.request_office_id
+              LEFT JOIN public.amphur am ON am.id = ef.amphur_id
+              LEFT JOIN public.province pr ON pr.id = ef.province_id
+              LEFT JOIN public.res_partner rpn ON rpn.id = fl.owner_id
+              LEFT JOIN public.tambon tmn ON tmn.id = rpn.tambon_id
+              LEFT JOIN public.amphur amn ON amn.id = rpn.amphur_id
+              LEFT JOIN public.province prn ON prn.id = rpn.province_id
+              LEFT JOIN public.fishing_vessel fv ON fv.id = fl.vessel_id
+              LEFT JOIN public.fishing_marking fm ON fm.id = fl.fishing_marking_id
+              LEFT JOIN public.fishing_vms fvms ON fvms.id = fv.vms_id
+              LEFT JOIN public.fishing_tool_line ftl1 on ftl1.id = (select ftl.id from fishing_tool_line ftl where ftl.fishing_license_id = fl.id order by ftl.id asc offset 0 limit 1)
+              LEFT JOIN public.fishing_tool_group ftg1 on ftg1.id = ftl1.fishing_tool_category_id
+              LEFT JOIN public.fishing_tool ft1 on ft1.id = ftl1.fishing_tool_id
+              WHERE fl.fishery_year = :fishery_year
+                AND fl.state = 'active'
+                AND fl.license_type_id = 1
+                AND fv.ship_code = :ship_code
+              ORDER BY fl.date_effective DESC NULLS LAST, fl.id DESC
+              LIMIT 1";
+
+      $stmt = $pdo->prepare($sql);
+      $stmt->bindValue(':fishery_year', $fishery_year);
+      $stmt->bindValue(':ship_code', $ship_code);
+      $stmt->execute();
+
+      $row = $stmt->fetch(PDO::FETCH_ASSOC);
+      if (!$row) return false;
+
+      return new Elicense($row);
   }
 
       public static function find_by_ship_code(PDO $pdo, string $ship_code) {
