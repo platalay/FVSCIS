@@ -26,7 +26,9 @@ try {
     if ($ship_code === '' || $contact_phone === '' || $department_id === '') {
         throw new Exception("กรุณากรอกข้อมูลให้ครบถ้วน");
     }
-
+    $VesselData = Elicense::find_one_by_ship_code($el_db, $ship_code);
+    $Portdata = ElicensePort::find_one_by_license_no($el_db, $port_license);
+    
     // ✅ ตรวจสอบว่าเรือนี้มีคำขอที่ยังไม่เสร็จหรือไม่
     $existing_request = InspectionRequest::find_active_by_ship($ship_code);
     if ($existing_request) {
@@ -41,6 +43,11 @@ try {
     $request = new InspectionRequest();
     $request->ship_code           = $ship_code;
     $request->vessel_name         = $vessel_name;
+    $request->vessel_mark         = $VesselData->fishing_mark;  
+    $request->license_number      = $VesselData->license_no; 
+    $request->gear_type           = $VesselData->geartype;
+    $request->owner_name          = $VesselData->display_name;
+    $data_owner_id                = $VesselData->nationality_id;
     $request->contact_phone       = $contact_phone;
     $request->department_id       = $department_id;
     $result = Department::get_department_group_id($request->department_id);
@@ -50,6 +57,7 @@ try {
     $request->port_amphur_id      = $amphur_id;
     $request->port_tambon_id      = $tambon_id;
     $request->port_license_no     = $port_license;
+    $request->port_name           = $Portdata->port_name;
     $request->inspect_date_start  = $inspect_start;
     $request->inspect_date_end    = $inspect_end;
     $request->confirm_agreement   = $agree;

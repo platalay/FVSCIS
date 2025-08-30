@@ -27,9 +27,9 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                     <tr style="font-size: 14px;">
                                         <th>ดำเนินการ</th>
                                         <th>เลขทะเบียนเรือ</th>
-                                        <th>ใบอนุญาตท่า</th>
-                                        <th>วันที่ขอเริ่มตรวจ</th>
-                                        <th>วันที่ขอเสร็จ</th>
+                                        <th>ชื่อเรือ</th>
+                                        <th>ช่วงวันที่ขอตรวจ</th>
+                                        <th>วันนัดตรวจยืนยันแล้ว</th>
                                         <th>วันที่สร้าง</th>
                                         <th>สถานะ</th>
                                     </tr>
@@ -89,10 +89,15 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                             </td>
 
                                             <td><?= h($req->ship_code) ?></td>
-                                            <td><?= h($req->port_license_no) ?></td>
-                                            <td><?= h($req->inspect_date_start) ?></td>
-                                            <td><?= h($req->inspect_date_end) ?></td>
-                                            <td><?= date('d/m/Y H:i', strtotime($req->created_at)) ?></td>
+                                            <td><?= h($req->vessel_name) ?></td>
+                                            <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
+                                            <td>
+                                            <?php  
+                                            if($req->is_confirm){
+                                                echo thai_date($req->confirmed_inspect_date);
+                                            }    
+                                            ?></td>
+                                            <td><?= thai_date($req->created_at) ?></td>
                                             <td>
                                                 <?php
                                                 switch ($req->status) {

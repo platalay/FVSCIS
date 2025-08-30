@@ -36,6 +36,22 @@ class ElicensePort {
     return array_map(fn($row) => new ElicensePort($row), $rows);
   }
 
+    public static function find_one_by_license_no(PDO $pdo, string $license_no): ?ElicensePort {
+      $sql = "
+          SELECT license_no, port_name, port_province_id, port_amphur_id, port_tambon_id
+          FROM public.elicense_license_port
+          WHERE state = 'active' AND license_no = :license_no
+          LIMIT 1
+      ";
+      $stmt = $pdo->prepare($sql);
+      $stmt->execute([':license_no' => $license_no]);
+
+      $row = $stmt->fetch(PDO::FETCH_ASSOC);
+      if (!$row) return null;
+
+      return new ElicensePort($row); // ตรวจว่าคอนสตรัคเตอร์รับ array ได้
+  }
+  
   public static function find_by_tambon(PDO $pdo, int $tambon_id) {
     $sql = "SELECT license_no, port_name, port_province_id, port_amphur_id, port_tambon_id
             FROM public.elicense_license_port

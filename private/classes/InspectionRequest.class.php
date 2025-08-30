@@ -13,6 +13,10 @@ class InspectionRequest extends DatabaseObject {
         'id',
         'ship_code',
         'vessel_name',
+        'vessel_mark',
+        'license_number',
+        'gear_type',
+        'owner_name',
         'contact_phone',
         'department_id',
         'department_group_id',
@@ -20,20 +24,26 @@ class InspectionRequest extends DatabaseObject {
         'port_amphur_id',
         'port_tambon_id',
         'port_license_no',
+        'port_name',
         'inspect_date_start',
         'inspect_date_end',
         'confirmed_inspect_date',
+        'is_confirm',
         'confirm_agreement',
         'status',
         'is_submitted',
         'submitted_at',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip',
-        'approved_by', 'approved_at', 'expire_at', 'approval_note', 'approved_ip', 'actual_inspect_date'
+        'approved_by', 'approved_at', 'effective_date', 'expire_at', 'approval_note', 'approved_ip', 'actual_inspect_date'
     ];
 
     public $id;
     public $ship_code;
     public $vessel_name;
+    public $vessel_mark;
+    public $license_number;
+    public $gear_type;
+    public $owner_name;
     public $contact_phone;
     public $department_id;
     public $department_group_id;
@@ -41,14 +51,15 @@ class InspectionRequest extends DatabaseObject {
     public $port_amphur_id;
     public $port_tambon_id;
     public $port_license_no;
+    public $port_name;
     public $inspect_date_start;
     public $inspect_date_end;
     public $confirmed_inspect_date;
     public $confirm_agreement = false;
+    public $is_confirm = false;
     public $status;
     public $is_submitted;
     public $submitted_at;
-    
     public $created_at;
     public $updated_at;
     public $created_by;
@@ -57,6 +68,7 @@ class InspectionRequest extends DatabaseObject {
     public $updated_ip;
     public $approved_by;
     public $approved_at; 
+    public $effective_date;
     public $expire_at;
     public $approval_note;
     public $approved_ip;

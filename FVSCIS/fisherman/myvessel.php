@@ -33,7 +33,7 @@ $fisherman=Fisherman::find_by_username($session->username);
                                     <th>ขนาดเรือ</th>
                                     <th>แรงม้า</th>
                                     <th>พื้นที่ทำการประมง</th>
-                                    <th>วันหมดอายุใบอนุญาติ</th>
+                                    <th>วันหมดอายุ สร.3</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -77,7 +77,7 @@ $fisherman=Fisherman::find_by_username($session->username);
                                         <td><?= h($vessel->vessel_engine_power) ?> แรงม้า</td>
                                         <td><?= h($vessel->fishing_area) ?></td>
                                         <?php $fvscisold = FvSanitationCertificationOld::find_by_ship_code($vessel->ship_code);?>
-                                        <td><?= isset($fvscisold) && isset($fvscisold->expiration_date) ? h($fvscisold->expiration_date) : '-' ?></td>
+                                        <td><?= isset($fvscisold) && isset($fvscisold->expiration_date) ? thai_date($fvscisold->expiration_date) : '-' ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>

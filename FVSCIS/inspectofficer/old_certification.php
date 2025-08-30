@@ -11,7 +11,6 @@ $responsible_unit = $ownerobj->name;
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
-
 ?>
 
 <!-- Begin Page Content -->
@@ -79,9 +78,9 @@ include("../../private/shared/topbarofficer.php");
                                             </td>
                                             <td><?= h($req->vessel_name) ?></td>
                                             <td><?= h($req->ship_code) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->request_date)) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->effective_date)) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->expiration_date)) ?></td>
+                                            <td><?= thai_date($req->request_date) ?></td>
+                                            <td><?= thai_date($req->effective_date) ?></td>
+                                            <td><?= thai_date($req->expiration_date) ?></td>
                                             <td><?= h($req->certificate_status) ?></td>
                                         </tr>
                                     <?php endforeach; endif; ?>
@@ -404,14 +403,17 @@ include("../../private/shared/topbarofficer.php");
                                 <label class="form-label">วันที่ยื่นคำขอ</label>
                                 <input type="date" class="form-control" name="FvSanitationCertificationOld[request_date]" id="edit-request-date">
                                 </div>
+
                                 <div class="col-md-3">
                                 <label class="form-label">วันที่ลงนาม</label>
                                 <input type="date" class="form-control" name="FvSanitationCertificationOld[signature_date]" id="edit-signature-date">
                                 </div>
+
                                 <div class="col-md-3">
                                 <label class="form-label">วันที่มีผล</label>
                                 <input type="date" class="form-control" name="FvSanitationCertificationOld[effective_date]" id="edit-effective-date" required>
                                 </div>
+
                                 <div class="col-md-3">
                                 <label class="form-label">วันหมดอายุ</label>
                                 <input type="date" class="form-control" name="FvSanitationCertificationOld[expiration_date]" id="edit-expiration-date" required>
@@ -431,7 +433,7 @@ include("../../private/shared/topbarofficer.php");
                                 <input type="hidden" name="FvSanitationCertificationOld[evaluation_agency]" id="edit-evaluation-agency">
                                 <input type="hidden" name="FvSanitationCertificationOld[signing_unit]" id="edit-signing-unit">
                                 <input type="hidden" name="FvSanitationCertificationOld[responsible_unit]" id="edit-responsible-unit">
-
+                                <input type="hidden" name="FvSanitationCertificationOld[type]" id="edit-type" value="0" >
                                 <!-- แสดงผลในโมดัล -->
                                 <?php
                                 $eval  = $evaluation_agency  ?? '';
@@ -445,10 +447,12 @@ include("../../private/shared/topbarofficer.php");
                                         <div class="fw-semibold">หน่วยประเมิน</div>
                                         <div><?= $eval !== '' ? h($eval) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
                                     </div>
+                                    
                                     <div class="col-md-4">
                                         <div class="fw-semibold">หน่วยลงนาม</div>
                                         <div><?= $sign !== '' ? h($sign) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
                                     </div>
+
                                     <div class="col-md-4">
                                         <div class="fw-semibold">หน่วยงานรับผิดชอบ</div>
                                         <div><?= $resp !== '' ? h($resp) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
@@ -587,22 +591,17 @@ include("../../private/shared/topbarofficer.php");
             $('#oc_gear_type').text(d.gear_type || '-');
             $('#oc_owner_name').text(d.owner_name || '-');
             $('#oc_certificate_number').text(d.certificate_number || '-');
-
             $('#oc_request_date').text(formatThaiDate(d.request_date));
             $('#oc_signature_date').text(formatThaiDate(d.signature_date));
             $('#oc_effective_date').text(formatThaiDate(d.effective_date));
             $('#oc_expiration_date').text(formatThaiDate(d.expiration_date));
-
             $('#oc_evaluation_agency').text(d.evaluation_agency || '-');
             $('#oc_signing_unit').text(d.signing_unit || '-');
             $('#oc_responsible_unit').text(d.responsible_unit || '-');
-
             $('#oc_vessel_status').html(statusToBadge(d.vessel_status));
             $('#oc_certificate_status').html(statusToBadge(d.certificate_status));
-
             $('#oc_temporary_reason').text(d.temporary_reason || '-');
             $('#oc_remark').text(d.remark || '-');
-
             $('#oldCertContent').show();
             },
             error: function(xhr) {

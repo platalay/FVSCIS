@@ -28,10 +28,10 @@ include("../../private/shared/topbarofficer.php");
                                     <tr style="font-size: 14px;">
                                         <th>ดำเนินการ</th>
                                         <th>เลขทะเบียนเรือ</th>
-                                        <th>ใบอนุญาตท่า</th>
-                                        <th>วันที่ขอเริ่มตรวจ</th>
-                                        <th>วันที่ขอเสร็จ</th>
-                                        <th>วันที่สร้าง</th>
+                                        <th>ชื่อเรือ</th>
+                                        <th>ช่วงเวลาขอตรวจ</th>
+                                        <th>วันที่ตรวจแล้วเสร็จ</th>
+                                        <th>วันที่ยื่นคำขอ</th>
                                         <th>สถานะ</th>
                                     </tr>
                                 </thead>
@@ -64,10 +64,10 @@ include("../../private/shared/topbarofficer.php");
 
 
                                             <td><?= h($req->ship_code) ?></td>
-                                            <td><?= h($req->port_license_no) ?></td>
-                                            <td><?= h($req->inspect_date_start) ?></td>
-                                            <td><?= h($req->inspect_date_end) ?></td>
-                                            <td><?= date('d/m/Y H:i', strtotime($req->created_at)) ?></td>
+                                            <td><?= h($req->vessel_name) ?></td>
+                                            <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
+                                            <td><?= thai_date($req->submitted_at) ?></td>
+                                            <td><?= thai_date($req->created_at) ?></td>
                                             <td>
                                                 <?php
                                                 switch ($req->status) {
@@ -123,7 +123,16 @@ include("../../private/shared/topbarofficer.php");
                             </div>
                             <div class="modal-footer flex-column align-items-stretch">
                             <input type="hidden" name="request_id" id="approve_request_id">
+                            <!-- ✅ วันที่มีผลบังคับใช้ -->
+                            <div class="mb-3 w-100">
+                                <label for="effective_date" class="form-label">วันที่มีผลบังคับใช้</label>
+                                <input type="date" class="form-control" name="effective_date" id="effective_date" required>
+                            </div>
 
+                            <div class="mb-3">
+                                <label for="temporary_reason" class="form-label">เหตุผลออกใบรับรองชั่วคราว</label>
+                                <textarea class="form-control" name="temporary_reason" id="temporary_reason" rows="2"></textarea>
+                            </div>    
                             <div class="mb-3">
                                 <label for="approval_note" class="form-label">หมายเหตุ (ถ้ามี)</label>
                                 <textarea class="form-control" name="approval_note" id="approval_note" rows="2"></textarea>

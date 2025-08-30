@@ -7,7 +7,7 @@ class FvSanitationCertificationOld extends DatabaseObject
         'id', 'vessel_name', 'ship_code', 'vessel_mark', 'license_number',
         'gear_type', 'owner_name', 'certificate_number',
         'request_date', 'signature_date', 'effective_date', 'expiration_date',
-        'vessel_status', 'evaluation_agency', 'signing_unit', 'temporary_reason', 'responsible_unit', 'certificate_status', 'remark'
+        'vessel_status', 'evaluation_agency', 'signing_unit', 'temporary_reason', 'responsible_unit', 'certificate_status', 'remark', 'type'
     ];
 
     public $id;
@@ -29,16 +29,36 @@ class FvSanitationCertificationOld extends DatabaseObject
     public $responsible_unit;//DepartmentGroup
     public $certificate_status;
     public $remark;
+    public $type;
 
     // ✅ หา record ด้วยทะเบียนเรือ
     public static function find_by_ship_code($ship_code)
     {
-        $sql = "SELECT * FROM " . static::$table_name . " ";
-        $sql .= "WHERE ship_code = '" . self::$database->escape_string($ship_code) . "' ";
+        $sc = self::$database->escape_string(trim($ship_code));
+
+        // เอาเรคคอร์ดที่มีวันหมดอายุจริง และเรียงใหม่สุดก่อน
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE ship_code = '{$sc}' ";
+        $sql .= "  AND expiration_date IS NOT NULL ";
+        $sql .= "  AND expiration_date <> '0000-00-00' ";
+        $sql .= "ORDER BY expiration_date DESC, effective_date DESC, signature_date DESC, id DESC ";
         $sql .= "LIMIT 1";
+
+        $result_array = static::find_by_sql($sql);
+        if (!empty($result_array)) {
+            return array_shift($result_array);
+        }
+
+        // fallback: ถ้าไม่มีวันหมดอายุที่ใช้ได้เลย ให้คืนเรคคอร์ดล่าสุดตาม id
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE ship_code = '{$sc}' ";
+        $sql .= "ORDER BY id DESC ";
+        $sql .= "LIMIT 1";
+
         $result_array = static::find_by_sql($sql);
         return !empty($result_array) ? array_shift($result_array) : null;
     }
+
 
     public function __construct($args = [])
     {

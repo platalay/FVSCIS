@@ -16,6 +16,7 @@ try {
     echo json_encode([
       'success' => true,
       'ship_code' => $vessel->ship_code,
+      'data_owner_id' => $vessel->nationality_id,
       'vessel_name' => $vessel->vessel_name,
       'vessel_ton_gross' => $vessel->vessel_ton_gross,
       'fishing_area' => $vessel->fishing_area

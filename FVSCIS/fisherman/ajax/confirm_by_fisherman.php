@@ -17,9 +17,9 @@ try {
     }
 
     // ✅ 1. อัปเดตการตกลงของชาวประมง
-    $req->confirm_agreement = 1;
+    $req->is_confirm = true;
     $req->status = "inspecting";
-    if (!$req->save()) throw new Exception("ไม่สามารถบันทึกการยืนยันได้");
+    if (!$req->save()) throw new Exception("ไม่สามารถบันทึกการยืนยันได้".$req->is_confirm);
 
     // ✅ 2. หาค่า action_id ที่ถูกต้องจาก code
     $action = LogAction::find_by_code('fisher_confirm_date');
@@ -34,7 +34,7 @@ try {
     $log->performed_at          = date('Y-m-d H:i:s'); // ✅ ใส่เวลาแบบ real-time
     $log->target_department_id  = $req->department_id;
     $log->target_usertype_id    = 3; // สมมุติว่า 3 = officer
-    $log->port_license_no       = $req->port_license;
+    $log->port_license_no       = $req->port_license_no;
     $log->save();
 
     // ✅ 4. แจ้งเตือนเจ้าหน้าที่กลุ่มที่รับผิดชอบ

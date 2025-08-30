@@ -26,11 +26,11 @@ include("../../private/shared/topbarofficer.php");
                                 <thead>
                                     <tr style="font-size: 14px;">
                                         <th>ดำเนินการ</th>
-                                        <th>เลขทะเบียนเรือ</th>
-                                        <th>ใบอนุญาตท่า</th>
-                                        <th>วันที่ขอเริ่มตรวจ</th>
-                                        <th>วันที่ขอเสร็จ</th>
-                                        <th>วันที่สร้าง</th>
+                                        <th>หมายเลขทะเบียนเรือ</th>
+                                        <th>ชื่อเรือ</th>
+                                        <th>ช่วงเวลาขอตรวจ</th>
+                                        <th></th>
+                                        <th>วันที่ยื่นคำขอ</th>
                                         <th>สถานะ</th>
                                     </tr>
                                 </thead>
@@ -59,7 +59,7 @@ include("../../private/shared/topbarofficer.php");
                                                 </button>
 
                                                 <!-- ปุ่มฟอร์มตรวจ -->
-                                                <?php if ($req->confirmed_inspect_date !== '0000-00-00'): ?>
+                                                <?php if ($req->is_confirm == 1): ?>
                                                     <a href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>"
                                                     class="btn btn-success btn-sm" title="ฟอร์มตรวจ">
                                                         <i class="fas fa-file-signature"></i>
@@ -74,10 +74,10 @@ include("../../private/shared/topbarofficer.php");
 
 
                                             <td><?= h($req->ship_code) ?></td>
-                                            <td><?= h($req->port_license_no) ?></td>
-                                            <td><?= h($req->inspect_date_start) ?></td>
-                                            <td><?= h($req->inspect_date_end) ?></td>
-                                            <td><?= date('d/m/Y H:i', strtotime($req->created_at)) ?></td>
+                                            <td><?= h($req->vessel_name) ?></td>
+                                            <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
+                                            <td></td>
+                                            <td><?= thai_date($req->created_at) ?></td>
                                             <td>
                                                 <?php
                                                 switch ($req->status) {
@@ -133,8 +133,21 @@ include("../../private/shared/topbarofficer.php");
                             <div class="modal-footer">
                             <input type="hidden" name="request_id" id="confirm_request_id">
                             <input type="hidden" name="original_confirmed_date" id="original_confirmed_date">
-                            <input type="date" name="confirmed_date" class="form-control" required>
-                            <button type="button" class="btn btn-primary" id="btnConfirmDate">ยืนยันวันตรวจ</button>
+                            <div class="row g-2 align-items-center mb-3">
+                            <div class="col-auto">
+                                <label for="confirmed_date" class="col-form-label text-secondary fw-semibold">
+                                กรุณาเลือกวันนัดตรวจ
+                                </label>
+                            </div>
+                            <div class="col">
+                                <input type="date" id="confirmed_date" name="confirmed_date" class="form-control" required>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-primary" id="btnConfirmDate">
+                                ยืนยัน
+                                </button>
+                            </div>
+                            </div>
                             </div>
                         </form>
                         </div>
@@ -180,11 +193,13 @@ include("../../private/shared/topbarofficer.php");
                             };
 
                             let html = `
-                                <p><strong>ชื่อเรือ:</strong> ${req.ship_name || '-'}</p>
-                                <p><strong>ทะเบียนเรือ:</strong> ${req.ship_code || '-'}</p>
+                                <p><strong>ชื่อเรือ:</strong> ${req.vessel_name || '-'} <strong>   ทะเบียนเรือ:</strong> ${req.ship_code || '-'}</p>
+                                <p><strong>ชื่อเจ้าของเรือ:</strong> ${req.owner_name || '-'} <strong>   หมายเลขติดต่อ:</strong> ${req.contact_phone || '-'} </p>
                                 <p><strong>ช่วงวันที่ขอตรวจ:</strong> ${req.inspect_date_start} ถึง ${req.inspect_date_end}</p>
-                                <p><strong>ใบอนุญาตท่า:</strong> ${req.port_license_no || '-'}</p>
+                                <p><strong>ชื่อท่าเทียบเรือประมงที่ใช้สำหรับการตรวจ:</strong> ${req.port_name || '-'} <strong>   ทะเบียนท่าเทียบเรือประมง:</strong> ${req.port_license_no || '-'} </p>
+                                <p><strong>ตำบล:</strong> ${req.port_tambon || '-'} <strong>  อำเภอ:</strong> ${req.port_amphur || '-'} <strong>  จังหวัด:</strong> ${req.port_province || '-'}</p>
                                 <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}`;
+                                
 
                             if (req.confirmed_inspect_date && req.confirmed_inspect_date !== '0000-00-00') {
                                 const displayDate = new Date(req.confirmed_inspect_date).toLocaleDateString('th-TH', {
@@ -198,6 +213,12 @@ include("../../private/shared/topbarofficer.php");
                             }
 
                             html += `</p>`;
+                            if (req.is_confirm == 1){
+                                html += `<p><span class="text-success"><i class="fas fa-calendar-check"></i> ผู้ขอตรวจยืนยันวันนัดตรวจแล้ว</span></p>`;
+                                $('#btnConfirmDate').prop('disabled', true);
+                            } else {
+                                html += `<p><span class="text-danger"><i class="fas fa-calendar-check"></i> ยังไม่มีการยืนยันวันนัดตรวจ</span></p>`;
+                            }
 
                             $('#modalRequestBody').html(html);
 
@@ -227,8 +248,43 @@ include("../../private/shared/topbarofficer.php");
 
             <script>
             $(document).ready(function () {
+            // กันเลือกวันย้อนหลัง (ถ้าอยากบังคับ)
+            const today = new Date().toISOString().split('T')[0];
+            $('#confirmed_date').attr('min', today);
+
             $('#btnConfirmDate').on('click', function () {
-                const formData = $('#confirmInspectionForm').serialize();
+                const $form = $('#confirmInspectionForm');
+                const $date = $('#confirmed_date');
+                const val = $date.val();
+
+                // 1) ตรวจว่ามีค่ามั้ย
+                if (!val) {
+                // ให้ browser แสดง bubble เตือน และโฟกัสช่อง
+                $date[0].reportValidity();
+                $date.addClass('is-invalid');                 // (ถ้าใช้ Bootstrap)
+                return;
+                } else {
+                $date.removeClass('is-invalid');
+                }
+
+                // 2) (ทางเลือก) ตรวจ format YYYY-MM-DD เผื่อ browser แปลก ๆ
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                Swal.fire({ icon: 'warning', title: 'รูปแบบวันที่ไม่ถูกต้อง', text: 'กรุณาเลือกวันที่จากปฏิทินอีกครั้ง' });
+                $date.focus();
+                return;
+                }
+
+                // 3) (ทางเลือก) ไม่ให้ย้อนหลัง
+                if (val < today) {
+                Swal.fire({ icon: 'warning', title: 'เลือกวันย้อนหลังไม่ได้', text: 'กรุณาเลือกตั้งแต่วันนี้เป็นต้นไป' });
+                $date.focus();
+                return;
+                }
+
+                // ✅ ผ่านแล้ว ค่อยส่ง AJAX
+                const formData = $form.serialize();
+                const $btn = $('#btnConfirmDate').prop('disabled', true);
+
                 $.ajax({
                 url: 'ajax/confirm_inspect_date.php',
                 method: 'POST',
@@ -240,30 +296,24 @@ include("../../private/shared/topbarofficer.php");
                         icon: 'success',
                         title: 'สำเร็จ',
                         text: response.message,
-                        timer: 2000,
+                        timer: 1800,
                         showConfirmButton: false
-                    }).then(() => {
-                        location.reload(); // หรือปิด modal แล้วรีโหลดเฉพาะตาราง
-                    });
+                    }).then(() => location.reload());
                     } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'เกิดข้อผิดพลาด',
-                        text: response.message
-                    });
+                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: response.message });
                     }
                 },
                 error: function () {
-                    Swal.fire({
-                    icon: 'error',
-                    title: 'การเชื่อมต่อล้มเหลว',
-                    text: 'ไม่สามารถติดต่อ server ได้'
-                    });
+                    Swal.fire({ icon: 'error', title: 'การเชื่อมต่อล้มเหลว', text: 'ไม่สามารถติดต่อ server ได้' });
+                },
+                complete: function () {
+                    $btn.prop('disabled', false);
                 }
                 });
             });
             });
             </script>
+
 <?php 
 include("../../private/shared/footerall.php");
 ?>

@@ -90,4 +90,68 @@ function sci_to_plain(string $val): string {
     return $sign . $res;
 }
 
+
+/**
+ * แปลงวันที่/เวลา (YYYY-MM-DD หรือ DATETIME จาก MySQL) เป็นรูปแบบไทย (พ.ศ.)
+ *
+ * @param string $dateStr  วันที่จาก MySQL เช่น '2025-08-30' หรือ '2025-08-30 14:35:00'
+ * @param array  $options  ['format' => 'long'|'short', 'show_day' => bool, 'show_time' => bool, 'null' => string]
+ * @return string
+ */
+function thai_date(string $dateStr, array $options = []): string
+{
+    // กันค่าไม่พร้อมใช้
+    if (empty($dateStr) || $dateStr === '0000-00-00' || $dateStr === '0000-00-00 00:00:00') {
+        return $options['null'] ?? '-';
+    }
+
+    // ตั้งค่าเริ่มต้น
+    $opt = array_merge([
+        'format'    => 'short',   // 'long' = มกราคม, 'short' = ม.ค.
+        'show_day'  => false,    // แสดงวัน จันทร์/อังคาร/...
+        'show_time' => false,    // แสดงเวลา HH:MM น.
+        'null'      => '-',
+    ], $options);
+
+    // ให้แน่ใจว่าใช้เวลาไทย
+    date_default_timezone_set('Asia/Bangkok');
+
+    $ts = strtotime($dateStr);
+    if ($ts === false) return $opt['null'];
+
+    $days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+    $monthsShort = [1=>'ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    $monthsLong  = [1=>'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+    $d = (int)date('j', $ts);
+    $m = (int)date('n', $ts);
+    $y = (int)date('Y', $ts) + 543;
+
+    $monthName = ($opt['format'] === 'short') ? $monthsShort[$m] : $monthsLong[$m];
+
+    $parts = [];
+    if ($opt['show_day']) {
+        $parts[] = 'วัน'.$days[(int)date('w', $ts)];
+    }
+    $parts[] = "{$d} {$monthName} {$y}";
+
+    if ($opt['show_time']) {
+        $parts[] = date('H:i', $ts) . ' น.';
+    }
+
+    return implode(' ', $parts);
+}
+
+// --- ฟังก์ชันย่อย: คืนเฉพาะชื่อวันไทย (เช่น "วันเสาร์")
+function thai_day(string $dateStr): string
+{
+    if (empty($dateStr) || $dateStr === '0000-00-00' || $dateStr === '0000-00-00 00:00:00') return '-';
+    date_default_timezone_set('Asia/Bangkok');
+    $ts = strtotime($dateStr);
+    if ($ts === false) return '-';
+    $days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+    return 'วัน' . $days[(int)date('w', $ts)];
+}
+
+
 ?>

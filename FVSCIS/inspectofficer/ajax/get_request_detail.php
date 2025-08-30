@@ -13,18 +13,25 @@ try {
     if (!$request) throw new Exception("ไม่พบคำขอในระบบ");
 
     // เตรียมข้อมูลตอบกลับ
-    $ship = Elicense::find_by_ship_code($el_db, $request->ship_code);
-    ////error_log("request->confirmed_inspect_date = ".$request->confirmed_inspect_date);
+    $tambon = Tambon::find_by_id($request->port_tambon_id);
+    $amphur = Amphur::find_by_id($request->port_amphur_id);
+    $province = Province::find_by_id($request->port_province_id);
     $data = [
         'id' => $id,
-        'ship_name'           => $ship->vessel_name,
+        'vessel_name'         => $request->vessel_name,
         'ship_code'           => $request->ship_code,
+        'owner_name'          => $request->owner_name,
         'port_license_no'     => $request->port_license_no,
+        'port_name'           => $request->port_name,
+        'port_tambon'         => $tambon->name,  
+        'port_amphur'         => $amphur->name,
+        'port_province'       => $province->name,
         'inspect_date_start'  => $request->inspect_date_start,
         'inspect_date_end'    => $request->inspect_date_end,
         'contact_phone'       => $request->contact_phone,
         'status'              => $request->status,
         'confirmed_inspect_date' => $request->confirmed_inspect_date,
+        'is_confirm' => $request->is_confirm,
     ];
 
     echo json_encode([
