@@ -245,7 +245,7 @@ include("../../private/shared/topbarofficer.php");
 
 
                 <script>
-                            $('#approveInspectionForm').on('submit', function (e) {
+                $('#approveInspectionForm').on('submit', function (e) {
                     e.preventDefault();
 
                     const formData = {
