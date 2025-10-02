@@ -78,7 +78,7 @@ include("../../private/shared/topbarofficer.php");
                                                         echo '<span class="badge bg-primary">อยู่ระหว่างตรวจ</span>';
                                                         break;
                                                     case InspectionRequest::STATUS_PASSED:
-                                                        echo '<span class="badge bg-success">ผ่านการตรวจ</span>';
+                                                        echo '<span class="badge bg-info text-dark">รออนุมัติ</span>';
                                                         break;
                                                     case InspectionRequest::STATUS_FAILED:
                                                         echo '<span class="badge bg-danger">ไม่ผ่านการตรวจ</span>';
@@ -250,6 +250,8 @@ include("../../private/shared/topbarofficer.php");
 
                     const formData = {
                         request_id: $('#approve_request_id').val(),
+                        effective_date: $('#effective_date').val(),
+                        temporary_reason: $('#temporary_reason').val(),
                         approval_note: $('#approval_note').val()
                     };
 

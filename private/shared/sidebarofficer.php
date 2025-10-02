@@ -65,7 +65,7 @@ $canSeeRespMenu = $isInspectOfficer && $officerId !== null && in_array($officerI
 
 <!-- Nav Item - Dashboard -->
 <li class="nav-item <?= is_active(['index.php','index.html'], $base, $pathLower) ? 'active' : '' ?>">
-  <a class="nav-link" href="/fvscis/inspectofficer/index.php">
+  <a class="nav-link" href="inspectofficer/index.php">
     <i class="fas fa-fw fa-tachometer-alt"></i>
     <span>Dashboard</span>
   </a>
@@ -73,7 +73,7 @@ $canSeeRespMenu = $isInspectOfficer && $officerId !== null && in_array($officerI
 
 <!-- Nav Item - Incoming Requests -->
 <li class="nav-item <?= is_active(['incoming_requests.php'], $base, $pathLower) ? 'active' : '' ?>">
-  <a class="nav-link" href="/fvscis/inspectofficer/incoming_requests.php">
+  <a class="nav-link" href="incoming_requests.php">
     <i class="fas fa-fw fa-inbox"></i>
     <span>คำขอตรวจ</span>
   </a>
@@ -81,7 +81,7 @@ $canSeeRespMenu = $isInspectOfficer && $officerId !== null && in_array($officerI
 
 <!-- Nav Item - Old Certification -->
 <li class="nav-item <?= is_active(['old_certification.php'], $base, $pathLower) ? 'active' : '' ?>">
-  <a class="nav-link" href="/fvscis/inspectofficer/old_certification.php">
+  <a class="nav-link" href="old_certification.php">
     <i class="fas fa-fw fa-file-alt"></i>
     <span>ข้อมูลการอนุมัติ</span>
   </a>
@@ -90,7 +90,7 @@ $canSeeRespMenu = $isInspectOfficer && $officerId !== null && in_array($officerI
 <?php if ($canSeeRespMenu): ?>
   <!-- Nav Item - ข้อมูลที่รับผิดชอบ (เฉพาะ officer/dept id ใน whitelist) -->
   <li class="nav-item <?= is_active(['all_old_certification.php'], $base, $pathLower) ? 'active' : '' ?>">
-    <a class="nav-link" href="/fvscis/inspectofficer/all_old_certification.php">
+    <a class="nav-link" href="all_old_certification.php">
       <i class="fas fa-fw fa-clipboard-check"></i>
       <span>ข้อมูลที่รับผิดชอบ</span>
     </a>

@@ -17,7 +17,7 @@ class Fisherman extends DatabaseObject {
     public $google_id;
     public $facebook_id;
     public $line_id;
-    public $citizen_id;
+    public ?string $citizen_id = null;
     public $is_active = 1;
     public $is_approved = 0;
     public $approved_by;

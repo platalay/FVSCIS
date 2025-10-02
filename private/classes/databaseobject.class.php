@@ -97,45 +97,7 @@ class DatabaseObject {
     return $this->errors;
   }
 
-  protected function create() {
-    $this->validate();
-    if(!empty($this->errors)) { return false; }
-
-    $attributes = $this->sanitized_attributes();
-    $sql = "INSERT INTO " . static::$table_name . " (";
-    $sql .= join(', ', array_keys($attributes));
-    $sql .= ") VALUES ('";
-    $sql .= join("', '", array_values($attributes));
-    $sql .= "')";
-    $result = self::$database->query($sql);
-    if ($result) {
-    $this->id = self::$database->insert_id;
-    } else {
-        error_log("[SQL-FAIL] " . $sql);
-        error_log("[MySQL ERROR] " . self::$database->error);
-    }
-    return $result;
-  }
-
-  protected function update() {
-    $this->validate();
-    if(!empty($this->errors)) { return false; }
-
-    $attributes = $this->sanitized_attributes();
-    $attribute_pairs = [];
-    foreach($attributes as $key => $value) {
-      $attribute_pairs[] = "{$key}='{$value}'";
-    }
-
-    $sql = "UPDATE " . static::$table_name . " SET ";
-    $sql .= join(', ', $attribute_pairs);
-    $sql .= " WHERE id='" . self::$database->escape_string($this->id) . "' ";
-    $sql .= "LIMIT 1";
-    error_log("[SQL-FAIL] " . $sql);
-    $result = self::$database->query($sql);
-
-    return $result;
-  }
+  
 
     public function save() {
       $now = date('Y-m-d H:i:s');
@@ -173,30 +135,133 @@ class DatabaseObject {
   }
 
   // Properties which have database columns, excluding ID
-    public function attributes() {
-        $attributes = [];
-        foreach(static::$db_columns as $column) {
-            if ($column === 'id') continue;
+  public function attributes() {
+      $attributes = [];
+      foreach (static::$db_columns as $column) {
+          if ($column === 'id') continue;
 
-            // ถ้าเป็นการ update → ข้าม created_* fields
-            if (isset($this->id) && in_array($column, ['created_at', 'created_by', 'created_ip'])) {
-                continue;
-            }
+          // ถ้าเป็นการ update → ข้าม created_* fields
+          if (isset($this->id) && in_array($column, ['created_at', 'created_by', 'created_ip'], true)) {
+              continue;
+          }
 
-            $attributes[$column] = $this->$column ?? null;
-        }
-        return $attributes;
-    }
-
-
+          // คง null เป็น null
+          $attributes[$column] = $this->$column ?? null;
+      }
+      return $attributes;
+  }
 
   protected function sanitized_attributes() {
-    $sanitized = [];
-    foreach($this->attributes() as $key => $value) {
-      $sanitized[$key] = isset($value) ? self::$database->escape_string($value) : '';
-    }
-    return $sanitized;
+      $sanitized = [];
+      foreach ($this->attributes() as $key => $value) {
+          // อย่าแปลง null เป็น '' และ escape เฉพาะค่าที่ไม่ใช่ null
+          $sanitized[$key] = ($value === null) ? null : self::$database->escape_string($value);
+      }
+      return $sanitized;
   }
+
+  /// sql_literal() เวอร์ชันที่รองรับทั้งวันที่, boolean 0/1 และ FK ที่ว่างให้เป็น NULL
+// ✅ เวอร์ชันแก้ไข: กัน 0 หายสำหรับ citizen_id/รหัส/เบอร์โทร ฯลฯ
+protected static function sql_literal(string $key, $val): string {
+    // วันที่/เวลา: ว่าง => NULL
+    static $nullable_dates = [
+        'confirmed_inspect_date','expire_at','approved_at','actual_inspect_date','submitted_at','effective_date'
+    ];
+    // FK/เลขที่อาจว่างได้: ว่าง => NULL
+    static $nullable_int = ['approved_by','department_group_id','data_owner_id','target_officer_id','action_taken','type'];
+    // boolean 0/1: ว่าง => 0
+    static $zero_default_int = ['is_confirm','is_submitted','is_read'];
+
+    // 👇 รายชื่อฟิลด์ที่ต้อง "เก็บเป็นสตริงเสมอ" (ถึงจะเป็นตัวเลขก็ต้องใส่ quote)
+    static $force_string_fields = [
+        'citizen_id','ship_code','license_no','license_number','port_license_no',
+        'contact_phone','phone','mobile','vessel_mark','vms_serial_no','document_number','zip'
+    ];
+
+    // === boolean 0/1 ===
+    if (in_array($key, $zero_default_int, true)) {
+        if ($val === null || $val === '') return "0";
+        if (is_string($val) && in_array(strtolower($val), ['1','true','on','yes'], true)) return "1";
+        if (is_numeric($val)) return (string)(int)$val;
+        return "0";
+    }
+
+    // === FK/เลขที่ว่างได้ -> NULL ===
+    if (in_array($key, $nullable_int, true)) {
+        if ($val === null || $val === '') return "NULL";
+        if (is_numeric($val)) return (string)(int)$val;
+        return "NULL";
+    }
+
+    // === วันที่/เวลา ===
+    if (in_array($key, $nullable_dates, true)) {
+        return ($val === null || $val === '') ? "NULL" : "'" . $val . "'";
+    }
+
+    // === กฎพิเศษสำหรับฟิลด์สตริงรูปแบบรหัส/หมายเลข ===
+    // 1) ถ้าคีย์อยู่ใน white-list → ใส่ quote เสมอ
+    if (in_array($key, $force_string_fields, true)) {
+        return "'" . ($val ?? '') . "'";
+    }
+    // 2) ถ้าเป็นสตริงและ "ขึ้นต้นด้วย 0 และเป็นตัวเลขล้วน" → ใส่ quote (กัน 0 หาย)
+    if (is_string($val) && preg_match('/^0\d+$/', $val)) {
+        return "'" . $val . "'";
+    }
+    // 3) ถ้าชื่อคีย์บ่งชี้ว่าเป็นรหัส/หมายเลข (code/no/phone/idcard) → ใส่ quote
+    if (preg_match('/(code|_no|phone|idcard|citizen|zip)$/i', $key)) {
+        return "'" . ($val ?? '') . "'";
+    }
+
+    // === ตัวเลขทั่วไป ===
+    if ($val !== null && (is_int($val) || is_float($val)
+        || (is_string($val) && preg_match('/^-?\d+(\.\d+)?$/', $val)))) {
+        return (string)$val; // ไม่ใส่ quote เฉพาะกรณีที่ "ไม่ใช่" สตริงที่ต้องคง 0 นำหน้า
+    }
+
+    // === ค่าอื่น ๆ (สตริง) ===
+    return "'" . ($val ?? '') . "'";
+}
+
+
+
+
+  protected function create() {
+      $this->validate();
+      if (!empty($this->errors)) { return false; }
+
+      $attributes = $this->sanitized_attributes();
+      $cols   = array_keys($attributes);
+      $values = [];
+      foreach ($attributes as $k => $v) {
+          $values[] = static::sql_literal($k, $v);
+      }
+
+      $sql  = "INSERT INTO " . static::$table_name . " (";
+      $sql .= join(', ', $cols) . ") VALUES (" . join(', ', $values) . ")";
+
+      $result = self::$database->query($sql);
+      if ($result) { $this->id = self::$database->insert_id; }
+      return $result;
+  }
+
+  protected function update() {
+      $this->validate();
+      if (!empty($this->errors)) { return false; }
+
+      $attributes = $this->sanitized_attributes();
+
+      $pairs = [];
+      foreach ($attributes as $k => $v) {
+          $pairs[] = "{$k}=" . static::sql_literal($k, $v);
+      }
+
+      $id  = self::$database->escape_string($this->id);
+      $sql = "UPDATE " . static::$table_name . " SET " . join(', ', $pairs) .
+            " WHERE id='{$id}' LIMIT 1";
+
+      return self::$database->query($sql);
+  }
+
 
   public function delete() {
     $sql = "DELETE FROM " . static::$table_name . " ";

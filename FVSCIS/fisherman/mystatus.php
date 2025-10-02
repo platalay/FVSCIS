@@ -60,8 +60,10 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                             <td class="text-center">
                                                 <?php if ($req->status === InspectionRequest::STATUS_PENDING): ?>
 
-                                                    <?php if ($req->confirmed_inspect_date === '0000-00-00'): ?>
-                                                        <button class="btn btn-danger btn-sm btn-cancel-request" 
+                                                    <?php
+                                                    $cid = $req->confirmed_inspect_date;
+                                                    if (in_array($cid, [null, '', '0000-00-00', '0000-00-00 00:00:00'], true)): ?>
+                                                        <button class="btn btn-danger btn-sm btn-delete-request" 
                                                                 data-id="<?= h($req->id) ?>" 
                                                                 title="ยกเลิกคำขอ">
                                                             <i class="fas fa-times-circle"></i>
@@ -211,6 +213,69 @@ $fisherman=Fisherman::find_by_id($session->user_id());
             });
         });
 
+        //ลบข้อมูล
+
+        $(document).on('click', '.btn-delete-request', function (e) {
+            e.preventDefault();
+
+            const $btn = $(this);
+            const id = $btn.data('id');
+            if (!id) return;
+
+            const ajaxDelete = () => $.ajax({
+                url: 'ajax/delete_request.php',
+                type: 'POST',
+                dataType: 'json',
+                data: { id },
+                beforeSend() { $btn.prop('disabled', true).addClass('disabled'); },
+            }).always(() => {
+                $btn.prop('disabled', false).removeClass('disabled');
+            });
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                title: 'ลบคำขอถาวร?',
+                html: 'ข้อมูลที่เกี่ยวข้องทั้งหมดจะถูกลบและไม่สามารถกู้คืนได้',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ลบถาวร',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+                }).then((r) => {
+                if (!r.isConfirmed) return;
+
+                ajaxDelete().done((res) => {
+                    if (res && res.success) {
+                    Swal.fire({ icon: 'success', title: 'ลบแล้ว', timer: 1200, showConfirmButton: false });
+                    const $row = $btn.closest('tr');
+                    if ($.fn.DataTable && $('#dataTable').length) {
+                        $('#dataTable').DataTable().row($row).remove().draw(false);
+                    } else {
+                        $row.remove();
+                    }
+                    } else {
+                    Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: res?.message || '' });
+                    }
+                }).fail((xhr) => {
+                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: xhr.responseJSON?.message || xhr.statusText });
+                });
+                });
+            } else {
+                if (!confirm('ลบคำขอถาวร?')) return;
+                ajaxDelete().done((res) => {
+                if (res && res.success) {
+                    const $row = $btn.closest('tr');
+                    if ($.fn.DataTable && $('#dataTable').length) {
+                    $('#dataTable').DataTable().row($row).remove().draw(false);
+                    } else {
+                    $row.remove();
+                    }
+                } else {
+                    alert(res?.message || 'ลบไม่สำเร็จ');
+                }
+                }).fail(() => alert('เกิดข้อผิดพลาด'));
+            }
+            });
         // ส่งฟอร์มยืนยันวันตรวจ
         $('#confirmInspectionForm').on('submit', function (e) {
             e.preventDefault();

@@ -62,7 +62,7 @@ class InspectionFormStatus extends DatabaseObject {
         $running = str_pad($count + 1, 5, '0', STR_PAD_LEFT);
         $department_code_two = str_pad($department_code, 2, '0', STR_PAD_LEFT);
 
-        return "efvscis-{$year}-{$department_code_two}-{$running}";
+        return "Ifvscis-{$year}-{$department_code_two}-{$running}";
     }
 
 

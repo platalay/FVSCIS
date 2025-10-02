@@ -10,7 +10,7 @@ try {
 
     $data = $_POST['request'];
 
-    // ✳️ ตรวจสอบข้อมูลจำเป็น
+    // ✳️ ดึงค่าจำเป็น
     $ship_code      = trim($data['ship_code'] ?? '');
     $vessel_name    = trim($data['vessel_name'] ?? '');
     $contact_phone  = trim($data['contact_phone'] ?? '');
@@ -23,13 +23,37 @@ try {
     $inspect_end    = trim($data['inspect_date_end'] ?? '');
     $agree          = isset($data['confirm_agreement']) ? 1 : 0;
 
+    // ✅ รองรับรูปแบบฟอร์ม: 1=ทั่วไป, 2=EU (checkbox)
+    $inspection_form_type = (int)($_POST['request']['inspection_form_type'] ?? 1);
+    $inspection_form_type = ($inspection_form_type === 2) ? 2 : 1; // บังคับ 1/2
+
+    // ✅ ตรวจข้อมูลขั้นต่ำ
     if ($ship_code === '' || $contact_phone === '' || $department_id === '') {
         throw new Exception("กรุณากรอกข้อมูลให้ครบถ้วน");
     }
+
+    // ✅ ตรวจเบอร์โทร (ตัวเลข 9–10 หลัก แบบหยืดหยุ่น)
+    if (!preg_match('/^\d{9,10}$/', $contact_phone)) {
+        throw new Exception("กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง (9–10 หลัก)");
+    }
+
+    // ✅ ตรวจวันที่ (ถ้ามีการกรอกครบคู่)
+    if ($inspect_start !== '' && $inspect_end !== '') {
+        $ds = strtotime($inspect_start);
+        $de = strtotime($inspect_end);
+        if ($ds === false || $de === false) {
+            throw new Exception("รูปแบบวันที่ไม่ถูกต้อง");
+        }
+        if ($ds > $de) {
+            throw new Exception("วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด");
+        }
+    }
+
+    // ⚙️ ดึงข้อมูลอ้างอิงเรือ/ท่าเรือ
     $VesselData = Elicense::find_one_by_ship_code($el_db, $ship_code);
-    $Portdata = ElicensePort::find_one_by_license_no($el_db, $port_license);
-    
-    // ✅ ตรวจสอบว่าเรือนี้มีคำขอที่ยังไม่เสร็จหรือไม่
+    $Portdata   = ElicensePort::find_one_by_license_no($el_db, $port_license);
+
+    // ✅ ตรวจคำขอค้างอยู่ของเรือลำนี้
     $existing_request = InspectionRequest::find_active_by_ship($ship_code);
     if ($existing_request) {
         echo json_encode([
@@ -39,38 +63,48 @@ try {
         exit;
     }
 
-    // ✅ 1. บันทึกคำขอ
+    // ✅ บันทึกคำขอ
     $request = new InspectionRequest();
     $request->ship_code           = $ship_code;
     $request->vessel_name         = $vessel_name;
-    $request->vessel_mark         = $VesselData->fishing_mark;  
-    $request->license_number      = $VesselData->license_no; 
-    $request->gear_type           = $VesselData->geartype;
-    $request->owner_name          = $VesselData->display_name;
-    $data_owner_id                = $VesselData->nationality_id;
-    $request->contact_phone       = $contact_phone;
+    $request->vessel_mark         = $VesselData->fishing_mark ?? null;
+    $request->license_number      = $VesselData->license_no   ?? null;
+    $request->gear_type           = $VesselData->geartype     ?? null;
+    $request->owner_name          = $VesselData->display_name ?? null;
+
+    // group/data owner จากหน่วยงาน
+    $result = Department::get_department_group_id($department_id);
     $request->department_id       = $department_id;
-    $result = Department::get_department_group_id($request->department_id);
-    $request->department_group_id = $result->parent_department;
-    $request->data_owner_id = $result->data_owner_id;
+    $request->department_group_id = $result->parent_department ?? null;
+    $request->data_owner_id       = $result->data_owner_id     ?? null;
+
+    // พื้นที่/ท่าเทียบเรือ
     $request->port_province_id    = $province_id;
     $request->port_amphur_id      = $amphur_id;
     $request->port_tambon_id      = $tambon_id;
     $request->port_license_no     = $port_license;
-    $request->port_name           = $Portdata->port_name;
-    $request->inspect_date_start  = $inspect_start;
-    $request->inspect_date_end    = $inspect_end;
-    $request->confirm_agreement   = $agree;
-    $request->created_by = $session->user_id() ?? 0;
-    $request->created_at          = date('Y-m-d H:i:s');
-    $request->status = InspectionRequest::STATUS_PENDING;
-    $request->confirmed_inspect_date = null;
-    
+    $request->port_name           = $Portdata->port_name ?? null;
+
+    // วันที่ตรวจที่ต้องการ
+    $request->inspect_date_start  = $inspect_start ?: null;
+    $request->inspect_date_end    = $inspect_end   ?: null;
+
+    // คำยินยอม + ผู้สร้าง + สถานะ
+    $request->confirm_agreement       = $agree;
+    $request->created_by              = $session->user_id() ?? 0;
+    $request->created_at              = date('Y-m-d H:i:s');
+    $request->status                  = InspectionRequest::STATUS_PENDING;
+    $request->confirmed_inspect_date  = null;
+
+    // 🌟 สำคัญ: เก็บรูปแบบฟอร์ม (1/2)
+    $request->inspection_form_type = $inspection_form_type;
+
     if (!$request->save()) {
-        throw new Exception("ไม่สามารถบันทึกคำขอได้" . ($request->errors ?? ''));
+        $err = is_array($request->errors ?? null) ? implode(', ', $request->errors) : ($request->errors ?? '');
+        throw new Exception("ไม่สามารถบันทึกคำขอได้" . ($err ? " ({$err})" : ''));
     }
 
-    // ✅ 2. บันทึก log
+    // ✅ Log
     $action = LogAction::find_by_code('submitted');
     if (!$action) {
         throw new Exception("ไม่พบรหัส action 'submitted'");
@@ -79,20 +113,27 @@ try {
     $log = new InspectionLog();
     $log->inspection_request_id = $request->id;
     $log->action_id             = $action->id;
-    $log->note                  = 'ชาวประมงยื่นคำขอตรวจเรือ';
-    $log->performed_by = $session->user_id() ?? 0; // ถ้าไม่มี session ให้เก็บเป็น 0 (system)
-    $log->performed_at          = date('Y-m-d H:i:s'); // ✅ ใส่เวลาแบบ real-time
+    $log->note                  = ($inspection_form_type === 2)
+                                  ? 'ชาวประมงยื่นคำขอ: ตรวจสุขอนามัยเพื่อขอใบรับรอง EU'
+                                  : 'ชาวประมงยื่นคำขอ: ตรวจสุขอนามัยแบบทั่วไป';
+    $log->performed_by          = $session->user_id() ?? 0;
+    $log->performed_at          = date('Y-m-d H:i:s');
     $log->target_department_id  = $department_id;
-    $log->target_usertype_id    = 3; // สมมุติว่า 3 = officer
+    $log->target_usertype_id    = 3; // 3 = officer (ตามที่ใช้อยู่)
     $log->port_license_no       = $port_license;
     $log->save();
-    //save notification
+
+    // 🔔 Notification → เจ้าหน้าที่หน่วยงานที่เลือก
     $officers = Officer::find_by_department_id($department_id);
+    $notif_title = ($inspection_form_type === 2)
+        ? "มีคำขอ 'ตรวจ EU Export' ใหม่จากชาวประมง"
+        : "มีคำขอตรวจสุขอนามัยเรือใหม่จากชาวประมง";
+
     foreach ($officers as $officer) {
         Notification::create_notification(
             $officer->id,
             'inspectofficer',
-            "มีคำขอตรวจสุขอนามัยเรือใหม่จากชาวประมง",
+            $notif_title,
             'action_required',
             'inspection_request',
             $request->id,
@@ -114,3 +155,4 @@ try {
     exit;
 }
 ?>
+

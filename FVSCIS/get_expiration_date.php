@@ -11,7 +11,7 @@ if (empty($ship_code)) {
 }
 
 // ค้นหาข้อมูล
-$record = FvSanitationCertificationOld::find_by_ship_code($ship_code);
+$record = FvSanitationCertificationOld::find_one_by_ship_code($ship_code);
 
 if ($record) {
     echo json_encode([

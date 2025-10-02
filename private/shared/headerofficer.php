@@ -29,6 +29,42 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom styles for this template-->
     <link href="../css/sb-admin-2.min.css" rel="stylesheet" />
+    <!-- ✨ CSS เฉพาะโมดัลนี้ (วางไว้ครั้งเดียวใต้ <head> หรือไฟล์ css ของคุณ) -->
+    <style>
+      /* จัด layout ภายในโมดัลให้เลื่อนแค่ .modal-body */
+      #modalFvscisOldAdd .modal-content { display: flex; flex-direction: column; }
+      #modalFvscisOldAdd .modal-body { overflow-y: auto; }
+
+      /* มือถือ ≤576px: ให้เต็มจอ และกัน header/footer เหลือพื้นที่เลื่อนใน body */
+      @media (max-width: 576px) {
+        #modalFvscisOldAdd .modal-dialog { margin: 0; }                   /* เต็มจอจริง */
+        #modalFvscisOldAdd .modal-content { height: 100dvh; border-radius: 0; } /* รองรับแถบ address bar */
+        #modalFvscisOldAdd .modal-body { max-height: calc(100dvh - 11rem); }    /* เผื่อ header+footer */
+      }
+    </style>
+    <!-- CSS เฉพาะโมดัลนี้ -->
+    <style>
+      /* จัด layout: ให้ .modal-body เป็นส่วนที่เลื่อน */
+      #modalFvscisOldEdit .modal-content {
+        display: flex;
+        flex-direction: column;
+      }
+      #modalFvscisOldEdit .modal-body {
+        flex: 1 1 auto;           /* กินพื้นที่ที่เหลือ */
+        overflow-y: auto;          /* เลื่อนเฉพาะ body */
+        -webkit-overflow-scrolling: touch; /* นิ่มบน iOS */
+      }
+
+      /* จอ ≤992px (lg-down): เต็มจอ, ไม่มี margin, สูงเท่า viewport จริง */
+      @media (max-width: 992px) {
+        #modalFvscisOldEdit .modal-dialog { margin: 0; }
+        #modalFvscisOldEdit .modal-content {
+          height: 100dvh;          /* dynamic viewport, กันแถบ address bar */
+          border-radius: 0;
+        }
+      }
+    </style>
+    
   </head>
 
   <body id="page-top">
