@@ -48,27 +48,35 @@ $inspection_items = [
 
       <td>
         <?php
-          $fail_texts = [];
+        $fail_texts = [];
 
-          if ($data->$status_field == 'fail') {
-              // ดึง checklist ที่ถูกติ๊ก
-              if (!empty($grouped_fail_items[$code])) {
-                  foreach ($grouped_fail_items[$code] as $fail_item) {
-                      $fail_field = $fail_item->field_name;
-                      if (!empty($data->$fail_field)) {
-                          $fail_texts[] = htmlspecialchars($fail_item->label_text);
-                      }
-                  }
-              }
-              // เพิ่มหมายเหตุถ้ามี
-              $remark_field = 'remark_' . $code;
-              if (!empty($data->$remark_field)) {
-                  $fail_texts[] = 'หมายเหตุ: ' . htmlspecialchars($data->$remark_field);
-              }
-          }
+        // ป้องกันกรณี $data เป็น null หรือไม่ใช่ object
+        $status = (isset($data) && is_object($data) && isset($data->$status_field)) ? $data->$status_field : null;
 
-          echo !empty($fail_texts) ? implode('<br>', $fail_texts) : '-';
+        if ($status === 'fail') {
+            // ดึง checklist ที่ถูกติ๊ก
+            if (!empty($grouped_fail_items[$code]) && is_iterable($grouped_fail_items[$code])) {
+                foreach ($grouped_fail_items[$code] as $fail_item) {
+                    $fail_field = $fail_item->field_name;
+
+                    if (isset($data) && is_object($data) && !empty($data->$fail_field)) {
+                        $fail_texts[] = htmlspecialchars($fail_item->label_text, ENT_QUOTES, 'UTF-8');
+                    }
+                }
+            }
+
+            // เพิ่มหมายเหตุถ้ามี
+            $remark_field = 'remark_' . $code;
+            $remark = (isset($data) && is_object($data) && isset($data->$remark_field)) ? $data->$remark_field : '';
+            if ($remark !== '') {
+                $fail_texts[] = 'หมายเหตุ: ' . htmlspecialchars($remark, ENT_QUOTES, 'UTF-8');
+            }
+        }
+
+        // ถ้าไม่มีข้อมูล ให้แสดง “-”
+        echo !empty($fail_texts) ? implode('<br>', $fail_texts) : '-';
         ?>
+
       </td>
     </tr>
   <?php endforeach; ?>

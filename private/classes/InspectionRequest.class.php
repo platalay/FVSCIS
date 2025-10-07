@@ -31,6 +31,7 @@ class InspectionRequest extends DatabaseObject {
         'is_confirm',
         'confirm_agreement',
         'inspection_form_type',
+        'cold_room_flag',
         'status',
         'is_submitted',
         'submitted_at',
@@ -58,6 +59,8 @@ class InspectionRequest extends DatabaseObject {
     public $confirmed_inspect_date;
     public $confirm_agreement = false;
     public $inspection_form_type;
+    public $cold_room_flag;
+
     public $is_confirm = false;
     public $status;
     public $is_submitted;

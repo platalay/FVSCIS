@@ -13,6 +13,7 @@ class InspectionFailItem extends DatabaseObject {
         $sql = "SELECT * FROM " . static::$table_name;
         $sql .= " WHERE form_section = '" . self::$database->escape_string($section) . "'";
         $sql .= " ORDER BY order_no ASC";
+        error_log(date('[Y-m-d H:i:s] ') . "SQL: " . $sql);
         return static::find_by_sql($sql);
     }
 }

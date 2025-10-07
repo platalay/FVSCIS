@@ -53,28 +53,34 @@ $inspection_items = [
 
       <td>
         <?php
-          $fail_texts = [];
+        $fail_texts = [];
 
-          if ($data->$status_field == 'fail') {
-              // checklist ที่ถูกติ๊ก
-              if (!empty($grouped_fail_items[$code])) {
-                  foreach ($grouped_fail_items[$code] as $fail_item) {
-                      $fail_field = $fail_item->field_name;
-                      if (!empty($data->$fail_field)) {
-                          $fail_texts[] = htmlspecialchars($fail_item->label_text);
-                      }
-                  }
-              }
+        // ใช้ nullsafe operator (PHP 8+) ปลอดภัยถ้า $data เป็น null
+        $status = $data?->$status_field ?? null;
 
-              // หมายเหตุ
-              $remark_field = 'remark_' . $code;
-              if (!empty($data->$remark_field)) {
-                  $fail_texts[] = 'หมายเหตุ: ' . htmlspecialchars($data->$remark_field);
-              }
-          }
+        if ($status === 'fail') {
+            // กันกรณี index ไม่อยู่ หรือไม่ใช่ iterable
+            if (!empty($grouped_fail_items[$code]) && is_iterable($grouped_fail_items[$code])) {
+                foreach ($grouped_fail_items[$code] as $fail_item) {
+                    $fail_field = $fail_item->field_name;
+                    // เช็กค่าใน $data ของช่องที่ถูกติ๊ก
+                    if (!empty($data?->$fail_field)) {
+                        $fail_texts[] = htmlspecialchars($fail_item->label_text, ENT_QUOTES, 'UTF-8');
+                    }
+                }
+            }
 
-          echo !empty($fail_texts) ? implode('<br>', $fail_texts) : '-';
+            // หมายเหตุ
+            $remark_field = 'remark_' . $code;
+            $remark = $data?->$remark_field ?? '';
+            if ($remark !== '') {
+                $fail_texts[] = 'หมายเหตุ: ' . htmlspecialchars($remark, ENT_QUOTES, 'UTF-8');
+            }
+        }
+
+        echo !empty($fail_texts) ? implode('<br>', $fail_texts) : '-';
         ?>
+
       </td>
     </tr>
   <?php endforeach; ?>

@@ -4,7 +4,7 @@ class InspectionFormMaterial extends DatabaseObject {
     protected static $table_name = "inspection_form_material";
     protected static $db_columns = [
         'id', 'request_id',
-        'status_2_1', 'fail_2_1_1', 'fail_2_1_2', 'fail_2_1_3', 'remark_2_1',
+        'status_2_1', 'fail_2_1_1', 'fail_2_1_2', 'remark_2_1',
         'status_2_2', 'remark_2_2',
         'status_2_3', 'remark_2_3',
         'status_2_4', 'fail_2_4_1', 'fail_2_4_2', 'fail_2_4_3', 'remark_2_4',
@@ -19,7 +19,6 @@ class InspectionFormMaterial extends DatabaseObject {
     public $status_2_1;
     public $fail_2_1_1;
     public $fail_2_1_2;
-    public $fail_2_1_3;
     public $remark_2_1;
 
     public $status_2_2;

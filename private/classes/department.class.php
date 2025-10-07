@@ -2,11 +2,12 @@
 class Department extends DatabaseObject {
 
     static protected $table_name = "departments";
-    static protected $db_columns = ['id', 'name', 'parent_department', 'address_no', 'building', 'alley', 'village_no', 'road', 'subdistrict', 'district', 'province', 'postal_code', 'phone', 'fax', 'email', 'note', 'data_owner_id'];
+    static protected $db_columns = ['id', 'name', 'parent_department', 'data_owner_id', 'address_no', 'building', 'alley', 'village_no', 'road', 'subdistrict', 'district', 'province', 'postal_code', 'phone', 'fax', 'email', 'note', 'data_owner_id'];
 
     public $id;
     public $name;
     public $parent_department;
+    public $data_owner_id;
     public $address_no;
     public $building;
     public $alley;
@@ -20,7 +21,7 @@ class Department extends DatabaseObject {
     public $fax;
     public $email;
     public $note;
-    public $data_owner_id;
+    
 
     public function __construct($args=[]) {
         $this->name = $args['name'] ?? '';

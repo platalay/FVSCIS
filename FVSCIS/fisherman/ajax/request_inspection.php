@@ -26,7 +26,8 @@ try {
     // ✅ รองรับรูปแบบฟอร์ม: 1=ทั่วไป, 2=EU (checkbox)
     $inspection_form_type = (int)($_POST['request']['inspection_form_type'] ?? 1);
     $inspection_form_type = ($inspection_form_type === 2) ? 2 : 1; // บังคับ 1/2
-
+    $cold_room_flag_raw = $_POST['request']['cold_room_flag'] ?? '0';
+    $cold_room_flag = ($cold_room_flag_raw === '1') ? 1 : 0; // บังคับ 0/1
     // ✅ ตรวจข้อมูลขั้นต่ำ
     if ($ship_code === '' || $contact_phone === '' || $department_id === '') {
         throw new Exception("กรุณากรอกข้อมูลให้ครบถ้วน");
@@ -98,6 +99,7 @@ try {
 
     // 🌟 สำคัญ: เก็บรูปแบบฟอร์ม (1/2)
     $request->inspection_form_type = $inspection_form_type;
+    $request->cold_room_flag = $cold_room_flag;
 
     if (!$request->save()) {
         $err = is_array($request->errors ?? null) ? implode(', ', $request->errors) : ($request->errors ?? '');

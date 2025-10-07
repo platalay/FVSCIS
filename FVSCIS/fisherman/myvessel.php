@@ -88,129 +88,145 @@ $fisherman=Fisherman::find_by_username($session->username);
                     </div>
                     <!-- Modal: Request Inspection -->
                     <!-- Modal: Request Inspection -->
-<div class="modal fade" id="requestInspectionModal" tabindex="-1" aria-labelledby="requestInspectionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <form id="requestInspectionForm" method="post" action="request_inspection.php">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="requestInspectionModalLabel">ยื่นคำขอตรวจเรือ</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
+                    <div class="modal fade" id="requestInspectionModal" tabindex="-1" aria-labelledby="requestInspectionModalLabel" aria-hidden="true">
+                      <div class="modal-dialog modal-lg">
+                        <form id="requestInspectionForm" method="post" action="ajax/request_inspection.php">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title" id="requestInspectionModalLabel">ยื่นคำขอตรวจเรือ</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
 
-        <div class="modal-body">
-          <!-- รายละเอียดเรือ -->
-          <div class="mb-3">
-            <strong>เลขทะเบียนเรือ:</strong> <span id="modal-ship-code"></span><br>
-            <strong>ชื่อเรือ:</strong> <span id="modal-vessel-name"></span><br>
-            <strong>ขนาดตันกรอส:</strong> <span id="modal-vessel-ton"></span> ตัน<br>
-            <strong>พื้นที่ทำการประมง:</strong> <span id="modal-fishing-area"></span>
-          </div>
+                            <div class="modal-body">
+                              <!-- รายละเอียดเรือ -->
+                              <div class="mb-3">
+                                <strong>เลขทะเบียนเรือ:</strong> <span id="modal-ship-code"></span><br>
+                                <strong>ชื่อเรือ:</strong> <span id="modal-vessel-name"></span><br>
+                                <strong>ขนาดตันกรอส:</strong> <span id="modal-vessel-ton"></span> ตัน<br>
+                                <strong>พื้นที่ทำการประมง:</strong> <span id="modal-fishing-area"></span>
+                              </div>
 
-          <!-- ข้อมูลผู้ยื่น -->
-          <div class="mb-3">
-            <input type="hidden" name="request[ship_code]" id="hidden_ship_code">
-            <label for="contact_phone" class="form-label">หมายเลขโทรศัพท์ที่ติดต่อได้</label>
-            <input type="text"
-                   name="request[contact_phone]"
-                   id="contact_phone"
-                   class="form-control"
-                   required
-                   maxlength="10"
-                   inputmode="numeric"
-                   autocomplete="tel"
-                   placeholder="เช่น 0891234567">
-          </div>
+                              <!-- ข้อมูลผู้ยื่น -->
+                              <div class="mb-3">
+                                <input type="hidden" name="request[ship_code]" id="hidden_ship_code">
+                                <label for="contact_phone" class="form-label">หมายเลขโทรศัพท์ที่ติดต่อได้</label>
+                                <input type="text"
+                                      name="request[contact_phone]"
+                                      id="contact_phone"
+                                      class="form-control"
+                                      required
+                                      maxlength="10"
+                                      inputmode="numeric"
+                                      autocomplete="tel"
+                                      placeholder="เช่น 0891234567">
+                              </div>
 
-          <!-- เลือกจังหวัด อำเภอ ตำบล ท่าเรือ -->
-          <div class="row mb-3">
-            <div class="col-md-3">
-              <label for="port_province_id" class="form-label">จังหวัด</label>
-              <select name="request[port_province_id]" id="port_province_id" class="form-select" required>
-                <option value="">-- เลือกจังหวัด --</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label for="port_amphur_id" class="form-label">อำเภอ</label>
-              <select name="request[port_amphur_id]" id="port_amphur_id" class="form-select" required>
-                <option value="">-- เลือกอำเภอ --</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label for="port_tambon_id" class="form-label">ตำบล</label>
-              <select name="request[port_tambon_id]" id="port_tambon_id" class="form-select" required>
-                <option value="">-- เลือกตำบล --</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label for="port_license_no" class="form-label">ท่าเรือ</label>
-              <select name="request[port_license_no]" id="port_license_no" class="form-select" required>
-                <option value="">-- เลือกท่าเรือ --</option>
-              </select>
-            </div>
-          </div>
+                              <!-- เลือกจังหวัด อำเภอ ตำบล ท่าเรือ -->
+                              <div class="row mb-3">
+                                <div class="col-md-3">
+                                  <label for="port_province_id" class="form-label">จังหวัด</label>
+                                  <select name="request[port_province_id]" id="port_province_id" class="form-select" required>
+                                    <option value="">-- เลือกจังหวัด --</option>
+                                  </select>
+                                </div>
+                                <div class="col-md-3">
+                                  <label for="port_amphur_id" class="form-label">อำเภอ</label>
+                                  <select name="request[port_amphur_id]" id="port_amphur_id" class="form-select" required>
+                                    <option value="">-- เลือกอำเภอ --</option>
+                                  </select>
+                                </div>
+                                <div class="col-md-3">
+                                  <label for="port_tambon_id" class="form-label">ตำบล</label>
+                                  <select name="request[port_tambon_id]" id="port_tambon_id" class="form-select" required>
+                                    <option value="">-- เลือกตำบล --</option>
+                                  </select>
+                                </div>
+                                <div class="col-md-3">
+                                  <label for="port_license_no" class="form-label">ท่าเรือ</label>
+                                  <select name="request[port_license_no]" id="port_license_no" class="form-select" required>
+                                    <option value="">-- เลือกท่าเรือ --</option>
+                                  </select>
+                                </div>
+                              </div>
 
-          <div class="mb-3">
-            <label for="department_id" class="form-label">หน่วยงานที่ยื่นคำขอ</label>
-            <select name="request[department_id]" id="department_id" class="form-select" required>
-              <option value="">-- เลือกหน่วยงาน --</option>
-              <?php 
-                $Departments = Department::find_all();
-                foreach ($Departments as $Department): ?>
-                  <option value="<?= $Department->id ?>" data-province-id="<?= $Department->province ?>">
-                    <?= $Department->name ?>
-                  </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
+                              <div class="mb-3">
+                                <label for="department_id" class="form-label">หน่วยงานที่ยื่นคำขอ</label>
+                                <select name="request[department_id]" id="department_id" class="form-select" required>
+                                  <option value="">-- เลือกหน่วยงาน --</option>
+                                  <?php 
+                                    $Departments = Department::find_all();
+                                    foreach ($Departments as $Department): ?>
+                                      <option value="<?= $Department->id ?>" data-province-id="<?= $Department->province ?>">
+                                        <?= $Department->name ?>
+                                      </option>
+                                  <?php endforeach; ?>
+                                </select>
+                              </div>
 
-          <!-- วันที่ต้องการตรวจ -->
-          <div class="row mb-3">
-            <div class="col">
-              <label for="inspect_date_start" class="form-label">วันที่เริ่มต้องการตรวจ</label>
-              <input type="date" name="request[inspect_date_start]" id="inspect_date_start" class="form-control" required>
-            </div>
-            <div class="col">
-              <label for="inspect_date_end" class="form-label">ถึงวันที่</label>
-              <input type="date" name="request[inspect_date_end]" id="inspect_date_end" class="form-control" required>
-            </div>
-          </div>
+                              <!-- วันที่ต้องการตรวจ -->
+                              <div class="row mb-3">
+                                <div class="col">
+                                  <label for="inspect_date_start" class="form-label">วันที่เริ่มต้องการตรวจ</label>
+                                  <input type="date" name="request[inspect_date_start]" id="inspect_date_start" class="form-control" required>
+                                </div>
+                                <div class="col">
+                                  <label for="inspect_date_end" class="form-label">ถึงวันที่</label>
+                                  <input type="date" name="request[inspect_date_end]" id="inspect_date_end" class="form-control" required>
+                                </div>
+                              </div>
 
-          <!-- ✅ รูปแบบการตรวจ -->
-          <div class="mb-3 p-3 border rounded">
-            <div class="form-check">
-              <!-- hidden เก็บค่าแบบฟอร์ม: 1=ทั่วไป, 2=EU -->
-              <input type="hidden" name="request[inspection_form_type]" id="inspection_form_type" value="1">
-              <input class="form-check-input" type="checkbox" id="eu_cert_checkbox">
-              <label class="form-check-label fw-semibold" for="eu_cert_checkbox">
-                ขอหนังสือรับรองมาตรฐานด้านสุขอนามัยในเรือประมงเพื่อการส่งออกสินค้าสัตว์น้ำไปสหภาพยุโรป
-              </label>
-            </div>
-            <small class="text-muted d-block mt-2">
-              ไม่เลือก = ตรวจทั่วไป (แบบที่ 1) | เลือก = ตรวจเพื่อ EU Export (แบบที่ 2)
-            </small>
-          </div>
+                              <!-- ✅ รูปแบบการตรวจ -->
+                              <div class="mb-3 p-3 border rounded">
+                                <div class="form-check">
+                                  <!-- hidden เก็บค่าแบบฟอร์ม: 1=ทั่วไป, 2=EU -->
+                                  <input type="hidden" name="request[inspection_form_type]" id="inspection_form_type" value="1">
+                                  <input class="form-check-input" type="checkbox" id="eu_cert_checkbox">
+                                  <label class="form-check-label fw-semibold" for="eu_cert_checkbox">
+                                    ขอหนังสือรับรองมาตรฐานด้านสุขอนามัยในเรือประมงเพื่อการส่งออกสินค้าสัตว์น้ำไปสหภาพยุโรป
+                                  </label>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                  ไม่เลือก = ตรวจทั่วไป (แบบที่ 1) | เลือก = ตรวจเพื่อ EU Export (แบบที่ 2)
+                                </small>
+                              </div>
 
-          <!-- Checkbox ยืนยัน -->
-          <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" name="request[confirm_agreement]" id="confirm_agreement" required>
-            <label class="form-check-label" for="confirm_agreement">
-              ข้าพเจ้ายืนยันว่าข้อมูลที่กรอกถูกต้องและยินยอมให้ใช้ข้อมูลนี้ในการตรวจเรือ
-            </label>
-          </div>
+                              <!-- ✅ เรือห้องเย็น / ระบบทำความเย็น -->
+                              <div class="mb-3 p-3 border rounded">
+                                <div class="form-check">
+                                  <!-- hidden เก็บค่า: 0/1 -->
+                                  <input type="hidden" name="request[cold_room_flag]" id="cold_room_flag" value="0">
+                                  <input class="form-check-input" type="checkbox" id="cold_room_checkbox">
+                                  <label class="form-check-label fw-semibold" for="cold_room_checkbox">
+                                    เรือห้องเย็น / มีระบบทำความเย็น
+                                  </label>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                  ถ้าเลือก ระบบจะเพิ่มหัวข้อ 5.8–5.9 ในรายการตรวจหมวดการเก็บรักษาสัตว์น้ำ
+                                </small>
+                              </div>
 
-          <!-- Hidden vessel fields -->
-          <input type="hidden" name="request[vessel_name]" id="hidden_vessel_name">
-        </div>
+                              <!-- Checkbox ยืนยัน -->
+                              <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="request[confirm_agreement]" id="confirm_agreement" required>
+                                <label class="form-check-label" for="confirm_agreement">
+                                  ข้าพเจ้ายืนยันว่าข้อมูลที่กรอกถูกต้องและยินยอมให้ใช้ข้อมูลนี้ในการตรวจเรือ
+                                </label>
+                              </div>
 
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">ยื่นคำขอ</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-<!-- /Modal -->
+                              <!-- Hidden vessel fields -->
+                              <input type="hidden" name="request[vessel_name]" id="hidden_vessel_name">
+                            </div>
+
+                            <div class="modal-footer">
+                              <button type="submit" class="btn btn-primary">ยื่นคำขอ</button>
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                    <!-- /Modal -->
+
  <!-- Modal: Request Inspection -->                   
                 <!-- /.container-fluid -->                  
 </div><!-- <div class="container-fluid"> -->
@@ -478,33 +494,85 @@ document.addEventListener('DOMContentLoaded', function () {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('requestInspectionForm');
-  const euCheckbox = document.getElementById('eu_cert_checkbox');
-  let typeInput = document.getElementById('inspection_form_type');
-  const submitBtn = form?.querySelector('button[type="submit"]');
+  if (!form) return;
 
-  // ✅ ถ้าไม่มี hidden inspection_form_type ให้สร้างเพิ่ม (default = 1)
+  const submitBtn   = form.querySelector('button[type="submit"]');
+
+  // ====== อ้างอิง checkbox/hidden ======
+  const euCheckbox  = document.getElementById('eu_cert_checkbox');
+  let   typeInput   = document.getElementById('inspection_form_type'); // hidden: 1/2
+
+  const coldCheckbox = document.getElementById('cold_room_checkbox');
+  let   coldInput    = document.getElementById('cold_room_flag');       // hidden: 0/1
+
+  // ✅ ถ้าไม่มี hidden → สร้างให้
   if (!typeInput) {
     typeInput = document.createElement('input');
     typeInput.type = 'hidden';
     typeInput.name = 'request[inspection_form_type]';
-    typeInput.id = 'inspection_form_type';
+    typeInput.id   = 'inspection_form_type';
     typeInput.value = '1';
     form.appendChild(typeInput);
   }
+  if (!coldInput) {
+    coldInput = document.createElement('input');
+    coldInput.type = 'hidden';
+    coldInput.name = 'request[cold_room_flag]';
+    coldInput.id   = 'cold_room_flag';
+    coldInput.value = '0';
+    form.appendChild(coldInput);
+  }
 
-  // ✅ sync checkbox → hidden value (1=ทั่วไป, 2=EU)
+  // ====== ฟังก์ชันซิงก์ค่า ======
+  const syncEuType = () => {
+    if (!euCheckbox) return;
+    typeInput.value = euCheckbox.checked ? '2' : '1'; // 1=ทั่วไป, 2=EU
+  };
+  const syncColdFlag = () => {
+    if (!coldCheckbox) return;
+    coldInput.value = coldCheckbox.checked ? '1' : '0'; // 1=มีห้องเย็น, 0=ไม่มี
+  };
+
+  // ====== ตั้งค่าเริ่มต้นจาก hidden (รองรับกรณีเปิดแก้ไข/เติมค่าเดิม) ======
   if (euCheckbox) {
-    const syncType = () => {
-      typeInput.value = euCheckbox.checked ? '2' : '1';
-    };
-    // ครั้งแรกตอนโหลด
-    syncType();
-    // เวลาเปลี่ยนค่า
-    euCheckbox.addEventListener('change', syncType);
+    // ถ้ามีค่าใน hidden อยู่แล้ว → ติ๊ก checkbox ให้ตรงกัน
+    euCheckbox.checked = (typeInput.value === '2');
+    syncEuType();
+    euCheckbox.addEventListener('change', syncEuType);
+  }
+  if (coldCheckbox) {
+    coldCheckbox.checked = (coldInput.value === '1');
+    syncColdFlag();
+    coldCheckbox.addEventListener('change', syncColdFlag);
+  }
+
+  // ====== Helper ตรวจสอบช่วงวันที่ ======
+  function validateDateRange() {
+    const startEl = document.getElementById('inspect_date_start');
+    const endEl   = document.getElementById('inspect_date_end');
+    if (!startEl || !endEl || !startEl.value || !endEl.value) return true;
+    const start = new Date(startEl.value);
+    const end   = new Date(endEl.value);
+    return start <= end;
   }
 
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
+
+    // sync ค่าอีกครั้งก่อนส่ง
+    syncEuType();
+    syncColdFlag();
+
+    // ตรวจวันที่เริ่ม–สิ้นสุด
+    if (!validateDateRange()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ช่วงวันที่ไม่ถูกต้อง',
+        text: '“วันที่เริ่มต้องการตรวจ” ต้องไม่เกิน “ถึงวันที่”',
+        confirmButtonText: 'ตกลง'
+      });
+      return;
+    }
 
     // ป้องกันกดซ้ำ
     if (submitBtn) {
@@ -515,36 +583,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     try {
-      // อัปเดตค่าอีกครั้งก่อนส่ง (กันกรณีมีการแก้ไขท้ายสุด)
-      if (euCheckbox) {
-        typeInput.value = euCheckbox.checked ? '2' : '1';
-      }
-
       // สร้าง payload
       const formData = new FormData(form);
 
-      // ส่งคำขอ
-      const response = await fetch('ajax/request_inspection.php', {
-        method: 'POST',
-        body: formData
-      });
+      // ปลายทาง: ใช้ action ของฟอร์มก่อน, ถ้าไม่มีให้ fallback
+      const endpoint = form.getAttribute('action') || 'ajax/request_inspection.php';
 
-      // ตรวจ response.ok ก่อน parse
+      // ส่งคำขอ
+      const response = await fetch(endpoint, { method: 'POST', body: formData });
+
       if (!response.ok) {
         const text = await response.text().catch(() => '');
         throw new Error(text || `HTTP ${response.status} ${response.statusText}`);
       }
 
-      // พยายาม parse JSON อย่างปลอดภัย
       let result;
       try {
         result = await response.json();
-      } catch (jsonErr) {
+      } catch {
         const text = await response.text().catch(() => '');
         throw new Error(text || 'ไม่สามารถอ่านข้อมูลที่ส่งกลับจากเซิร์ฟเวอร์ได้');
       }
 
-      // ประมวลผลผลลัพธ์
       if (result && result.success) {
         await Swal.fire({
           icon: 'success',
@@ -552,26 +612,22 @@ document.addEventListener('DOMContentLoaded', function () {
           text: result.message || 'บันทึกคำขอเรียบร้อย',
           confirmButtonText: 'ตกลง'
         });
-        location.reload(); // ✅ reload หลังจาก alert ปิด
+        location.reload();
       } else {
-        const msg = result?.message || 'ไม่สามารถบันทึกคำขอได้';
-        throw new Error(msg);
+        throw new Error(result?.message || 'ไม่สามารถบันทึกคำขอได้');
       }
     } catch (err) {
-      // ❌ กรณี AJAX ล้มเหลว / JSON ผิด / server error
       Swal.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาด',
         text: err.message || 'ไม่ทราบสาเหตุ',
         confirmButtonText: 'ตกลง'
       }).then(() => {
-        // ✅ ถ้า session หมดอายุ → ส่งกลับหน้า login
         if ((err.message || '').includes('Session')) {
           window.location.href = '../login.php';
         }
       });
     } finally {
-      // คืนสถานะปุ่ม
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = submitBtn.dataset.originalText || 'ยื่นคำขอ';
@@ -580,5 +636,6 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 </script>
+
 
 <?php include("../../private/shared/footerall.php"); ?>
