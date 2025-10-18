@@ -26,6 +26,7 @@ class Department extends DatabaseObject {
     public function __construct($args=[]) {
         $this->name = $args['name'] ?? '';
         $this->parent_department = $args['parent_department'] ?? '';
+        $this->data_owner_id = $args['data_owner_id'] ?? '';
         $this->address_no = $args['address_no'] ?? '';
         $this->building = $args['building'] ?? '';
         $this->alley = $args['alley'] ?? '';

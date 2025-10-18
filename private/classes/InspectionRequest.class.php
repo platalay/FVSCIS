@@ -20,6 +20,7 @@ class InspectionRequest extends DatabaseObject {
         'contact_phone',
         'department_id',
         'department_group_id',
+        'data_owner_id',
         'port_province_id',
         'port_amphur_id',
         'port_tambon_id',
@@ -33,6 +34,7 @@ class InspectionRequest extends DatabaseObject {
         'inspection_form_type',
         'cold_room_flag',
         'status',
+        'is_manual_case',
         'is_submitted',
         'submitted_at',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip',
@@ -49,6 +51,7 @@ class InspectionRequest extends DatabaseObject {
     public $contact_phone;
     public $department_id;
     public $department_group_id;
+    public $data_owner_id;
     public $port_province_id;
     public $port_amphur_id;
     public $port_tambon_id;
@@ -63,6 +66,7 @@ class InspectionRequest extends DatabaseObject {
 
     public $is_confirm = false;
     public $status;
+    public $is_manual_case;
     public $is_submitted;
     public $submitted_at;
     public $created_at;

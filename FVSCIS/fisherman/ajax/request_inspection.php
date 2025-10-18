@@ -96,10 +96,11 @@ try {
     $request->created_at              = date('Y-m-d H:i:s');
     $request->status                  = InspectionRequest::STATUS_PENDING;
     $request->confirmed_inspect_date  = null;
-
+    $request->contact_phone = $contact_phone;
     // 🌟 สำคัญ: เก็บรูปแบบฟอร์ม (1/2)
     $request->inspection_form_type = $inspection_form_type;
     $request->cold_room_flag = $cold_room_flag;
+    $request->is_manual_case = 0;
 
     if (!$request->save()) {
         $err = is_array($request->errors ?? null) ? implode(', ', $request->errors) : ($request->errors ?? '');

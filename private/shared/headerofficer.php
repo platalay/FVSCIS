@@ -63,6 +63,36 @@
           border-radius: 0;
         }
       }
+      .req-type-pill {
+        display: inline-flex;
+        gap: .4rem;
+        align-items: center;
+        background: #f8f9fa;
+        border: 1px solid #e6e6e6;
+        border-radius: 999px;
+        padding: .25rem .55rem;
+        font-size: 13px;
+        line-height: 1;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .req-type-pill:hover {
+        background: #eef3ff;
+        border-color: #c9d7f5;
+      }
+
+      /* ปรับสีแต่ละหมวด */
+      .req-type-pill i.eu        { color: #2f6bd8; }   /* EU */
+      .req-type-pill i.normal    { color: #6c757d; }   /* ตรวจทั่วไป */
+      .req-type-pill i.officer   { color: #0bb; }      /* เจ้าหน้าที่ */
+      .req-type-pill i.user      { color: #28a745; }   /* ผู้ยื่นเอง */
+      .req-type-pill i.cold      { color: #0ea5e9; }   /* ห้องเย็น */
+      .req-type-pill i.warm      { color: #9b9b9b; }   /* ไม่มีห้องเย็น */
+      .att-thumb {
+        width: 110px; height: 110px; object-fit: cover;
+        border-radius: .5rem; border: 1px solid #e6e6e6; cursor: zoom-in;
+        background:#f8f9fa;
+      }
     </style>
     
   </head>

@@ -33,7 +33,6 @@ try {
         'confirmed_inspect_date' => $request->confirmed_inspect_date,
         'is_confirm' => $request->is_confirm,
     ];
-
     echo json_encode([
         'success' => true,
         'request' => $data

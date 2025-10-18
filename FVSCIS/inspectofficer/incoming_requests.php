@@ -2,6 +2,7 @@
 require_once('../../private/initialize.php');
 $session->require_role(['inspectofficer']);
 $Officer = Officer::find_by_id($session->user_id());
+$Department = Department::find_by_id($Officer->departments_id);
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
 include("../../private/shared/topbarofficer.php");
@@ -13,12 +14,12 @@ include("../../private/shared/topbarofficer.php");
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <!--<h6 class="m-0 font-weight-bold text-primary">-->
+                            <h6 class="m-0 font-weight-bold text-primary">
                                 <!-- ปุ่ม Add -->
-                                <!--<button class="btn btn-success mb-3" onclick="addDepartmentgroup()">
-                                    <i class="fas fa-plus"></i> เพิ่มข้อมูล
+                                <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalManualCase">
+                                <i class="fas fa-plus"></i> เพิ่มข้อมูล
                                 </button>
-                            </h6>-->
+                            </h6>
                         </div>
                         <div class="card-body">
                         <div class="table-responsive">
@@ -29,7 +30,7 @@ include("../../private/shared/topbarofficer.php");
                                         <th>หมายเลขทะเบียนเรือ</th>
                                         <th>ชื่อเรือ</th>
                                         <th>ช่วงเวลาขอตรวจ</th>
-                                        <th></th>
+                                        <th>ประเภทคำขอ</th>
                                         <th>วันที่ยื่นคำขอ</th>
                                         <th>สถานะ</th>
                                     </tr>
@@ -54,6 +55,7 @@ include("../../private/shared/topbarofficer.php");
                                                 <!-- ปุ่มดูรายละเอียด -->
                                                 <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
                                                         data-bs-target="#modalRequestDetail"
+                                                        title="รายละเอียดคำขอ"
                                                         onclick="loadRequestDetail(<?= h($req->id) ?>)">
                                                     <i class="fas fa-search"></i>
                                                 </button>
@@ -76,7 +78,36 @@ include("../../private/shared/topbarofficer.php");
                                             <td><?= h($req->ship_code) ?></td>
                                             <td><?= h($req->vessel_name) ?></td>
                                             <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
-                                            <td></td>
+                                            <td class="text-center">
+                                            <?php
+                                                $icons = [];
+
+                                                // ① ตรวจแบบ EU หรือทั่วไป
+                                                if ($req->inspection_form_type == 2) {
+                                                $icons[] = '<i class="fas fa-globe-europe eu" title="ตรวจเพื่อ EU Export"></i>';
+                                                } else {
+                                                $icons[] = '<i class="fas fa-ship normal" title="ตรวจทั่วไป (แบบที่ 1)"></i>';
+                                                }
+
+                                                // ② ใครเป็นคนยื่น
+                                                if ($req->is_manual_case == 1) {
+                                                $icons[] = '<i class="fas fa-user-tie officer" title="เจ้าหน้าที่สร้างคำขอ"></i>';
+                                                } else {
+                                                $icons[] = '<i class="fas fa-user user" title="ผู้ประกอบการยื่นเอง"></i>';
+                                                }
+
+                                                // ③ ห้องเย็นหรือไม่
+                                                if ($req->cold_room_flag == 1) {
+                                                $icons[] = '<i class="fas fa-snowflake cold" title="เรือห้องเย็น"></i>';
+                                                } else {
+                                                $icons[] = '<i class="fas fa-thermometer-half warm" title="เรือทั่วไป (ไม่มีห้องเย็น)"></i>';
+                                                }
+
+                                                echo '<span class="req-type-pill">' . implode(' ', $icons) . '</span>';
+                                            ?>
+                                            </td>
+
+
                                             <td><?= thai_date($req->created_at) ?></td>
                                             <td>
                                                 <?php
@@ -118,55 +149,18 @@ include("../../private/shared/topbarofficer.php");
 
 
                     </div>
-                    <!-- modalRequestDetail -->   
-                    <div class="modal fade" id="modalRequestDetail" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content">
-                        <form id="confirmInspectionForm">
-                            <div class="modal-header">
-                            <h5 class="modal-title">รายละเอียดคำขอตรวจเรือ</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body" id="modalRequestBody">
-                            <!-- 📌 JS จะโหลดข้อมูลมาใส่ตรงนี้ -->
-                            </div>
-                            <div class="modal-footer">
-                            <input type="hidden" name="request_id" id="confirm_request_id">
-                            <input type="hidden" name="original_confirmed_date" id="original_confirmed_date">
-                            <div class="row g-2 align-items-center mb-3">
-                            <div class="col-auto">
-                                <label for="confirmed_date" class="col-form-label text-secondary fw-semibold">
-                                กรุณาเลือกวันนัดตรวจ
-                                </label>
-                            </div>
-                            <div class="col">
-                                <input type="date" id="confirmed_date" name="confirmed_date" class="form-control" required>
-                            </div>
-                            <div class="col-auto">
-                                <button type="button" class="btn btn-primary" id="btnConfirmDate">
-                                ยืนยัน
-                                </button>
-                            </div>
-                            </div>
-                            </div>
-                        </form>
-                        </div>
-                    </div>
-                    </div>
-                    <!-- modalRequestDetail -->                               
+                    <?php include(__DIR__ . '/modal/modalRequestDetail.php'); ?>
+                    <?php include(__DIR__ . '/modal/modal_manual_case.php'); ?>                           
                                
 </div><!-- <div class="container-fluid"> -->
 
   
 <?php include("../../private/shared/footerofficer.php"); ?>
-<!-- SweetAlert2 -->
+
+    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
-    
-                    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-                                                
     <script src="../js/fvscis.js"></script>                                            
             <script>
                 function loadRequestDetail(id) {
@@ -247,6 +241,7 @@ include("../../private/shared/topbarofficer.php");
 
 
             <script>
+            document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
             $(document).ready(function () {
             // กันเลือกวันย้อนหลัง (ถ้าอยากบังคับ)
             const today = new Date().toISOString().split('T')[0];
@@ -314,6 +309,174 @@ include("../../private/shared/topbarofficer.php");
             });
             </script>
 
+            <script>
+                // พรีวิวไฟล์ + ลบได้ก่อนส่ง
+                (function(){
+                const input = document.getElementById('attachments');
+                const preview = document.getElementById('filePreview');
+
+                // เก็บไฟล์ที่เลือกไว้ในออบเจ็กต์ DataTransfer เพื่อให้ "ลบแล้วอัปเดต input" ได้
+                const dt = new DataTransfer();
+
+                function renderList(){
+                    preview.innerHTML = '';
+                    for (let i = 0; i < dt.files.length; i++) {
+                    const f = dt.files[i];
+                    const row = document.createElement('div');
+                    row.className = 'd-flex align-items-center border rounded p-2 mb-2 gap-2';
+
+                    // ไอคอน/thumbnail
+                    const thumb = document.createElement('div');
+                    thumb.style.width = '48px'; thumb.style.height = '48px';
+                    thumb.className = 'd-flex align-items-center justify-content-center border rounded';
+                    // แสดงภาพถ้าเป็นรูป
+                    if (f.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.src = URL.createObjectURL(f);
+                        img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
+                        thumb.appendChild(img);
+                    } else {
+                        thumb.textContent = f.name.split('.').pop().toUpperCase(); // แสดงนามสกุลไฟล์
+                        thumb.style.fontSize = '12px';
+                    }
+
+                    // รายละเอียดไฟล์
+                    const info = document.createElement('div');
+                    info.className = 'flex-grow-1';
+                    info.innerHTML = `<div class="fw-semibold">${f.name}</div>
+                                        <div class="text-muted" style="font-size:12px">
+                                        ${(f.size/1024).toFixed(0)} KB • ${f.type || 'unknown'}
+                                        </div>`;
+
+                    // ปุ่มลบ
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn btn-sm btn-outline-danger';
+                    btn.innerHTML = '<i class="fas fa-trash"></i>';
+                    btn.onclick = () => {
+                        // ลบรายการที่ i ออกจาก DataTransfer แล้วรีเฟรช
+                        const ndt = new DataTransfer();
+                        for (let j = 0; j < dt.files.length; j++) {
+                        if (j !== i) ndt.items.add(dt.files[j]);
+                        }
+                        // คัดลอกกลับ
+                        dt.items.clear();
+                        for (let k = 0; k < ndt.files.length; k++) dt.items.add(ndt.files[k]);
+                        input.files = dt.files;
+                        renderList();
+                    };
+
+                    row.appendChild(thumb);
+                    row.appendChild(info);
+                    row.appendChild(btn);
+                    preview.appendChild(row);
+                    }
+                }
+
+                // เมื่อเลือกไฟล์ใหม่ ให้ merge เข้ากับ dt (รองรับเลือกหลายรอบ)
+                input.addEventListener('change', (e) => {
+                    const maxSize = 10 * 1024 * 1024; // 10MB/ไฟล์
+                    const allow = ['pdf','jpg','jpeg','png','doc','docx'];
+
+                    for (const f of e.target.files) {
+                    const ext = f.name.split('.').pop().toLowerCase();
+                    if (!allow.includes(ext)) { alert(`${f.name}: ชนิดไฟล์ไม่อนุญาต`); continue; }
+                    if (f.size > maxSize) { alert(`${f.name}: ไฟล์ใหญ่เกิน 10MB`); continue; }
+                    dt.items.add(f);
+                    }
+                    input.value = ''; // เคลียร์ input เดิม เพื่อให้เลือกซ้ำได้
+                    input.files = dt.files;
+                    renderList();
+                });
+                })();
+                </script>
+
+                <script>
+                $(document).ready(function () {
+                    $('#port_tambon_id').on('change', function () {
+                        const tambonId = $(this).val();
+                        $('#port_license_no').html('<option value="">-- เลือกท่าเรือ --</option>');
+
+                        if (tambonId) {
+                            $.ajax({
+                                url: 'ajax/get_ports_by_tambon.php',
+                                type: 'GET',
+                                data: { tambon_id: tambonId },
+                                dataType: 'html',
+                                success: function (html) {
+                                    $('#port_license_no').html(html);
+                                }
+                            });
+                        }
+                    });
+                });
+                </script>
+
+                <script>
+                    // ตั้งค่า checkbox -> hidden
+                    (function(){
+                    const euCbx   = document.getElementById('eu_cert_checkbox');
+                    const euType  = document.getElementById('inspection_form_type'); // hidden
+                    const coldCbx = document.getElementById('cold_room_checkbox');
+                    const coldFlg = document.getElementById('cold_room_flag');       // hidden
+
+                    if(euCbx){
+                        euCbx.addEventListener('change', ()=> euType.value = euCbx.checked ? '2' : '1');
+                    }
+                    if(coldCbx){
+                        coldCbx.addEventListener('change', ()=> coldFlg.value = coldCbx.checked ? '1' : '0');
+                    }
+
+                    // กันย้อนหลังให้ช่องวันที่
+                    const d = document.getElementById('confirmed_inspect_date');
+                    if(d) d.min = new Date().toISOString().split('T')[0];
+                    })();
+
+                    // ส่งฟอร์มด้วย AJAX
+                    $(document).on('submit', '#formManualCase', function(e){
+                    e.preventDefault();
+
+                    const $btn = $(this).find('button[type="submit"]').prop('disabled', true);
+                    const fd   = new FormData(this); // เก็บทุก input ที่มี name รวมถึงไฟล์ attachments[]
+
+                    // ตรวจไฟล์ภาพฝั่ง client (กันพลาด)
+                    const files = $('#attachments')[0]?.files || [];
+                    const allow = ['image/jpeg','image/png','image/gif','image/webp'];
+                    for(let i=0;i<files.length;i++){
+                        if(!allow.includes(files[i].type)){ 
+                        Swal.fire('ไฟล์ไม่ถูกต้อง','อนุญาตเฉพาะรูปภาพ JPG/PNG/GIF/WebP','warning');
+                        $btn.prop('disabled', false);
+                        return;
+                        }
+                        if(files[i].size > 10*1024*1024){
+                        Swal.fire('ไฟล์ใหญ่เกินไป','จำกัดไม่เกิน 10MB ต่อไฟล์','warning');
+                        $btn.prop('disabled', false);
+                        return;
+                        }
+                    }
+
+                    $.ajax({
+                        url: 'ajax/create_manual_request_by_officer.php',
+                        type: 'POST',
+                        data: fd,
+                        processData: false,
+                        contentType: false,
+                        dataType: 'json'
+                    }).done(res => {
+                        if(res.success){
+                        Swal.fire({icon:'success', title:'สำเร็จ', text:res.message, timer:1600, showConfirmButton:false})
+                            .then(()=> location.reload());
+                        }else{
+                        Swal.fire('ไม่สำเร็จ', res.message || 'บันทึกไม่สำเร็จ', 'error');
+                        }
+                    }).fail(xhr => {
+                        Swal.fire('ผิดพลาด', 'ติดต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+                        console.error(xhr.responseText);
+                    }).always(() => $btn.prop('disabled', false));
+                    });
+                    </script>
+
+                
 <?php 
 include("../../private/shared/footerall.php");
 ?>

@@ -70,30 +70,45 @@ class InspectionFormPreservation extends DatabaseObject {
         return false;
     }
 
-    public static function check_complete($request_id) {
-        $record = self::find_or_create($request_id);
-        $is_complete = true;
+        public static function check_complete($request_id) {
+            $record = self::find_or_create($request_id);
+            $is_complete = true;
 
-        // วนเฉพาะ status_5_*
-        foreach (get_object_vars($record) as $property => $value) {
-            if (preg_match('/^status_5_\d+$/', $property)) {
-                // $code จะเป็น "5_3", "5_4", ...
+            // 1) อ่าน cold_room_flag จากคำขอ
+            $req  = InspectionRequest::find_by_id($request_id);
+            $cold = ((int)($req->cold_room_flag ?? 0) === 1);
+
+            // 2) รองรับทั้งกรณี ORM เก็บใน attributes() หรือเป็น public properties
+            $vars = method_exists($record, 'attributes') ? $record->attributes() : get_object_vars($record);
+
+            // 3) วนเฉพาะฟิลด์ status_5_*
+            foreach ($vars as $property => $value) {
+                if (!preg_match('/^status_5_\d+$/', $property)) continue;
+
+                // $code เช่น "5_8", "5_09", "5_10"
                 $code = substr($property, 7);
 
+                // ❗ ถ้าไม่ใช่เรือห้องเย็น → ข้าม 5.8 และ 5.9 (เผื่อรูปแบบมีศูนย์นำหน้า)
+                if (!$cold && preg_match('/^5_0?(8|9)$/', $code)) {
+                    continue;
+                }
+
                 $status = $record->$property ?? null;
-                if (!in_array($status, ['pass', 'fail'], true)) {
-                    $is_complete = false; // ยังไม่เลือก
+                $status = is_string($status) ? trim($status) : $status;
+
+                if ($status !== 'pass' && $status !== 'fail') {
+                    $is_complete = false; // ยังไม่ได้เลือก
                     break;
                 }
 
                 if ($status === 'fail') {
-                    $reasonProvided  = false;
-                    $hasAnyCheckbox  = false;
+                    $hasAnyCheckbox = false;
+                    $reasonProvided = false;
 
-                    // หา fail_{5_x}_{j} (แก้ regex ให้ใช้ $code ตรงๆ ไม่ซ้ำเลข 5)
+                    // หา fail_{5_x}_{j} ให้ตรงกับ code จริง (รองรับ 5_8 และ 5_09)
                     $pattern = '/^fail_' . preg_quote($code, '/') . '_\d+$/';
 
-                    foreach (get_object_vars($record) as $fail_prop => $fail_value) {
+                    foreach ($vars as $fail_prop => $fail_value) {
                         if (preg_match($pattern, $fail_prop)) {
                             $hasAnyCheckbox = true;
                             if (!empty($fail_value)) {
@@ -103,32 +118,32 @@ class InspectionFormPreservation extends DatabaseObject {
                         }
                     }
 
-                    // remark ของข้อปัจจุบัน: remark_{5_x} (แก้จาก remark_5_{$code} ที่ผิด)
+                    // remark ของข้อปัจจุบัน: remark_{5_x}
                     $remark_field = 'remark_' . $code;
                     $remark = $record->$remark_field ?? '';
-
-                    if (!empty($remark)) {
+                    if (trim((string)$remark) !== '') {
                         $reasonProvided = true;
                     }
 
-                    // ถ้ามี checkbox ให้เลือก แต่ยังไม่มีเหตุผลเลย → ไม่ครบ
+                    // มี checkbox แต่ยังไม่มีเหตุผลทั้ง checkbox/remark → ไม่ครบ
                     if ($hasAnyCheckbox && !$reasonProvided) {
                         $is_complete = false;
                         break;
                     }
                 }
             }
+
+            // 4) อัปเดตสถานะความครบถ้วนของหมวด 5
+            $status_record = InspectionFormStatus::find_by_request_id($request_id);
+            if ($status_record) {
+                $status_record->form_preservation_status = $is_complete ? 1 : 0;
+                $status_record->save();
+            }
+
+            return $is_complete;
         }
 
-        // อัปเดต InspectionFormStatus
-        $status_record = InspectionFormStatus::find_by_request_id($request_id);
-        if ($status_record) {
-            $status_record->form_preservation_status = $is_complete ? 1 : 0;
-            $status_record->save();
-        }
 
-        return $is_complete;
-    }
 
     public static function find_by_request_id($request_id) {
         $escaped = self::$database->escape_string($request_id);
