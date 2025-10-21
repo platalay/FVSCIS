@@ -29,3 +29,4 @@ try {
         'message' => $e->getMessage()
     ]);
 }
+

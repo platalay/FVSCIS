@@ -93,5 +93,15 @@ class InspectionAttachment extends DatabaseObject {
         }
         return false;
     }
+
+     public static function count_by_request_id($request_id) {
+        $rid = self::$database->escape_string($request_id);
+        $sql = "SELECT COUNT(*) AS c FROM " . static::$table_name . " WHERE request_id = '{$rid}'";
+        $res = self::$database->query($sql);
+        if ($res && ($row = $res->fetch_assoc())) {
+            return (int)$row['c'];
+        }
+        return 0;
+    }
 }
 ?>

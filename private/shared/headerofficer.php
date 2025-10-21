@@ -93,6 +93,30 @@
         border-radius: .5rem; border: 1px solid #e6e6e6; cursor: zoom-in;
         background:#f8f9fa;
       }
+
+      /* ใช้เฉพาะในโมดัลนี้ */
+      #modalFvscisOldAdd .file-card{ position:relative; }
+      #modalFvscisOldAdd .thumb-wrap{
+        width: 100%;
+        height: 120px;             /* 💡 ความสูง thumbnail */
+        border-radius: .5rem;
+        overflow: hidden;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+      }
+      #modalFvscisOldAdd .thumb-wrap img{
+        width: 100%;
+        height: 100%;
+        object-fit: cover;          /* ครอปให้พอดีกรอบ */
+        display: block;
+      }
+      #modalFvscisOldAdd .icon-pdf{
+        display:flex; align-items:center; justify-content:center;
+        width:100%; height:120px; border-radius:.5rem;
+        background:#fff1f2; border:1px dashed #fecdd3; font-weight:700;
+      }
+      #modalFvscisOldAdd .file-name{ font-size:.825rem; }
+
     </style>
     
   </head>

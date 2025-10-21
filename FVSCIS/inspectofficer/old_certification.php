@@ -74,6 +74,15 @@ include("../../private/shared/topbarofficer.php");
                                                         onclick="deleteOldCertification(<?= h($req->id) ?>, this)">
                                                 <i class="fas fa-trash"></i>
                                                 </button>
+                                                <?php
+                                                $attCount = FvCertificateAttachment::count_by_certificate_id($req->id);
+                                                if ($attCount > 0): ?>
+                                                <button class="btn btn-sm btn-warning btn-attachments"
+                                                        title="ไฟล์แนบ (<?= $attCount ?>)"
+                                                        data-id="<?= $req->id ?>">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </button>
+                                                <?php endif; ?>  
 
                                             </td>
                                             <td><?= h($req->vessel_name) ?></td>
@@ -91,415 +100,12 @@ include("../../private/shared/topbarofficer.php");
 
 
                     </div>
-                    <!-- modalviewOldModal -->
-                    <!-- Modal: รายละเอียดใบรับรองสุขอนามัยเรือ (ข้อมูลเก่า) -->
-                    <div class="modal fade" id="oldCertificationModal" tabindex="-1" aria-labelledby="oldCertLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                        <div class="modal-content border-0 shadow-lg">
-                        <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title" id="oldCertLabel">รายละเอียดใบรับรองสุขอนามัยเรือ (ข้อมูลเก่า)</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="ปิด"></button>
-                        </div>
-
-                        <div class="modal-body">
-                            <!-- Loading -->
-                            <div id="oldCertLoading" class="text-center my-4" style="display:none;">
-                            <div class="spinner-border" role="status"></div>
-                            <div class="mt-2">กำลังโหลดข้อมูล...</div>
-                            </div>
-
-                            <!-- Error -->
-                            <div id="oldCertError" class="alert alert-danger" style="display:none;"></div>
-
-                            <!-- เนื้อหา -->
-                            <div id="oldCertContent" style="display:none;">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">ชื่อเรือ</label>
-                                <div id="oc_vessel_name" class="fw-semibold"></div>
-                                </div>
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">ทะเบียนเรือ</label>
-                                <div id="oc_ship_code" class="fw-semibold"></div>
-                                </div>
-
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">หมายเลขเครื่องหมายเรือ</label>
-                                <div id="oc_vessel_mark"></div>
-                                </div>
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">เลขที่ใบอนุญาตทำการประมง</label>
-                                <div id="oc_license_number"></div>
-                                </div>
-
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">ชนิดเครื่องมือทำการประมง</label>
-                                <div id="oc_gear_type"></div>
-                                </div>
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">ชื่อเจ้าของเรือ</label>
-                                <div id="oc_owner_name"></div>
-                                </div>
-
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">เลขที่ใบรับรอง</label>
-                                <div id="oc_certificate_number"></div>
-                                </div>
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">สถานะเรือ</label>
-                                <div id="oc_vessel_status"></div>
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label text-muted">วันที่ยื่นคำขอ</label>
-                                <div id="oc_request_date"></div>
-                                </div>
-                                <div class="col-md-3">
-                                <label class="form-label text-muted">วันที่ลงนาม</label>
-                                <div id="oc_signature_date"></div>
-                                </div>
-                                <div class="col-md-3">
-                                <label class="form-label text-muted">วันที่มีผล</label>
-                                <div id="oc_effective_date"></div>
-                                </div>
-                                <div class="col-md-3">
-                                <label class="form-label text-muted">วันหมดอายุ</label>
-                                <div id="oc_expiration_date"></div>
-                                </div>
-
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">หน่วยประเมิน</label>
-                                <div id="oc_evaluation_agency"></div>
-                                </div>
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">หน่วยลงนาม</label>
-                                <div id="oc_signing_unit"></div>
-                                </div>
-
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">หน่วยรับผิดชอบ</label>
-                                <div id="oc_responsible_unit"></div>
-                                </div>
-                                <div class="col-md-6">
-                                <label class="form-label text-muted">สถานะใบรับรอง</label>
-                                <div id="oc_certificate_status"></div>
-                                </div>
-
-                                <div class="col-12">
-                                <label class="form-label text-muted">เหตุผลออกใบรับรองชั่วคราว</label>
-                                <div id="oc_temporary_reason"></div>
-                                </div>
-                                <div class="col-12">
-                                <label class="form-label text-muted">หมายเหตุ</label>
-                                <div id="oc_remark"></div>
-                                </div>
-                            </div>
-                            </div>
-                        </div>
-
-                        <div class="modal-footer bg-light">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
-                        </div>
-                        </div>
-                    </div>
-                    </div>
-
-                    <!-- /modalviewOldModal -->
-
-                    <!-- Modal: Add FvSanitationCertificationOld -->
-                    <div class="modal fade" id="modalFvscisOldAdd" tabindex="-1" aria-labelledby="modalFvscisOldAddLabel" aria-hidden="true">
-                    <!-- ✅ เลื่อนเฉพาะ body และเต็มจอเมื่อจอเล็ก -->
-                    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-sm-down">
-                        <div class="modal-content">
-                        <form id="form-fvscisold-add" autocomplete="off">
-                            <div class="modal-header">
-                            <h5 class="modal-title" id="modalFvscisOldAddLabel">เพิ่มข้อมูลใบรับรอง(manual)</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
-                            </div>
-
-                            <!-- ✅ เผื่อ fallback ใส่ style overflow:auto ด้วย (ไม่รบกวน CSS ข้างบน) -->
-                            <div class="modal-body" style="overflow-y:auto;">
-                            <div class="row g-3">
-
-                                <!-- 2 : ship_code + ปุ่มค้นหา -->
-                                <div class="col-md-3">
-                                <label class="form-label">รหัสเรือ</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" name="FvSanitationCertificationOld[ship_code]" id="fv-ship-code" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="btnLookupShip">
-                                    <span class="d-inline" id="btnText">ค้นหา</span>
-                                    <span class="spinner-border spinner-border-sm d-none" id="btnSpin" role="status" aria-hidden="true"></span>
-                                    </button>
-                                </div>
-                                </div>
-
-                                <!-- 1 -->
-                                <div class="col-md-3">
-                                <label class="form-label">ชื่อเรือ</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[vessel_name]" id="fv-vessel-name" required>
-                                </div>
-
-                                <!-- 3 -->
-                                <div class="col-md-3">
-                                <label class="form-label">หมายเลข/สัญลักษณ์เรือ</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[vessel_mark]" id="fv-vessel-mark">
-                                </div>
-
-                                <!-- 4 -->
-                                <div class="col-md-3">
-                                <label class="form-label">เลขที่ใบอนุญาต</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[license_number]" id="fv-license-number">
-                                </div>
-
-                                <!-- 5 -->
-                                <div class="col-md-3">
-                                <label class="form-label">ชนิดเครื่องมือทำการประมง</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[gear_type]" id="fv-gear-type">
-                                </div>
-
-                                <!-- 6 -->
-                                <div class="col-md-3">
-                                <label class="form-label">ชื่อเจ้าของเรือ</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[owner_name]" id="fv-owner-name">
-                                </div>
-
-                                <!-- 7 -->
-                                <div class="col-md-3">
-                                <label class="form-label">เลขที่ใบรับรอง</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[certificate_number]" required>
-                                </div>
-
-                                <!-- วันที่ -->
-                                <div class="col-md-3">
-                                <label class="form-label">วันที่ยื่นคำขอ</label>
-                                <input type="date" class="form-control" name="FvSanitationCertificationOld[request_date]">
-                                </div>
-                                <div class="col-md-3">
-                                <label class="form-label">วันที่ลงนาม</label>
-                                <input type="date" class="form-control" name="FvSanitationCertificationOld[signature_date]">
-                                </div>
-                                <div class="col-md-3">
-                                <label class="form-label">วันที่มีผล</label>
-                                <input type="date" class="form-control" name="FvSanitationCertificationOld[effective_date]" required>
-                                </div>
-                                <div class="col-md-3">
-                                <label class="form-label">วันหมดอายุ</label>
-                                <input type="date" class="form-control" name="FvSanitationCertificationOld[expiration_date]" required>
-                                </div>
-
-                                <!-- ซ่อนค่าอ้างอิง -->
-                                <input type="hidden" name="FvSanitationCertificationOld[evaluation_agency]" value="<?= h($Officer->departments_id ?? '') ?>">
-                                <input type="hidden" name="FvSanitationCertificationOld[signing_unit]"        value="<?= h($department->parent_department ?? '') ?>">
-                                <input type="hidden" name="FvSanitationCertificationOld[responsible_unit]"   value="<?= h($departmentgroup->responsible_unit ?? '') ?>">
-
-                                <!-- สถานะ -->
-                                <div class="col-md-3">
-                                <label class="form-label">สถานะใบรับรอง (certificate_status)</label>
-                                <select class="form-select" name="FvSanitationCertificationOld[certificate_status]" required>
-                                    <option value="" selected disabled>-- เลือกสถานะ --</option>
-                                    <option value="สร. 3">สร. 3</option>
-                                    <option value="สร. 3 ชั่วคราว">สร. 3 ชั่วคราว</option>
-                                    <option value="ไม่ผ่าน">ไม่ผ่าน</option>
-                                </select>
-                                </div>
-
-                                <!-- อื่น ๆ -->
-                                <div class="col-md-6">
-                                <label class="form-label">เหตุผลชั่วคราว</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[temporary_reason]">
-                                </div>
-
-                                <div class="col-md-6">
-                                <label class="form-label">หมายเหตุ (remark)</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[remark]">
-                                </div>
-
-                                <!-- แสดงผลในโมดัล -->
-                                <?php
-                                $eval = $evaluation_agency ?? '';
-                                $sign = $signing_unit ?? '';
-                                $resp = $responsible_unit ?? '';
-                                ?>
-                                <div class="col-12">
-                                <div class="border rounded p-3 mb-2 bg-light">
-                                    <div class="row g-2 small">
-                                    <div class="col-md-4">
-                                        <div class="fw-semibold">หน่วยประเมิน</div>
-                                        <div><?= $eval !== '' ? h($eval) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="fw-semibold">หน่วยลงนาม</div>
-                                        <div><?= $sign !== '' ? h($sign) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="fw-semibold">หน่วยงานรับผิดชอบ</div>
-                                        <div><?= $resp !== '' ? h($resp) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
-                                    </div>
-                                    </div>
-                                </div>
-                                </div>
-
-                            </div><!-- /.row -->
-                            </div><!-- /.modal-body -->
-
-                            <div class="modal-footer">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
-                            <button type="submit" class="btn btn-primary">บันทึก</button>
-                            </div>
-                        </form>
-                        </div>
-                    </div>
-                    </div>
-                    <!-- /Modal -->   
-                     
-                    <!-- Modal: Edit FvSanitationCertificationOld -->
-                    <div class="modal fade" id="modalFvscisOldEdit" tabindex="-1"
-                        aria-labelledby="modalFvscisOldEditLabel" aria-hidden="true">
-                    <!-- เลื่อนเฉพาะ body + fullscreen เมื่อ lg-down -->
-                    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down">
-                        <div class="modal-content">
-                        <form id="form-fvscisold-edit" autocomplete="off">
-                            <div class="modal-header">
-                            <h5 class="modal-title" id="modalFvscisOldEditLabel">แก้ไขข้อมูลใบรับรอง (เก่า)</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
-                            </div>
-
-                            <div class="modal-body">
-                            <input type="hidden" name="FvSanitationCertificationOld[id]" id="edit-id">
-
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                <label class="form-label">รหัสเรือ</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[ship_code]" id="edit-ship-code" required>
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">ชื่อเรือ</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[vessel_name]" id="edit-vessel-name" required>
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">หมายเลข/สัญลักษณ์เรือ</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[vessel_mark]" id="edit-vessel-mark">
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">เลขที่ใบอนุญาต</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[license_number]" id="edit-license-number">
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">ชนิดเครื่องมือทำการประมง</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[gear_type]" id="edit-gear-type">
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">ชื่อเจ้าของเรือ</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[owner_name]" id="edit-owner-name">
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">เลขที่ใบรับรอง</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[certificate_number]" id="edit-certificate-number" required>
-                                </div>
-
-                                <!-- วันที่ -->
-                                <div class="col-md-3">
-                                <label class="form-label">วันที่ยื่นคำขอ</label>
-                                <input type="date" class="form-control"
-                                        name="FvSanitationCertificationOld[request_date]" id="edit-request-date">
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">วันที่ลงนาม</label>
-                                <input type="date" class="form-control"
-                                        name="FvSanitationCertificationOld[signature_date]" id="edit-signature-date">
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">วันที่มีผล</label>
-                                <input type="date" class="form-control"
-                                        name="FvSanitationCertificationOld[effective_date]" id="edit-effective-date" required>
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">วันหมดอายุ</label>
-                                <input type="date" class="form-control"
-                                        name="FvSanitationCertificationOld[expiration_date]" id="edit-expiration-date" required>
-                                </div>
-
-                                <div class="col-md-3">
-                                <label class="form-label">สถานะใบรับรอง</label>
-                                <select class="form-select"
-                                        name="FvSanitationCertificationOld[certificate_status]" id="edit-certificate-status" required>
-                                    <option value="" disabled>-- เลือกสถานะ --</option>
-                                    <option value="สร. 3">สร. 3</option>
-                                    <option value="สร. 3 ชั่วคราว">สร. 3 ชั่วคราว</option>
-                                    <option value="ไม่ผ่าน">ไม่ผ่าน</option>
-                                </select>
-                                </div>
-
-                                <!-- Hidden (หน่วยงาน จาก record เดิม) -->
-                                <input type="hidden" name="FvSanitationCertificationOld[evaluation_agency]" id="edit-evaluation-agency">
-                                <input type="hidden" name="FvSanitationCertificationOld[signing_unit]" id="edit-signing-unit">
-                                <input type="hidden" name="FvSanitationCertificationOld[responsible_unit]" id="edit-responsible-unit">
-                                <input type="hidden" name="FvSanitationCertificationOld[type]" id="edit-type" value="0">
-
-                                <!-- สรุปหน่วยงาน -->
-                                <?php
-                                $eval  = $evaluation_agency  ?? '';
-                                $sign  = $signing_unit       ?? '';
-                                $resp  = $responsible_unit   ?? '';
-                                ?>
-                                <div class="col-12">
-                                <div class="border rounded p-3 mb-2 bg-light">
-                                    <div class="row g-2 small">
-                                    <div class="col-md-4">
-                                        <div class="fw-semibold">หน่วยประเมิน</div>
-                                        <div><?= $eval !== '' ? h($eval) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="fw-semibold">หน่วยลงนาม</div>
-                                        <div><?= $sign !== '' ? h($sign) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="fw-semibold">หน่วยงานรับผิดชอบ</div>
-                                        <div><?= $resp !== '' ? h($resp) : '<span class="text-muted">ไม่ระบุ</span>' ?></div>
-                                    </div>
-                                    </div>
-                                </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                <label class="form-label">เหตุผลชั่วคราว</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[temporary_reason]" id="edit-temporary-reason">
-                                </div>
-
-                                <div class="col-md-6">
-                                <label class="form-label">หมายเหตุ (remark)</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[remark]" id="edit-remark">
-                                </div>
-                            </div><!-- /.row -->
-                            </div><!-- /.modal-body -->
-
-                            <div class="modal-footer">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
-                            <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
-                            </div>
-                        </form>
-                        </div>
-                    </div>
-                    </div>
-                    <!-- /Modal -->
+                    
+                    <?php include(__DIR__ . '/modal/modal_view_fvsanitation_old.php'); ?>
+                    <?php include(__DIR__ . '/modal/modal_add_fvsanitation_old.php'); ?>
+                    <?php include(__DIR__ . '/modal/modal_edit_fvsanitation_old.php'); ?>
+                    <?php include(__DIR__ . '/modal/modal_attachment.php'); ?>  
+                    
                                
 </div><!-- <div class="container-fluid"> -->
 
@@ -695,26 +301,36 @@ include("../../private/shared/topbarofficer.php");
         // ajax เพิ่มข้อมูล
         <script>
         // ส่งฟอร์มด้วย AJAX
-        $('#form-fvscisold-add').on('submit', function(e) {
-        e.preventDefault();
-        $.ajax({
-            url: 'ajax/create_fvscisold.php',
-            type: 'POST',
-            data: $(this).serialize(),
-            dataType: 'json',
-            success: function(res) {
-            if (res.success) {
-                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', timer: 1200, showConfirmButton: false })
-                .then(() => location.reload());
-            } else {
-                Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.message || 'กรุณาลองใหม่' });
-            }
-            },
-            error: function(xhr) {
-            Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: xhr.responseText || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์' });
-            }
-        });
-        });
+            $('#form-fvscisold-add').on('submit', function(e){
+            e.preventDefault();
+            const form = this;
+            const fd = new FormData(form);
+            $.ajax({
+                url: 'ajax/fvscis_old_create.php',
+                method: 'POST',
+                data: fd,
+                processData: false,
+                contentType: false,
+                dataType: 'json'
+            }).done(function(res){
+                if(res.success){
+                    Swal.fire({
+                        title: 'สำเร็จ',
+                        text: 'บันทึกข้อมูลเรียบร้อย',
+                        icon: 'success',
+                        timer: 1200,
+                        showConfirmButton: false
+                    }).then(() => {
+                        $('#modalFvscisOldAdd').modal('hide');
+                        location.reload(); // ✅ รีเฟรชหน้าใหม่ทั้งหมด
+                    });
+                }else{
+                Swal.fire('ผิดพลาด', res.message || 'บันทึกไม่สำเร็จ', 'error');
+                }
+            }).fail(function(){
+                Swal.fire('ผิดพลาด','ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้','error');
+            });
+            });
         </script>
 
         // update
@@ -850,7 +466,175 @@ include("../../private/shared/topbarofficer.php");
             }
             </script>
 
-                                          
+            <script>
+            // ===== พรีวิวไฟล์ก่อนอัปโหลด =====
+            (function(){
+            const $input  = $('#certAttachments');
+            const $list   = $('#selectedFiles');
+            let selected  = []; // เก็บ File objects
+
+            // สร้าง/อัปเดต FileList ใน input จาก selected[]
+            function syncInputFiles(){
+                const dt = new DataTransfer();
+                selected.forEach(f => dt.items.add(f));
+                $input[0].files = dt.files;
+            }
+
+            // เรนเดอร์การ์ดพรีวิว
+            function renderSelected(){
+                if(!selected.length){ $list.empty(); return; }
+                let html = '';
+                selected.forEach((f,idx)=>{
+                const ext = (f.name.split('.').pop() || '').toLowerCase();
+                const isImg = ['jpg','jpeg','png','webp','gif'].includes(ext);
+                const src = isImg ? URL.createObjectURL(f) : '';
+                html += `
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 shadow-sm file-card">
+                        <button type="button" class="btn btn-sm btn-danger btn-remove" data-idx="${idx}" title="เอาไฟล์นี้ออก">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        ${isImg
+                            ? `<div class="thumb-wrap"><img src="${src}" alt="${f.name}"></div>`
+                            : `<div class="icon-pdf">PDF</div>`
+                        }
+                        <div class="file-name mt-2 text-truncate" title="${f.name}">${f.name}</div>
+                        </div>
+                    </div>`;
+                });
+                $list.html(html);
+            }
+
+            // เมื่อเลือกไฟล์
+            $input.on('change', function(){
+                const files = Array.from(this.files || []);
+                // ต่อท้ายรายการ (กัน duplicate ด้วยชื่อ+ขนาด)
+                files.forEach(f=>{
+                if(!selected.some(x => x.name===f.name && x.size===f.size)){ selected.push(f); }
+                });
+                syncInputFiles(); renderSelected();
+            });
+
+            // ลบไฟล์ออกจากพรีวิว/อินพุต
+            $list.on('click', '.btn-remove', function(){
+                const idx = +$(this).data('idx');
+                if(idx>=0){ selected.splice(idx,1); syncInputFiles(); renderSelected(); }
+            });
+            })();
+            </script>
+
+            <script>
+                    // 📎 เมื่อคลิกปุ่มไฟล์แนบ (เวอร์ชันใหม่)
+                    $(document).on('click', '.btn-attachments', function () {
+                    const reqId = $(this).data('id');
+                    if (!reqId) return;
+
+                    // เคลียร์ UI เดิม
+                    $('#photoModalReqId').text('');          // เราจะใส่ "ชื่อเรือ (ทะเบียน ...) — N รูป" ทีหลัง
+                    $('#photoGrid').empty();
+                    $('#photoEmpty').addClass('d-none').text('กำลังโหลด...');
+                    $('#photoPreviewWrap').addClass('d-none');
+                    $('#photoPreviewImg').attr('src', '');
+
+                    // เปิดโมดัลก่อน (ให้ผู้ใช้เห็นว่าเริ่มทำงานแล้ว)
+                    $('#modalPhotoAttachments').modal('show');
+
+                    // สร้าง Promise สองตัว (ดึงรายละเอียดคำขอ + ไฟล์แนบ)
+                    const pDetail = $.ajax({
+                        url: 'ajax/get_certification_detail.php',
+                        method: 'GET',
+                        data: { id: reqId },
+                        dataType: 'json'
+                    });
+
+                    const pAttach = $.ajax({
+                        url: 'ajax/get_certification_attachments.php',
+                        method: 'GET',
+                        data: { id: reqId },
+                        dataType: 'json'
+                    });
+
+                    // รอทั้งสองอย่างเสร็จ แล้วค่อยอัปเดตหัวข้อ + แสดงรูป
+                    $.when(pDetail, pAttach).done(function (detailRes, attachRes) {
+                        // jQuery.when คืนค่าเป็น array [data, statusText, jqXHR]
+                        const detail = detailRes[0];
+                        const attach = attachRes[0];
+
+                        // ----- 1) เตรียมชื่อเรือ/ทะเบียน -----
+                        let vesselName = '';
+                        let shipCode   = '';
+                        if (detail && detail.success && detail.request) {
+                        vesselName = detail.request.vessel_name || '';
+                        shipCode   = detail.request.ship_code   || '';
+                        }
+
+                        // ----- 2) เรนเดอร์รูป -----
+                        let photos = [];
+                        if (attach && attach.success && Array.isArray(attach.attachments)) {
+                        photos = attach.attachments.filter(a => a.is_image);
+                        // ใช้ url ที่ encode แล้ว ถ้า API ส่งมา
+                        photos = photos.map(p => ({
+                            ...p,
+                            _url: p.url_enc ? p.url_enc : (encodeURI(p.url || ''))
+                        }));
+                        } else {
+                        $('#photoEmpty').removeClass('d-none').text('ไม่สามารถโหลดไฟล์แนบได้');
+                        }
+                        renderPhotoGrid(photos);
+
+                        // ----- 3) ตั้งหัวโมดัล: "ชื่อเรือ (ทะเบียน xxx) — N รูป" -----
+                        const parts = [];
+                        if (vesselName) parts.push(`ชื่อเรือ ${vesselName}`);
+                        if (shipCode)   parts.push(`ทะเบียน ${shipCode}`);
+                        const leftText = parts.length ? parts.join(' • ') : `คำขอ #${reqId}`;
+                        const rightText = `— ${photos.length} รูป`;
+                        $('#photoModalReqId').text(`${leftText} ${rightText}`);
+
+                    }).fail(function () {
+                        $('#photoEmpty').removeClass('d-none').text('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+                    });
+                    });
+
+
+                    function renderPhotoGrid(photos) {
+                    const $grid = $('#photoGrid'), $empty = $('#photoEmpty');
+                    const $pvW = $('#photoPreviewWrap'), $pv = $('#photoPreviewImg');
+
+                    const imgs = photos.filter(p => p.is_image);
+                    if (!imgs.length) { $empty.removeClass('d-none').text('ยังไม่มีรูปภาพแนบ'); return; }
+                    $empty.addClass('d-none');
+
+                    // ใช้ url_enc ถ้ามี (กันชื่อไทย/ช่องว่าง), และข้ามไฟล์ที่ exists=false
+                    const valid = imgs.filter(p => p.exists !== false);
+
+                    let html = '';
+                    valid.forEach(p => {
+                        const u = p.url_enc || encodeURI(p.url);
+                        html += `
+                        <div class="border rounded p-1 shadow-sm" style="width:140px;">
+                            <a href="${u}" class="photo-thumb" data-url="${u}">
+                            <img src="${u}" alt="${p.name}" class="img-thumbnail w-100" style="height:120px; object-fit:cover;">
+                            </a>
+                            <div class="small text-truncate mt-1" title="${p.name}">${p.name}</div>
+                        </div>`;
+                    });
+                    $grid.html(html);
+
+                    if (valid.length) {
+                        $pv.attr('src', valid[0].url_enc || encodeURI(valid[0].url));
+                        $pvW.removeClass('d-none');
+                    }
+
+                    $grid.off('click','a.photo-thumb').on('click','a.photo-thumb', function(e){
+                        e.preventDefault();
+                        $pv.attr('src', $(this).data('url'));
+                        $pvW.removeClass('d-none');
+                    });
+                    }
+
+
+                    </script>
+                
 
 <?php 
 include("../../private/shared/footerall.php");
