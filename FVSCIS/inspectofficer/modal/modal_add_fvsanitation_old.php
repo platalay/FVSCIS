@@ -91,6 +91,8 @@
                                     <option value="" selected disabled>-- เลือกสถานะ --</option>
                                     <option value="สร. 3">สร. 3</option>
                                     <option value="สร. 3 ชั่วคราว">สร. 3 ชั่วคราว</option>
+                                    <option value="สร. 3 EU">สร. 3 EU</option>
+                                    <option value="สร. 3 EU ชั่วคราว">สร. 3 EU ชั่วคราว</option>
                                     <option value="ไม่ผ่าน">ไม่ผ่าน</option>
                                 </select>
                                 </div>

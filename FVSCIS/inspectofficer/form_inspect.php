@@ -199,7 +199,7 @@ $pending = '⏳';
 
                 <?php endif; ?>
 
-                <?php
+                <!--<?php
                 $result = InspectionEvaluation::check_vessel_pass($request->id, 'non_permitted');
 
                 if (
@@ -211,7 +211,7 @@ $pending = '⏳';
                     !$form->document_locked
                 ):
                 ?>
-
+                
                 <div class="mt-4">
                     <div class="card o-hidden border-0 shadow-lg">
                         <div class="card-body p-4 text-center">
@@ -229,7 +229,7 @@ $pending = '⏳';
                 </div>
 
                 <?php endif; ?>
-
+                -->
             <div class="accordion mt-4" id="inspectionAccordion1">
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">

@@ -27,6 +27,9 @@
     />
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ✅ โหลด Bootstrap Icons (จำเป็นสำหรับ <i class="bi bi-trash"></i>) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
     <!-- Custom styles for this template-->
     <link href="../css/sb-admin-2.min.css" rel="stylesheet" />
     <!-- ✨ CSS เฉพาะโมดัลนี้ (วางไว้ครั้งเดียวใต้ <head> หรือไฟล์ css ของคุณ) -->
@@ -117,6 +120,12 @@
       }
       #modalFvscisOldAdd .file-name{ font-size:.825rem; }
 
+      .file-card{position:relative;border:1px solid #e9ecef;border-radius:.75rem;padding:.5rem}
+      .file-card .btn-remove, .file-card .btn-del-existing{position:absolute;top:.35rem;right:.35rem}
+      .thumb-wrap{width:100%;height:140px;background:#f8f9fa;border-radius:.5rem;display:flex;align-items:center;justify-content:center;overflow:hidden}
+      .thumb-wrap img{max-width:100%;max-height:100%;object-fit:cover}
+      .icon-pdf{width:100%;height:140px;border-radius:.5rem;background:#f8f9fa;display:flex;align-items:center;justify-content:center;font-weight:700}
+      .file-name{font-size:.85rem;word-break:break-all}
     </style>
     
   </head>

@@ -4,13 +4,13 @@
                     <!-- เลื่อนเฉพาะ body + fullscreen เมื่อ lg-down -->
                     <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down">
                         <div class="modal-content">
-                        <form id="form-fvscisold-edit" autocomplete="off">
+                        <form id="form-fvscisold-edit" autocomplete="off" method="post" enctype="multipart/form-data">
                             <div class="modal-header">
                             <h5 class="modal-title" id="modalFvscisOldEditLabel">แก้ไขข้อมูลใบรับรอง (เก่า)</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
                             </div>
 
-                            <div class="modal-body">
+                            <div class="modal-body" style="overflow-y:auto; max-height:calc(100vh - 200px);">
                             <input type="hidden" name="FvSanitationCertificationOld[id]" id="edit-id">
 
                             <div class="row g-3">
@@ -88,6 +88,8 @@
                                     <option value="" disabled>-- เลือกสถานะ --</option>
                                     <option value="สร. 3">สร. 3</option>
                                     <option value="สร. 3 ชั่วคราว">สร. 3 ชั่วคราว</option>
+                                    <option value="สร. 3 EU">สร. 3 EU</option>
+                                    <option value="สร. 3 EU ชั่วคราว">สร. 3 EU ชั่วคราว</option>
                                     <option value="ไม่ผ่าน">ไม่ผ่าน</option>
                                 </select>
                                 </div>
@@ -134,6 +136,35 @@
                                 <input type="text" class="form-control"
                                         name="FvSanitationCertificationOld[remark]" id="edit-remark">
                                 </div>
+                                <!-- input file old new -->
+                                <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                        <div class="fw-semibold">ไฟล์แนบใบรับรอง</div>
+                                        <div class="text-muted small">รองรับ .jpg .jpeg .png .gif .webp .pdf (สูงสุด ~10MB/ไฟล์)</div>
+                                </div>
+                                <div style="min-width:260px;">
+                                        <!-- ใช้ name="attachments[]" ให้เข้ากับสคริปต์บันทึกเดิมของคุณ -->
+                                        <input type="file" id="certAttachmentsEdit" name="attachments[]" multiple
+                                        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+                                        class="form-control form-control-sm">
+                                </div>
+                                </div>
+
+                                <!-- พรีวิวไฟล์ที่ *จะอัปโหลดใหม่* -->
+                                <div class="row g-3 mt-2" id="selectedFilesEdit"></div>
+
+                                <!-- รายการไฟล์ที่มีอยู่เดิมในระบบ -->
+                                <div class="mt-3">
+                                <div class="fw-semibold mb-2">ไฟล์ที่แนบไว้แล้ว</div>
+                                <div class="row g-3" id="existingFiles"></div>
+                                </div>
+                                </div>
+                                </div>
+
+                                <!-- /input file old new -->
+
                             </div><!-- /.row -->
                             </div><!-- /.modal-body -->
 
