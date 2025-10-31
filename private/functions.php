@@ -153,5 +153,13 @@ function thai_day(string $dateStr): string
     return 'วัน' . $days[(int)date('w', $ts)];
 }
 
+function cleanup_social_tmp() {
+  if (!empty($_SESSION['social_tmp'])) {
+    $tmp = $_SESSION['social_tmp'];
+    if (!isset($tmp['expires_at']) || time() > $tmp['expires_at']) {
+      unset($_SESSION['social_tmp']); // หมดอายุ → ลบทิ้ง
+    }
+  }
+}
 
 ?>

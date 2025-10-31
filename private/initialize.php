@@ -33,5 +33,5 @@
 	//DatabaseObjectFi::set_database($fi_db);
 
   $session = new Session;
-	
+	cleanup_social_tmp();
 ?>

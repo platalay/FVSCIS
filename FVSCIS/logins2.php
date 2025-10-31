@@ -1,6 +1,6 @@
 <?php
 require_once('../private/initialize.php');
-
+$tmp = $_SESSION['social_tmp'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,7 +46,7 @@ require_once('../private/initialize.php');
                 
                 </div>
                 <div class="col-lg-6 d-flex align-items-center justify-content-center">
-                <button type="button" class="p-0 border-0 bg-transparent" style="box-shadow: none;" data-bs-toggle="modal" data-bs-target="#OfficerModal" title="ลงทะเบียนใช้งานสำหรับเจ้าหน้าที่กรม">
+                <button type="button" class="p-0 border-0 bg-transparent" style="box-shadow: none;" data-bs-toggle="modal" data-bs-target="#OfficerModal" title="ลงทะเบียนใช้งานสำหรับเจ้าหน้าที่กรมประมง">
   <img src="img/officer.png" class="img-fluid" style="max-height: 200px;" alt="Officer">
 </button>
 </div>
@@ -76,20 +76,20 @@ require_once('../private/initialize.php');
             <input type="text" class="form-control" name="fisherman[citizen_id]" id="citizen_id" required>
           </div>
           <div class="mb-3">
-            <label for="email" class="form-label">อีเมล (ไม่บังคับหากบันทึกจะมีการแจ้งข้อมูลผ่านทาง email)</label>
+            <label for="email" class="form-label">อีเมล(ไม่บังคับหากบันทึกจะมีการแจ้งข้อมูลผ่านทาง email)</label>
             <input type="email" class="form-control" name="fisherman[email]" id="email">
           </div>
-          <input type="hidden" name="fisherman[username]" value="<?= $_SESSION['username'] ?>">
+          <input type="hidden" name="fisherman[username]" value="<?= $tmp['username_tmp'] ?>">
           <?php
-          if (isset($_SESSION['username']) && isset($_SESSION['user_id'])) {
-              $firstChar = strtolower(substr($_SESSION['username'], 0, 1));
-
+          if (isset($tmp['username_tmp']) && isset($tmp['user_id_tmp'])) {
+              $firstChar = strtolower(substr($tmp['username_tmp'], 0, 1));
+            error_log("firstchar = ".$firstChar);
               if ($firstChar === 'g') {
-                  echo '<input type="hidden" name="fisherman[google_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="fisherman[google_id]" value="' . htmlspecialchars($tmp['user_id_tmp'], ENT_QUOTES, 'UTF-8') . '">';
               } elseif ($firstChar === 'l') {
-                  echo '<input type="hidden" name="fisherman[line_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="fisherman[line_id]" value="' . htmlspecialchars($tmp['user_id_tmp'], ENT_QUOTES, 'UTF-8') . '">';
               } elseif ($firstChar === 'f') {
-                  echo '<input type="hidden" name="fisherman[facebook_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="fisherman[facebook_id]" value="' . htmlspecialchars($tmp['user_id_tmp'], ENT_QUOTES, 'UTF-8') . '">';
               }
           }
           ?>
@@ -116,17 +116,17 @@ require_once('../private/initialize.php');
         <form id="OfficerForm">
           
           <!-- Hidden Fields -->
-          <input type="hidden" name="Officer[username]" value="<?= $_SESSION['username'] ?>">
+          <input type="hidden" name="Officer[username]" value="<?= $tmp['username_tmp'] ?>">
           <?php
-          if (isset($_SESSION['username']) && isset($_SESSION['user_id'])) {
-              $firstChar = strtolower(substr($_SESSION['username'], 0, 1));
-
+          if (isset($tmp['username_tmp']) && isset($tmp['user_id_tmp'])) {
+              $firstChar = strtolower(substr($tmp['username_tmp'], 0, 1));
+              error_log("firstchar = ".$firstChar);
               if ($firstChar === 'g') {
-                  echo '<input type="hidden" name="Officer[google_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="Officer[google_id]" value="' . htmlspecialchars($tmp['user_id_tmp'], ENT_QUOTES, 'UTF-8') . '">';
               } elseif ($firstChar === 'l') {
-                  echo '<input type="hidden" name="Officer[line_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="Officer[line_id]" value="' . htmlspecialchars($tmp['user_id_tmp'], ENT_QUOTES, 'UTF-8') . '">';
               } elseif ($firstChar === 'f') {
-                  echo '<input type="hidden" name="Officer[facebook_id]" value="' . htmlspecialchars($_SESSION['user_id'], ENT_QUOTES, 'UTF-8') . '">';
+                  echo '<input type="hidden" name="Officer[facebook_id]" value="' . htmlspecialchars($tmp['user_id_tmp'], ENT_QUOTES, 'UTF-8') . '">';
               }
           }
           ?>
@@ -143,8 +143,8 @@ require_once('../private/initialize.php');
           </div>
 
           <div class="mb-3">
-            <label for="email" class="form-label">อีเมล</label>
-            <input type="email" class="form-control" id="email" name = "Officer[email]" value="<?= $_SESSION['email'] ?>" required>
+            <label for="email" class="form-label">อีเมล(ไม่บังคับหากบันทึกจะมีการแจ้งข้อมูลผ่านทาง email)</label>
+            <input type="email" class="form-control" id="email" name = "Officer[email]" value="<?= $tmp['email_tmp'] ?>" required>
           </div>
           <?php
           // ส่วน HTML + PHP
@@ -210,7 +210,7 @@ require_once('../private/initialize.php');
             <input type="text" class="form-control" id="name" required>
           </div>
           <div class="mb-3">
-            <label for="email" class="form-label">อีเมล</label>
+            <label for="email" class="form-label">อีเมล(ไม่บังคับหากบันทึกจะมีการแจ้งข้อมูลผ่านทาง email)</label>
             <input type="email" class="form-control" id="email" required>
           </div>
           <div class="mb-3">

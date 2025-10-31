@@ -165,7 +165,7 @@ class DatabaseObject {
 protected static function sql_literal(string $key, $val): string {
     // วันที่/เวลา: ว่าง => NULL
     static $nullable_dates = [
-        'confirmed_inspect_date','expire_at','approved_at','actual_inspect_date','submitted_at','effective_date'
+        'confirmed_inspect_date','expire_at','approved_at','actual_inspect_date','submitted_at','effective_date', 'token_expiry'
     ];
     // FK/เลขที่อาจว่างได้: ว่าง => NULL
     static $nullable_int = ['approved_by','department_group_id','data_owner_id','target_officer_id','action_taken','type'];
@@ -238,7 +238,7 @@ protected static function sql_literal(string $key, $val): string {
 
       $sql  = "INSERT INTO " . static::$table_name . " (";
       $sql .= join(', ', $cols) . ") VALUES (" . join(', ', $values) . ")";
-      error_log($sql);
+      //error_log($sql);
       $result = self::$database->query($sql);
       if ($result) { $this->id = self::$database->insert_id; }
       return $result;

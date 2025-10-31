@@ -42,7 +42,14 @@ if (isset($_GET['code'])) {
         $username = 'google_' . $google_id;
         $picture = htmlspecialchars($userinfo['picture'] ?? '');
         $email = htmlspecialchars($userinfo['email'] ?? '');
-
+        $_SESSION['social_tmp'] = [
+        'email_tmp'       => $email,
+        'username_tmp'    => $username,
+        'user_id_tmp' => $google_id, // หรือ google_id/line_id
+        'created_at'  => time(),
+        'expires_at'  => time() + 10*60, // อายุ 10 นาที
+        ];
+        
         // ตรวจสอบ Officer ก่อน
         $Officer = Officer::find_by_username($username);
         if ($Officer) {

@@ -26,6 +26,17 @@ if ($session->is_logged_in()) {
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    .bg-login-image{
+  min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,.15), rgba(255,255,255,.15)), /* ปรับ .35 ได้ */
+    url('img/first.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+  </style>
 </head>
 
 <body class="bg-gradient-primary">
@@ -36,8 +47,10 @@ if ($session->is_logged_in()) {
         <div class="card o-hidden border-0 shadow-lg my-5">
           <div class="card-body p-0">
             <!-- Nested Row within Card Body -->
-            <div class="row">
-              <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
+            <div class="row g-0">
+              <div class="col-lg-6 d-none d-lg-block bg-login-image">
+
+              </div>
               <div class="col-lg-6">
                 <div class="p-5">
                   <div class="text-center">

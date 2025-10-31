@@ -1,6 +1,6 @@
 <?php
 require_once('../private/initialize.php');
-$session = new Session();
+//$session = new Session();
 $fb_app_id = FB_APP_ID;
 $fb_app_secret = FB_APP_SECRET;
 $redirect_uri = FB_REDIRECT_URI;
@@ -46,12 +46,17 @@ if (isset($_GET['code'])) {
     curl_close($ch);
 
     $user = json_decode($user_info, true);
-
     $facebook_id = htmlspecialchars($user['id']);
     $username = 'facebook_' . $facebook_id;
     $picture = htmlspecialchars($user['picture']['data']['url'] ?? '');
     $email = htmlspecialchars($user['email'] ?? '');
-
+    $_SESSION['social_tmp'] = [
+    'email_tmp'       => $email,
+    'username_tmp'    => $username,
+    'user_id_tmp' => $facebook_id, // หรือ google_id/line_id
+    'created_at'  => time(),
+    'expires_at'  => time() + 10*60, // อายุ 10 นาที
+    ];
     $Officer = Officer::find_by_username($username);
     if ($Officer) {
         if ($Officer->is_approved) {
@@ -96,6 +101,7 @@ if (isset($_GET['code'])) {
                 );
             }
         } else {
+            
             redirect_to('logins2.php');
         }
     }

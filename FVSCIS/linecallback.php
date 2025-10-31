@@ -74,7 +74,13 @@ $line_id = htmlspecialchars($user_info['sub']);
 $username = 'line_' . $line_id;
 $picture = htmlspecialchars($user_info['picture'] ?? '');
 $email = htmlspecialchars($user_info['email'] ?? '');
-
+$_SESSION['social_tmp'] = [
+'email_tmp'       => $email,
+'username_tmp'    => $username,
+'user_id_tmp' => $line_id, // หรือ google_id/line_id
+'created_at'  => time(),
+'expires_at'  => time() + 10*60, // อายุ 10 นาที
+];
 // ✅ ตรวจสอบ Officer
 $Officer = Officer::find_by_username($username);
 if ($Officer) {

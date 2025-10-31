@@ -77,6 +77,12 @@ class Fisherman extends DatabaseObject {
         return !empty($result) ? array_shift($result) : false;
     }
 
+    public static function find_by_email($email) {
+        $sql = "SELECT * FROM " . static::$table_name . " WHERE login_token = '" . self::$database->escape_string($email) . "' LIMIT 1";
+        $result = static::find_by_sql($sql);
+        return !empty($result) ? array_shift($result) : false;
+    }
+    
     public function save_token($token, $expiry) {
         $this->login_token = $token;
         $this->token_expiry = $expiry;

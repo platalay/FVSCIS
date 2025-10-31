@@ -45,7 +45,7 @@ require_once('../private/initialize.php');
                 
                 </div>
                 <div class="col-lg-6 d-flex align-items-center justify-content-center">
-                <button type="button" class="p-0 border-0 bg-transparent" style="box-shadow: none;" data-bs-toggle="modal" data-bs-target="#modalAddOfficer" title="ลงทะเบียนใช้งานสำหรับเจ้าหน้าที่กรม">
+                <button type="button" class="p-0 border-0 bg-transparent" style="box-shadow: none;" data-bs-toggle="modal" data-bs-target="#modalAddOfficer" title="ลงทะเบียนใช้งานสำหรับเจ้าหน้าที่กรมประมง">
   <img src="img/officer.png" class="img-fluid" style="max-height: 200px;" alt="Officer">
 </button>
 </div>
@@ -66,7 +66,7 @@ require_once('../private/initialize.php');
         <form id="formAddOfficer" method="POST" action="ajax/save_officer_local.php">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="modalAddOfficerLabel">ลงทะเบียนเจ้าหน้าที่ (บัญชีภายใน)</h5>
+              <h5 class="modal-title" id="modalAddOfficerLabel">ลงทะเบียนเจ้าหน้าที่</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
             </div>
 
@@ -93,7 +93,7 @@ require_once('../private/initialize.php');
                   <input type="text" class="form-control" name="officer[position]" id="position">
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label for="email" class="form-label">อีเมล</label>
+                  <label for="email" class="form-label">อีเมล(ไม่บังคับหากบันทึกจะมีการแจ้งข้อมูลผ่านทาง email)</label>
                   <input type="email" class="form-control" name="officer[email]" id="email">
                 </div>
                 
@@ -153,7 +153,7 @@ require_once('../private/initialize.php');
           <form id="formAddFisherman" method="POST" action="ajax/save_fisherman_local.php">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title" id="modalAddFishermanLabel">ลงทะเบียนชาวประมง (บัญชีภายใน)</h5>
+                <h5 class="modal-title" id="modalAddFishermanLabel">ลงทะเบียนชาวประมง</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
               </div>
 
@@ -174,7 +174,7 @@ require_once('../private/initialize.php');
                 </div>
 
                 <div class="mb-3">
-                  <label for="email" class="form-label">อีเมล</label>
+                  <label for="email" class="form-label">อีเมล(ไม่บังคับหากบันทึกจะมีการแจ้งข้อมูลผ่านทาง email)</label>
                   <input type="email" class="form-control" name="fisherman[email]" id="email">
                 </div>
 
@@ -363,7 +363,7 @@ require_once('../private/initialize.php');
                   Swal.fire({
                     icon: 'success',
                     title: 'ลงทะเบียนสำเร็จ',
-                    text: 'เพิ่มบัญชีเจ้าหน้าที่เรียบร้อยแล้ว กรุณารอการอนุมัติจากเจ้าหน้าที่',
+                    text: 'เพิ่มบัญชีเรียบร้อยแล้ว กรุณารอการอนุมัติจากเจ้าหน้าที่',
                     timer: 2000,
                     showConfirmButton: false
                   }).then(() => {
@@ -421,7 +421,7 @@ require_once('../private/initialize.php');
                     Swal.fire({
                       icon: 'success',
                       title: 'ลงทะเบียนสำเร็จ',
-                      text: 'เพิ่มบัญชีเจ้าหน้าที่เรียบร้อยแล้ว กรุณารอการอนุมัติจากเจ้าหน้าที่'
+                      text: 'เพิ่มบัญชีเรียบร้อยแล้ว กรุณารอการอนุมัติจากเจ้าหน้าที่'
                     }).then(() => {
                       $('#modalAddOfficer').modal('hide');
                       $('#formAddOfficer')[0].reset();

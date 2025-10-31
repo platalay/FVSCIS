@@ -4,14 +4,14 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(0);
 header('Content-Type: application/json');
-
+$tmp = $_SESSION['social_tmp'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $args = $_POST['Officer'] ?? [];
 
     $officer = new Officer($args);
     $officer->is_active = 1;
     $officer->is_approved = 0;
-    $officer->created_by = $_SESSION['user_id'] ?? 0;
+    $officer->created_by = $tmp['user_id_tmp'] ?? 0;
     $officer->created_at = date('Y-m-d H:i:s');
     $officer->updated_at = date('Y-m-d H:i:s');
 
