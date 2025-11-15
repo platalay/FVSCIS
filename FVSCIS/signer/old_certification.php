@@ -33,6 +33,7 @@ include("../../private/shared/topbarofficer.php");
                                         <th>วันที่บังคับใช้</th>
                                         <th>วันที่หมดอายุ</th>
                                         <th>ประเภท สร.3</th>
+                                        <th>สถานะ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -59,10 +60,11 @@ include("../../private/shared/topbarofficer.php");
                                             </td>
                                             <td><?= h($req->vessel_name) ?></td>
                                             <td><?= h($req->ship_code) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->request_date)) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->effective_date)) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->expiration_date)) ?></td>
+                                            <td><?= thai_date(date('d/m/Y', strtotime($req->request_date))) ?></td>
+                                            <td><?= thai_date(date('d/m/Y', strtotime($req->effective_date))) ?></td>
+                                            <td><?= thai_date(date('d/m/Y', strtotime($req->expiration_date))) ?></td>
                                             <td><?= h($req->certificate_status) ?></td>
+                                            <td><?= h($req->status) ?></td>
                                         </tr>
                                     <?php endforeach; endif; ?>
                                 </tbody>

@@ -12,11 +12,11 @@ if (isset($_GET['code'])) {
 
     $token_url = 'https://oauth2.googleapis.com/token';
     $post_fields = [
-        'code' => $code,
-        'client_id' => $client_id,
+        'code'          => $code,
+        'client_id'     => $client_id,
         'client_secret' => $client_secret,
-        'redirect_uri' => $redirect_uri,
-        'grant_type' => 'authorization_code',
+        'redirect_uri'  => $redirect_uri,
+        'grant_type'    => 'authorization_code',
     ];
 
     $ch = curl_init($token_url);
@@ -33,34 +33,59 @@ if (isset($_GET['code'])) {
     $data = json_decode($response, true);
 
     if (isset($data['id_token'])) {
-        // Decode JWT payload
-        $payload = explode('.', $data['id_token'])[1] ?? '';
-        $userinfo = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
 
-        // เตรียมข้อมูล
-        $google_id = htmlspecialchars($userinfo['sub']);
+        // ===== Decode JWT payload แบบกัน padding =====
+        $parts = explode('.', $data['id_token']);
+        $payload = $parts[1] ?? '';
+
+        $payload = strtr($payload, '-_', '+/');
+        $padding = strlen($payload) % 4;
+        if ($padding > 0) {
+            $payload .= str_repeat('=', 4 - $padding);
+        }
+
+        $userinfo = json_decode(base64_decode($payload), true);
+
+        // ===== เตรียมข้อมูล =====
+        $google_id = htmlspecialchars($userinfo['sub'] ?? '');
+        if ($google_id === '') {
+            $session->message('ไม่พบข้อมูลผู้ใช้จาก Google');
+            redirect_to('login.php');
+        }
+
         $username = 'google_' . $google_id;
-        $picture = htmlspecialchars($userinfo['picture'] ?? '');
-        $email = htmlspecialchars($userinfo['email'] ?? '');
+        $picture  = htmlspecialchars($userinfo['picture'] ?? '');
+        $email    = htmlspecialchars($userinfo['email'] ?? '');
+
+        // เก็บ temp สำหรับใช้ในหน้าลงทะเบียนภายหลัง (รวมรูปด้วย)
         $_SESSION['social_tmp'] = [
-        'email_tmp'       => $email,
-        'username_tmp'    => $username,
-        'user_id_tmp' => $google_id, // หรือ google_id/line_id
-        'created_at'  => time(),
-        'expires_at'  => time() + 10*60, // อายุ 10 นาที
+            'email_tmp'     => $email,
+            'username_tmp'  => $username,
+            'user_id_tmp'   => $google_id,   // google_id
+            'picture_tmp'   => $picture,     // <<<<< เพิ่มเก็บรูป
+            'created_at'    => time(),
+            'expires_at'    => time() + 10*60, // อายุ 10 นาที
         ];
-        
-        // ตรวจสอบ Officer ก่อน
+
+        // ===== ตรวจสอบ Officer ก่อน =====
         $Officer = Officer::find_by_username($username);
         if ($Officer) {
+
             if ($Officer->is_approved) {
                 $role = Session::map_usertype_id_to_role($Officer->usertype_id);
+
                 if ($role === 'unknown') {
                     Officer::alert_and_redirect(
                         'ไม่สามารถเข้าสู่ระบบ',
                         'สิทธิ์ของคุณไม่ถูกต้อง',
                         'login.php'
                     );
+                }
+
+                // ถ้ามีรูปจาก Google และ profile_image ยังว่าง → อัปเดตให้
+                if (!empty($picture) && empty($Officer->profile_image)) {
+                    $Officer->profile_image = $picture;
+                    $Officer->save();
                 }
 
                 // Login แล้ว redirect
@@ -85,12 +110,21 @@ if (isset($_GET['code'])) {
             }
 
         } else {
-            // ตรวจสอบ Fisherman
+            // ===== ตรวจสอบ Fisherman =====
             $fisherman = Fisherman::find_by_username($username);
             if ($fisherman) {
+
                 if ($fisherman->is_approved) {
+
+                    // ถ้ามีรูปจาก Google และ profile_image ยังว่าง → อัปเดตให้
+                    if (!empty($picture) && empty($fisherman->profile_image)) {
+                        $fisherman->profile_image = $picture;
+                        $fisherman->save();
+                    }
+
                     $session->login($fisherman, 'fisherman', $picture);
                     Session::redirect_by_role('fisherman');
+
                 } else {
                     Fisherman::alert_and_redirect(
                         'รอการอนุมัติ',
@@ -98,8 +132,9 @@ if (isset($_GET['code'])) {
                         'login.php'
                     );
                 }
+
             } else {
-                // ยังไม่เคยลงทะเบียน
+                // ยังไม่เคยลงทะเบียน → ส่งไปหน้าลงทะเบียนต่อ (มี social_tmp พร้อมรูปแล้ว)
                 redirect_to('logins2.php');
             }
         }
@@ -112,4 +147,4 @@ if (isset($_GET['code'])) {
 } else {
     echo "ไม่ได้รับ code จาก Google";
 }
-
+?>

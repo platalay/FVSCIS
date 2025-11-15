@@ -33,33 +33,39 @@ aria-hidden="true"
 <div class="modal-dialog" role="document">
 <div class="modal-content">
   <div class="modal-header">
-    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+    <h5 class="modal-title" id="exampleModalLabel">พร้อมที่จะออกจากระบบหรือไม่?</h5>
     <button
       class="close"
       type="button"
-      data-dismiss="modal"
+      data-bs-dismiss="modal"
       aria-label="Close"
     >
       <span aria-hidden="true">×</span>
     </button>
   </div>
   <div class="modal-body">
-    Select "Logout" below if you are ready to end your current session.
+    เลือก “ออกจากระบบ” หากคุณต้องการยุติการใช้งานในครั้งนี้
   </div>
   <div class="modal-footer">
     <button
       class="btn btn-secondary"
       type="button"
-      data-dismiss="modal"
+      data-bs-dismiss="modal"
     >
-      Cancel
+      ยกเลิก
     </button>
-    <a class="btn btn-primary" href="../logout.php">Logout</a>
+    <a class="btn btn-primary" href="../logout.php">ออกจากระบบ</a>
   </div>
 </div>
 </div>
 </div>
-
+<!-- jQuery CDN + fallback -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    if (typeof jQuery === 'undefined') {
+        document.write('<script src="../vendor/jquery/jquery.min.js"><\/script>');
+    }
+</script>
 <!-- Bootstrap core JavaScript-->
 <script src="../vendor/jquery/jquery.min.js"></script>
 <!--<script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>-->

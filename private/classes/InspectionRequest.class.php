@@ -116,5 +116,194 @@ class InspectionRequest extends DatabaseObject {
         return static::find_by_sql($sql);
     }
 
+    public static function count_by_fisherman($fisherman_id) {
+        $fisherman_id = self::$database->escape_string($fisherman_id);
+        $sql  = "SELECT COUNT(*) AS cnt ";
+        $sql .= "FROM " . static::$table_name . " ";
+        $sql .= "WHERE created_by = '{$fisherman_id}'";
+        
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+        return (int)($row['cnt'] ?? 0);
+    }
+
+    // 2) นับจำนวนคำขอตามสถานะ (รับได้ทั้งค่าเดียวหรือ array)
+    public static function count_by_fisherman_and_status($fisherman_id, $statuses = []) {
+        $fisherman_id = self::$database->escape_string($fisherman_id);
+
+        $sql  = "SELECT COUNT(*) AS cnt ";
+        $sql .= "FROM " . static::$table_name . " ";
+        $sql .= "WHERE created_by = '{$fisherman_id}' ";
+
+        if (!empty($statuses)) {
+            if (!is_array($statuses)) {
+                $statuses = [$statuses];
+            }
+
+            $escaped_statuses = [];
+            foreach ($statuses as $st) {
+                $escaped_statuses[] = "'" . self::$database->escape_string($st) . "'";
+            }
+            $status_list = implode(',', $escaped_statuses);
+            $sql .= "AND status IN ({$status_list}) ";
+        }
+
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+        return (int)($row['cnt'] ?? 0);
+    }
+
+    // 3) ดึงคำขอล่าสุดของชาวประมง (limit ตามต้องการ, default 5)
+    public static function find_recent_by_fisherman($fisherman_id, $limit = 5) {
+        $fisherman_id = self::$database->escape_string($fisherman_id);
+        $limit = (int)$limit;
+
+        $sql  = "SELECT * ";
+        $sql .= "FROM " . static::$table_name . " ";
+        $sql .= "WHERE created_by = '{$fisherman_id}' ";
+        $sql .= "ORDER BY created_at DESC, id DESC ";
+        $sql .= "LIMIT {$limit}";
+
+        return static::find_by_sql($sql);
+    }
+
+
+
+    // ...
+
+    public static function count_by_department($department_id) {
+        $department_id = self::$database->escape_string($department_id);
+        $sql  = "SELECT COUNT(*) AS cnt FROM " . static::$table_name;
+        $sql .= " WHERE department_id = '{$department_id}'";
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+        return (int)($row['cnt'] ?? 0);
+    }
+
+    public static function count_by_department_and_status($department_id, $status) {
+        $department_id = self::$database->escape_string($department_id);
+        $status        = self::$database->escape_string($status);
+
+        $sql  = "SELECT COUNT(*) AS cnt FROM " . static::$table_name;
+        $sql .= " WHERE department_id = '{$department_id}'";
+        $sql .= "   AND status = '{$status}'";
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+        return (int)($row['cnt'] ?? 0);
+    }
+
+    public static function find_recent_by_department_and_status($department_id, array $statuses, $limit = 10) {
+        $department_id = self::$database->escape_string($department_id);
+        $limit = (int)$limit;
+
+        $escaped_status = array_map(function($s) {
+            return "'" . self::$database->escape_string($s) . "'";
+        }, $statuses);
+        $status_list = implode(',', $escaped_status);
+
+        $sql  = "SELECT * FROM " . static::$table_name;
+        $sql .= " WHERE department_id = '{$department_id}'";
+        $sql .= "   AND status IN ({$status_list})";
+        $sql .= " ORDER BY created_at DESC";
+        $sql .= " LIMIT {$limit}";
+        return static::find_by_sql($sql);
+    }
+
+    public static function find_today_tasks_by_officer($department_id, $date) {
+        $department_id = self::$database->escape_string($department_id);
+        $date       = self::$database->escape_string($date);
+
+        $sql  = "SELECT * FROM " . static::$table_name;
+        $sql .= " WHERE department_id = '{$department_id}'";
+        $sql .= "   AND DATE(confirmed_inspect_date) = '{$date}'";
+        $sql .= " ORDER BY confirmed_inspect_date ASC";
+        return static::find_by_sql($sql);
+    }
+
+    public function status_label() {
+        $map = [
+            'pending'     => 'รอดำเนินการ',
+            'inspecting'  => 'อยู่ระหว่างตรวจ',
+            'passed'      => 'ผ่าน',
+            'failed'      => 'ไม่ผ่าน',
+            'conditional' => 'ผ่านแบบมีเงื่อนไข',
+            'completed'   => 'ตรวจเสร็จสิ้น',
+            'cancelled'   => 'ยกเลิก',
+        ];
+        return $map[$this->status] ?? $this->status;
+    }
+
+    public static function status_text($status) {
+        $map = [
+            'pending'     => 'รอดำเนินการ',
+            'cancelled'   => 'ยกเลิก',
+            'inspecting'  => 'อยู่ระหว่างตรวจ',
+            'passed'      => 'ผ่านตรวจ',
+            'failed'      => 'ไม่ผ่านตรวจ',
+            'conditional' => 'ผ่านแบบมีเงื่อนไข',
+            'completed'   => 'อนุมัติ'
+        ];
+
+        return $map[$status] ?? $status;
+    }
+
+        public static function count_by_status($status) {
+        $status = self::$database->escape_string($status);
+        $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name;
+        $sql .= " WHERE status = '{$status}'";
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+        return (int)$row['cnt'];
+        }
+
+        public static function find_recent_for_admin($limit = 10) {
+        $sql = "SELECT * FROM " . static::$table_name;
+        $sql .= " ORDER BY created_at DESC";
+        $sql .= " LIMIT " . (int)$limit;
+        return static::find_by_sql($sql);
+        }
+
+        public static function count_by_department_groups($group_ids = [], $status = null) {
+    if (empty($group_ids)) { return 0; }
+
+    $ids = array_map('intval', $group_ids);
+    $id_list = implode(',', $ids);
+
+    $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name .
+           " WHERE department_group_id IN ({$id_list})";
+
+    if ($status !== null) {
+        $status = self::$database->escape_string($status);
+        $sql .= " AND status = '{$status}'";
+    }
+
+    $result = self::$database->query($sql);
+    $row = $result->fetch_assoc();
+    return (int)$row['cnt'];
+}
+
+    public static function find_recent_by_department_groups_and_status($group_ids = [], $statuses = [], $limit = 10) {
+        if (empty($group_ids) || empty($statuses)) { return []; }
+
+        $ids = array_map('intval', $group_ids);
+        $id_list = implode(',', $ids);
+
+        $status_list = array_map(function($s) {
+            return "'" . self::$database->escape_string($s) . "'";
+        }, $statuses);
+        $status_sql = implode(',', $status_list);
+
+        $limit = (int)$limit;
+
+        $sql = "SELECT * FROM " . static::$table_name .
+            " WHERE department_group_id IN ({$id_list})" .
+            " AND status IN ({$status_sql})" .
+            " ORDER BY created_at DESC" .
+            " LIMIT {$limit}";
+
+        return static::find_by_sql($sql);
+    }
+
+
 }
 ?>

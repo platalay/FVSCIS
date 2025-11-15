@@ -20,7 +20,6 @@ include("../../private/shared/topbaradmin.php");
                                         <tr style="font-size: 14px;">
                                         <th>รหัสเจ้าหน้าที่</th>
                                         <th>ชื่อผู้ใช้</th>
-                                        <th>รหัสผ่าน</th>
                                         <th>ชื่อ-นามสกุล</th>
                                         <th>ตำแหน่ง</th>
                                         <th>อีเมล</th>
@@ -46,7 +45,6 @@ include("../../private/shared/topbaradmin.php");
                                         <tr style="font-size: 14px;">
                                         <th>รหัสเจ้าหน้าที่</th>
                                         <th>ชื่อผู้ใช้</th>
-                                        <th>รหัสผ่าน</th>
                                         <th>ชื่อ-นามสกุล</th>
                                         <th>ตำแหน่ง</th>
                                         <th>อีเมล</th>
@@ -83,6 +81,12 @@ include("../../private/shared/topbaradmin.php");
                                             <i class="fas fa-edit text-white"></i>
                                         </button>
 
+                                        <!-- ปุ่มเปลี่ยนรหัสผ่านใหม่ -->
+                                        <button class="btn btn-warning btn-sm btn-change-pass"
+                                                data-id="<?php echo $Officer->id; ?>"
+                                                data-username="<?php echo h($Officer->username); ?>">
+                                            <i class="fas fa-key"></i>
+                                        </button>
 
                                         <!-- ปุ่ม Delete -->
                                         <button class="btn btn-danger btn-sm" onclick="deleteOfficer(<?php echo $Officer->id; ?>)" title="ลบ" style="width: 35px; height: 35px;">
@@ -91,7 +95,6 @@ include("../../private/shared/topbaradmin.php");
                                     </div>
                                     </td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->username); ?></td>
-                                    <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->password); ?></td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->full_name); ?></td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->position); ?></td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->email); ?></td>
@@ -99,7 +102,11 @@ include("../../private/shared/topbaradmin.php");
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->facebook_id); ?></td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->line_id); ?></td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->is_active); ?></td>
-                                    <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->is_approved); ?></td>
+                                    <td class="text-center align-middle"
+                                        style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">
+                                    
+                                        <?php echo ((int)$Officer->is_approved === 1) ? 'อนุมัติ' : 'รออนุมัติ'; ?>
+                                    </td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->approved_by); ?></td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->approved_at); ?></td>
                                     <td class="text-center align-middle" style="color: <?php echo ((int)$Officer->is_approved === 1) ? '#2e7d32' : '#e65100'; ?>;">   <?php echo h($Officer->login_token); ?></td>
@@ -211,6 +218,45 @@ include("../../private/shared/topbaradmin.php");
                         </div>
                     </div>
                     </div>
+                    <!-- Edit Officer Modal -->
+
+                    <!-- Edit password Modal -->
+                    <div class="modal fade" id="changePassModal" tabindex="-1" role="dialog" aria-labelledby="changePassLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <form id="changePassForm" class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="changePassLabel">เปลี่ยนรหัสผ่านผู้ใช้งาน</h5>
+                            <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p>
+                            ผู้ใช้งาน: <strong id="chgUserName"></strong>
+                            </p>
+
+                            <input type="hidden" name="id" id="chgFishermanId">
+
+                            <div class="form-group">
+                            <label for="newPassword">รหัสผ่านใหม่</label>
+                            <input type="password" name="new_password" id="newPassword" class="form-control" required>
+                            </div>
+
+                            <div class="form-group">
+                            <label for="confirmPassword">ยืนยันรหัสผ่านใหม่</label>
+                            <input type="password" id="confirmPassword" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">ยกเลิก</button>
+                            <button class="btn btn-primary" type="submit">บันทึก</button>
+                        </div>
+                        </form>
+                    </div>
+                    </div>
+                    <!-- Edit password Modal -->
 
                 <!-- /.container-fluid -->
 </div>
@@ -223,9 +269,64 @@ include("../../private/shared/footeradmin.php");
 
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
+    <script src="../js/fvscis.js"></script>
                                         
             <script>
+
+                $(document).on('click', '.btn-change-pass', function () {
+                const id = $(this).data('id');
+                const username = $(this).data('username');
+
+                $('#chgFishermanId').val(id);
+                $('#chgUserName').text(username);
+                $('#newPassword').val('');
+                $('#confirmPassword').val('');
+
+                $('#changePassModal').modal('show');
+            });
+
+            // submit ฟอร์มเปลี่ยนรหัสผ่าน
+            $('#changePassForm').on('submit', function (e) {
+                e.preventDefault();
+
+                const pass1 = $('#newPassword').val().trim();
+                const pass2 = $('#confirmPassword').val().trim();
+
+                if (!pass1 || !pass2) {
+                    Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสผ่านให้ครบ', 'warning');
+                    return;
+                }
+
+                if (pass1 !== pass2) {
+                    Swal.fire('แจ้งเตือน', 'รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน', 'warning');
+                    return;
+                }
+
+                if (pass1.length < 6) {
+                    Swal.fire('แจ้งเตือน', 'กรุณากำหนดรหัสผ่านอย่างน้อย 6 ตัวอักษร', 'warning');
+                    return;
+                }
+
+                $.ajax({
+                    url: 'ajax/change_officer_password.php',
+                    method: 'POST',
+                    dataType: 'json',
+                    data: $(this).serialize(), // จะส่ง id + new_password
+                    success: function (res) {
+                        if (res.success) {
+                            $('#changePassModal').modal('hide');
+                            Swal.fire('สำเร็จ', 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว', 'success');
+                        } else {
+                            Swal.fire('ผิดพลาด', res.message || 'ไม่สามารถเปลี่ยนรหัสผ่านได้', 'error');
+                        }
+                    },
+                    error: function () {
+                        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+                    }
+                });
+            });
+
+
         $(document).ready(function () {
             if (!$.fn.DataTable) {
                 console.error("DataTables plugin not loaded");

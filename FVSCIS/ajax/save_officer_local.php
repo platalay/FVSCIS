@@ -74,6 +74,23 @@ try {
 
     // 7. บันทึกข้อมูล Officer ใหม่ลงฐานข้อมูล
     if ($officer->save()) {
+        $admins = Officer::find_admins();  
+        if (!empty($admins)) {
+            foreach ($admins as $admin) {
+                $msg = "มีคำขอสมัครเจ้าหน้าที่ใหม่จาก "
+                     . ($officer->full_name ?? $officer->username ?? 'ไม่ทราบชื่อ');
+
+                Notification::create_notification(
+                    $admin->id,        // user_id ของผู้รับ (admin แต่ละคน)
+                    'admin',           // user_role (ฝั่ง admin ใช้คำนี้)
+                    $msg,              // message
+                    'action_required', // notification_type
+                    'officer',         // reference_type (ชนิดอ้างอิง)
+                    $officer->id       // reference_id (id ของ officer ที่สมัคร)
+                );
+            }
+        }
+        
         // หากบันทึกสำเร็จ ตอบกลับ JSON success
         echo json_encode(["success" => true]);
     } else {

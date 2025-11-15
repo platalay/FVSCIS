@@ -7,7 +7,7 @@ include("../../private/shared/topbaradmin.php");
 
 <!-- Begin Page Content -->
 <div class="container-fluid">
-<h3 class="h3 mb-2 text-gray-800">ข้อมูลผู้ใช้งานกลุ่มเจ้าหน้าที่</h3>
+<h3 class="h3 mb-2 text-gray-800">ข้อมูลผู้ใช้งานกลุ่มชาวประมง</h3>
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
@@ -20,7 +20,6 @@ include("../../private/shared/topbaradmin.php");
                                         <tr style="font-size: 14px;">
                                         <th>ลำดับผู้ใช้งาน</th>
                                         <th>ชื่อผู้ใช้</th>
-                                        <th>รหัสผ่าน</th>
                                         <th>ชื่อเต็ม</th>
                                         <th>อีเมล</th>
                                         <th>Google ID</th>
@@ -43,7 +42,6 @@ include("../../private/shared/topbaradmin.php");
                                         <tr style="font-size: 14px;">
                                         <th>ลำดับผู้ใช้งาน</th>
                                         <th>ชื่อผู้ใช้</th>
-                                        <th>รหัสผ่าน</th>
                                         <th>ชื่อเต็ม</th>
                                         <th>อีเมล</th>
                                         <th>Google ID</th>
@@ -82,6 +80,12 @@ include("../../private/shared/topbaradmin.php");
                                             <i class="fas fa-edit text-white"></i>
                                         </button>
 
+                                        <!-- ปุ่มเปลี่ยนรหัสผ่านใหม่ -->
+                                        <button class="btn btn-warning btn-sm btn-change-pass"
+                                                data-id="<?php echo $Fisherman->id; ?>"
+                                                data-username="<?php echo h($Fisherman->username); ?>">
+                                            <i class="fas fa-key"></i>
+                                        </button>
 
                                         <!-- ปุ่ม Delete -->
                                         <button class="btn btn-danger btn-sm" onclick="deleteFisherman(<?php echo $Fisherman->id; ?>)" title="ลบ" style="width: 35px; height: 35px;">
@@ -90,7 +94,6 @@ include("../../private/shared/topbaradmin.php");
                                     </div>
                                     </td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->username); ?></td>
-                                    <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->password); ?></td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->full_name); ?></td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->email); ?></td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->google_id); ?></td>
@@ -98,7 +101,11 @@ include("../../private/shared/topbaradmin.php");
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->line_id); ?></td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->citizen_id); ?></td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->is_active); ?></td>
-                                    <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->is_approved); ?></td>
+                                    <td class="text-center align-middle"
+                                        style="color: <?= $color; ?>">
+                                    
+                                        <?php echo ((int)$Fisherman->is_approved === 1) ? 'อนุมัติ' : 'รออนุมัติ'; ?>
+                                    </td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->approved_by); ?></td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->approved_at); ?></td>
                                     <td class="text-center align-middle" style="color: <?= $color; ?>"><?php echo h($Fisherman->login_token); ?></td>
@@ -141,7 +148,6 @@ include("../../private/shared/topbaradmin.php");
                                 <label for="edit-citizen_id" class="form-label">หมายเลขบัตรประชาชน</label>
                                 <input type="text" class="form-control" name="fisherman[citizen_id]" id="edit-citizen_id" required>
                             </div>
-
                             <div class="form-check mb-2">
                                 <input type="checkbox" class="form-check-input" name="fisherman[is_active]" id="edit-is_active" value="1">
                                 <label class="form-check-label" for="edit-is_active">เปิดใช้งาน</label>
@@ -165,7 +171,46 @@ include("../../private/shared/topbaradmin.php");
                         </form>
                     </div>
                     </div>
+                    <!-- Edit fisherman Modal -->
 
+
+                    <!-- Edit password Modal -->
+                    <div class="modal fade" id="changePassModal" tabindex="-1" role="dialog" aria-labelledby="changePassLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <form id="changePassForm" class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="changePassLabel">เปลี่ยนรหัสผ่านผู้ใช้งาน</h5>
+                            <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p>
+                            ผู้ใช้งาน: <strong id="chgUserName"></strong>
+                            </p>
+
+                            <input type="hidden" name="id" id="chgFishermanId">
+
+                            <div class="form-group">
+                            <label for="newPassword">รหัสผ่านใหม่</label>
+                            <input type="password" name="new_password" id="newPassword" class="form-control" required>
+                            </div>
+
+                            <div class="form-group">
+                            <label for="confirmPassword">ยืนยันรหัสผ่านใหม่</label>
+                            <input type="password" id="confirmPassword" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">ยกเลิก</button>
+                            <button class="btn btn-primary" type="submit">บันทึก</button>
+                        </div>
+                        </form>
+                    </div>
+                    </div>
+                    <!-- Edit password Modal -->
 
                 <!-- /.container-fluid -->
 </div>
@@ -178,9 +223,65 @@ include("../../private/shared/footeradmin.php");
 
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
+    <script src="../js/fvscis.js"></script>
                                         
             <script>
+            // กดปุ่มรูปกุญแจ -> เปิด modal
+            $(document).on('click', '.btn-change-pass', function () {
+                const id = $(this).data('id');
+                const username = $(this).data('username');
+
+                $('#chgFishermanId').val(id);
+                $('#chgUserName').text(username);
+                $('#newPassword').val('');
+                $('#confirmPassword').val('');
+
+                $('#changePassModal').modal('show');
+            });
+
+            // submit ฟอร์มเปลี่ยนรหัสผ่าน
+            $('#changePassForm').on('submit', function (e) {
+                e.preventDefault();
+
+                const pass1 = $('#newPassword').val().trim();
+                const pass2 = $('#confirmPassword').val().trim();
+
+                if (!pass1 || !pass2) {
+                    Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสผ่านให้ครบ', 'warning');
+                    return;
+                }
+
+                if (pass1 !== pass2) {
+                    Swal.fire('แจ้งเตือน', 'รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน', 'warning');
+                    return;
+                }
+
+                if (pass1.length < 6) {
+                    Swal.fire('แจ้งเตือน', 'กรุณากำหนดรหัสผ่านอย่างน้อย 6 ตัวอักษร', 'warning');
+                    return;
+                }
+
+                $.ajax({
+                    url: 'ajax/change_fisherman_password.php',
+                    method: 'POST',
+                    dataType: 'json',
+                    data: $(this).serialize(), // จะส่ง id + new_password
+                    success: function (res) {
+                        if (res.success) {
+                            $('#changePassModal').modal('hide');
+                            Swal.fire('สำเร็จ', 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว', 'success');
+                        } else {
+                            Swal.fire('ผิดพลาด', res.message || 'ไม่สามารถเปลี่ยนรหัสผ่านได้', 'error');
+                        }
+                    },
+                    error: function () {
+                        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+                    }
+                });
+            });
+
+
+
             $(document).ready(function () {
                 if (!$.fn.DataTable) {
                     console.error("DataTables plugin not loaded");

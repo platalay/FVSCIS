@@ -152,6 +152,7 @@ include("../../private/shared/topbaradmin.php");
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="../js/fvscis.js"></script>
             <script>
             $(document).ready(function () {
                 // ✅ เริ่มต้น DataTable

@@ -26,9 +26,9 @@ define("DB_NAME_EL", "db_elicense_live");
 define("DB_PORT_EL", "5432");
 
 
-define('LINE_LOGIN_CHANNEL_ID','1595819384');
-define('LINE_LOGIN_CHANNEL_SECRET','d6a1bff2afcf964257c482e4ac0dfbed');
-define('LINE_LOGIN_CALLBACK_URL','http://fishlanding.fisheries.go.th/ldheadquarter2020/public/login_uselib_callback.php');
+define('LINE_LOGIN_CHANNEL_ID','2007374384');
+define('LINE_LOGIN_CHANNEL_SECRET','c528c7071c8f8991f68102cb1e8687ae');
+define('LINE_LOGIN_CALLBACK_URL','https://fishlanding.fisheries.go.th/FVSCIS/linecallback.php');
 
 define('GOOGLE_CLIENT_ID',"334855618936-6rj6q830g4avknampvkhv8phjfonijqm.apps.googleusercontent.com");
 define('GOOGLE_CLIENT_SECRET',"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");

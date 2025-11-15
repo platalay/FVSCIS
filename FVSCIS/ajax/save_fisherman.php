@@ -68,6 +68,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fisherman']['citizen_
         $fisherman->created_by   = $tmp['user_id_tmp'] ?? 0;
 
         if ($fisherman->save()) {
+            $admins = Officer::find_admins();  
+            if (!empty($admins)) {
+                foreach ($admins as $admin) {
+                    $msg = "มีคำขอสมัครชาวประมงใหม่จาก "
+                        . ($fisherman->full_name ?? $fisherman->username ?? 'ไม่ทราบชื่อ');
+
+                    Notification::create_notification(
+                        $admin->id,        // user_id ของผู้รับ (admin แต่ละคน)
+                        'admin',           // user_role (ฝั่ง admin ใช้คำนี้)
+                        $msg,              // message
+                        'action_required', // notification_type
+                        'fisherman',         // reference_type (ชนิดอ้างอิง)
+                        $fisherman->id       // reference_id (id ของ fisherman ที่สมัคร)
+                    );
+                }
+            }
+
             unset($_SESSION['social_tmp']); // ล้าง session ชั่วคราวหลังบันทึกสำเร็จ
             $response['success'] = true;
             $response['message'] = 'บันทึกข้อมูลสำเร็จ';

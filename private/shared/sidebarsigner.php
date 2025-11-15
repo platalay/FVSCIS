@@ -9,7 +9,7 @@
     <div class="sidebar-brand-icon rotate-n-15">
       <i class="fas fa-ship"></i>
     </div>
-    <div class="sidebar-brand-text mx-3">FVSCIS Officer</div>
+    <div class="sidebar-brand-text mx-3">FVSCIS <br> ผู้อนุมัติ</div>
   </a>
 
   <hr class="sidebar-divider my-0" />
@@ -67,7 +67,7 @@ $canSeeRespMenu = $issigner && $officerId !== null && in_array($officerId, $allo
 <li class="nav-item <?= is_active(['index.php','index.html'], $base, $pathLower) ? 'active' : '' ?>">
   <a class="nav-link" href="index.php">
     <i class="fas fa-fw fa-tachometer-alt"></i>
-    <span>Dashboard</span>
+    <span>หน้าภาพรวม</span>
   </a>
 </li>
 
@@ -75,10 +75,16 @@ $canSeeRespMenu = $issigner && $officerId !== null && in_array($officerId, $allo
 <li class="nav-item <?= is_active(['incoming_requests.php'], $base, $pathLower) ? 'active' : '' ?>">
   <a class="nav-link" href="incoming_requests.php">
     <i class="fas fa-fw fa-inbox"></i>
-    <span>คำขอตรวจ</span>
+    <span>รออนุมัติ</span>
   </a>
 </li>
-
+<!-- Nav Item - Incoming Requests -->
+<li class="nav-item <?= is_active(['inspection_requests.php'], $base, $pathLower) ? 'active' : '' ?>">
+  <a class="nav-link" href="inspection_requests.php">
+    <i class="fas fa-fw fa-inbox"></i>
+    <span>คำขอทั้งหมดในสังกัด</span>
+  </a>
+</li>
 <!-- Nav Item - Old Certification -->
 <li class="nav-item <?= is_active(['old_certification.php'], $base, $pathLower) ? 'active' : '' ?>">
   <a class="nav-link" href="old_certification.php">
@@ -96,6 +102,13 @@ $canSeeRespMenu = $issigner && $officerId !== null && in_array($officerId, $allo
     </a>
   </li>
 <?php endif; ?>
+
+<li class="nav-item <?= is_active(['myaccount.php'], $base, $pathLower) ? 'active' : '' ?>">
+  <a class="nav-link" href="myaccount.php">
+    <i class="fas fa-fw fa-file-alt"></i>
+    <span>จัดการบัญชีผู้ใช้</span>
+  </a>
+</li>
 
   <!-- Sidebar Toggler -->
   <div class="text-center d-none d-md-inline">

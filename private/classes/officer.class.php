@@ -3,7 +3,7 @@ class Officer extends DatabaseObject {
 
     static protected $table_name = 'officer';
     static protected $db_columns = [
-        'id', 'username', 'password', 'full_name', 'position', 'email', 'google_id', 'facebook_id', 'line_id',
+        'id', 'username', 'password', 'profile_image', 'full_name', 'position', 'email', 'google_id', 'facebook_id', 'line_id',
         'is_active', 'is_approved', 'approved_by', 'approved_at', 'login_token', 'token_expiry',
         'departments_id', 'usertype_id',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
@@ -24,6 +24,7 @@ class Officer extends DatabaseObject {
     public $id;
     public $username;
     public $password;
+    public ?string $profile_image = null;
     public $full_name;
     public $position;
     public $email;
@@ -50,6 +51,7 @@ class Officer extends DatabaseObject {
     public function __construct($args=[]) {
         $this->username = $args['username'] ?? '';
         $this->password = $args['password'] ?? '';
+        $this->profile_image = $args['profile_image'] ?? '';
         $this->full_name = $args['full_name'] ?? '';
         $this->position = $args['position'] ?? '';
         $this->email = $args['email'] ?? '';
@@ -74,7 +76,14 @@ class Officer extends DatabaseObject {
         return self::ID_MAP[$departments_id] ?? null;
     }
 
-
+    public function get_profile_image_url(): string {
+        if (!empty($this->profile_image)) {
+            return '../uploads/profile/'.$this->profile_image;
+        }
+        // รูป default
+        return '../img/undraw_profile.svg';
+    }
+    
     public static function find_all_select_options_by_usertype($usertype_id = 4) {
         $usertype_id = self::$database->escape_string($usertype_id);
 
@@ -243,4 +252,18 @@ class Officer extends DatabaseObject {
         $sql .= "ORDER BY full_name ASC";
         return static::find_by_sql($sql);
     }
+
+    public static function find_recent($limit = 5) {
+    $sql = "SELECT * FROM " . static::$table_name;
+    $sql .= " ORDER BY created_at DESC";
+    $sql .= " LIMIT " . (int)$limit;
+    return static::find_by_sql($sql);
+    }
+
+    public static function find_admins() {
+        $sql = "SELECT * FROM " . static::$table_name;
+        $sql .= " WHERE usertype_id = 1";
+        return static::find_by_sql($sql);
+    }
+
 }

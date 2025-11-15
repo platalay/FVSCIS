@@ -1,3 +1,19 @@
+function loadNotificationCount() {
+        $.ajax({
+            url: 'ajax/load_notifications.php',
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                $('#alert-count').text(response.unread_count);
+                if (response.unread_count > 0) {
+                    $('#alert-count').show();
+                } else {
+                    $('#alert-count').hide();
+                }
+            }
+        });
+    }
+
 $(document).ready(function () {
     // ✅ แจ้งเตือนแบบ Ajax
     loadNotificationCount();
@@ -40,21 +56,7 @@ $(document).ready(function () {
         });
     });
 
-    function loadNotificationCount() {
-        $.ajax({
-            url: 'ajax/load_notifications.php',
-            method: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                $('#alert-count').text(response.unread_count);
-                if (response.unread_count > 0) {
-                    $('#alert-count').show();
-                } else {
-                    $('#alert-count').hide();
-                }
-            }
-        });
-    }
+    
 
     // ✅ DataTable เริ่มต้นพร้อม topSearch โดยตรวจสอบก่อนว่ามี element นี้หรือไม่
     if ($('#dataTable').length > 0) {

@@ -1,3 +1,14 @@
+<?php
+$uriFull   = $_SERVER['REQUEST_URI'] ?? ($_SERVER['SCRIPT_NAME'] ?? '');
+$uriPath   = parse_url($uriFull, PHP_URL_PATH);
+$uriPath   = is_string($uriPath) ? $uriPath : '';
+$base      = strtolower(basename($uriPath));
+
+// กำหนดว่าหน้าไหนให้แสดง search bar
+$pagesWithSearch = ['myvessel.php', 'mystatus.php'];
+
+$showTopSearch = in_array($base, $pagesWithSearch, true);
+?>
 <!-- Content Wrapper -->
 <div id="content-wrapper" class="d-flex flex-column">
   <!-- Main Content -->
@@ -13,7 +24,7 @@
       >
         <i class="fa fa-bars"></i>
       </button>
-
+      <?php if ($showTopSearch): ?>
       <!-- Topbar Search -->
       <form
         class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search"
@@ -34,6 +45,7 @@
           </div>
         </div>
       </form>
+      <?php endif; ?>
 
       <!-- Topbar Navbar -->
       <ul class="navbar-nav ml-auto">
@@ -178,13 +190,28 @@
               ><?= htmlspecialchars($session->get_display_name()) ?></span
             >
             <?php
-            $profile_img = !empty($session->user_picture)
-                ? htmlspecialchars($session->user_picture)
-                : '../img/undraw_profile.svg';
+            $default_image = '../img/default-user.svg';
+            $picture = $session->user_picture;
+
+            // ถ้าเป็น URL (เริ่มด้วย http หรือ https)
+            if (!empty($picture) && preg_match('/^https?:\/\//', $picture)) {
+                $profile_image = $picture;
+            }
+            // ถ้าเป็นไฟล์ในระบบ
+            else if (!empty($picture)) {
+                $path = '../uploads/profile/' . basename($picture);
+                $profile_image = file_exists($path) ? $path : $default_image;
+            }
+            // ถ้าไม่มีรูปเลย
+            else {
+                $profile_image = $default_image;
+            }
             ?>
             <img
               class="img-profile rounded-circle"
-              src="<?= $profile_img ?>"
+              id = "show_user_picture"
+              
+              src="<?= $profile_image ?>"
             />
           </a>
           <!-- Dropdown - User Information -->
@@ -214,7 +241,7 @@
               <i
                 class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"
               ></i>
-              Logout
+              ออกจากระบบ
             </a>
           </div>
         </li>

@@ -14,6 +14,7 @@
 
     <!-- Custom fonts for this template-->
     <!-- ใช้ Font Awesome 6 ผ่าน CDN -->
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" integrity="sha512-yYAvNc1yt43A8WlpEfxZB+e6Q+Uw6+k4ImCwU7Uv7Q7tXfS0ZsSHe8hrO0GnTt9vUmEyN4uh5kp1uQhxJcZx1A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <link
       href="../vendor/fontawesome-free/css/all.min.css"

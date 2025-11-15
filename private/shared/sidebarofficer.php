@@ -5,11 +5,11 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
   <!-- Sidebar - Brand -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
     <div class="sidebar-brand-icon rotate-n-15">
       <i class="fas fa-ship"></i>
     </div>
-    <div class="sidebar-brand-text mx-3">FVSCIS Officer</div>
+    <div class="sidebar-brand-text mx-3">FVSCIS <br> เจ้าหน้าที่</div>
   </a>
 
   <hr class="sidebar-divider my-0" />
@@ -65,9 +65,9 @@ $canSeeRespMenu = $isInspectOfficer && $officerId !== null && in_array($officerI
 
 <!-- Nav Item - Dashboard -->
 <li class="nav-item <?= is_active(['index.php','index.html'], $base, $pathLower) ? 'active' : '' ?>">
-  <a class="nav-link" href="inspectofficer/index.php">
+  <a class="nav-link" href="index.php">
     <i class="fas fa-fw fa-tachometer-alt"></i>
-    <span>Dashboard</span>
+    <span>หน้าภาพรวม</span>
   </a>
 </li>
 
@@ -97,6 +97,22 @@ $canSeeRespMenu = $isInspectOfficer && $officerId !== null && in_array($officerI
   </li>
 <?php endif; ?>
 
+<?php if ($canSeeRespMenu): ?>
+  <!-- Nav Item - ข้อมูลที่รับผิดชอบ (เฉพาะ officer/dept id ใน whitelist) -->
+  <li class="nav-item <?= is_active(['myaccount.php'], $base, $pathLower) ? 'active' : '' ?>">
+    <a class="nav-link" href="myaccount.php">
+      <i class="fas fa-fw fa-clipboard-check"></i>
+      <span>ข้อมูลที่รับผิดชอบ</span>
+    </a>
+  </li>
+<?php endif; ?>
+
+<li class="nav-item <?= is_active(['myaccount.php'], $base, $pathLower) ? 'active' : '' ?>">
+  <a class="nav-link" href="myaccount.php">
+    <i class="fas fa-fw fa-file-alt"></i>
+    <span>จัดการบัญชีผู้ใช้</span>
+  </a>
+</li>
   <!-- Sidebar Toggler -->
   <div class="text-center d-none d-md-inline">
     <button class="rounded-circle border-0" id="sidebarToggle"></button>

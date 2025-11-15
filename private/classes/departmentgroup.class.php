@@ -49,6 +49,12 @@ class DepartmentGroup extends DatabaseObject {
 
         return $grp ? $grp->name : null;
     }
+    public static function find_by_officer_id($officer_id) {
+        $officer_id = self::$database->escape_string($officer_id);
+        $sql = "SELECT * FROM " . static::$table_name;
+        $sql .= " WHERE officer_id = '{$officer_id}'";
+        return static::find_by_sql($sql);
+    }
 
 }
 ?>

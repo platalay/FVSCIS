@@ -4,7 +4,7 @@ class Fisherman extends DatabaseObject {
     static protected $table_name = 'fisherman';
     static protected $db_columns = [
         'id', 'username', 'password', 'full_name', 'email', 'google_id', 'facebook_id', 'line_id',
-        'citizen_id', 'is_active', 'is_approved', 'approved_by', 'approved_at',
+        'citizen_id', 'profile_image', 'is_active', 'is_approved', 'approved_by', 'approved_at',
         'login_token', 'token_expiry',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
@@ -18,6 +18,7 @@ class Fisherman extends DatabaseObject {
     public $facebook_id;
     public $line_id;
     public ?string $citizen_id = null;
+    public ?string $profile_image = null;
     public $is_active = 1;
     public $is_approved = 0;
     public $approved_by;
@@ -41,6 +42,7 @@ class Fisherman extends DatabaseObject {
         $this->facebook_id = $args['facebook_id'] ?? NULL;
         $this->line_id = $args['line_id'] ?? NULL;
         $this->citizen_id = $args['citizen_id'] ?? NULL;
+        $this->profile_image = $args['profile_image'] ?? NULL;
         $this->is_active = $args['is_active'] ?? 1;
         $this->is_approved = $args['is_approved'] ?? 0;
         $this->approved_by = $args['approved_by'] ?? NULL;
@@ -89,6 +91,15 @@ class Fisherman extends DatabaseObject {
         return $this->save();
     }
 
+    public function get_profile_image_url(): string {
+        if (!empty($this->profile_image)) {
+            return '../uploads/profile/'.$this->profile_image;
+        }
+        // รูป default
+        return '../img/undraw_profile.svg';
+    }
+
+
     public function set_hashed_password($plain_password) {
         $this->password = password_hash($plain_password, PASSWORD_DEFAULT);
     }
@@ -96,6 +107,7 @@ class Fisherman extends DatabaseObject {
     public function verify_password($plain_password) {
         return password_verify($plain_password, $this->password);
     }
+
 
     public static function find_or_create_by_facebook($fb_id, $full_name, $citizen_id, $email = null) {
         $sql = "SELECT * FROM " . static::$table_name . " WHERE facebook_id = '" . self::$database->escape_string($fb_id) . "' LIMIT 1";
@@ -184,6 +196,21 @@ class Fisherman extends DatabaseObject {
     }
     public function get_display_name() {
         return !empty($this->full_name) ? $this->full_name : $this->username;
+    }
+
+     // ใช้ตอนเปลี่ยนรหัสผ่าน / สมัครผู้ใช้ใหม่
+    public function set_password($plain_password) {
+        // ปรับชื่อ property ให้ตรงกับที่ใช้จริงในคลาสนี้
+        $this->password = password_hash($plain_password, PASSWORD_DEFAULT);
+        // หรือถ้าคุณใช้ชื่อ field ว่า password_hash:
+        // $this->password_hash = password_hash($plain_password, PASSWORD_DEFAULT);
+    }
+
+    public static function find_recent($limit = 5) {
+    $sql = "SELECT * FROM " . static::$table_name;
+    $sql .= " ORDER BY created_at DESC";
+    $sql .= " LIMIT " . (int)$limit;
+    return static::find_by_sql($sql);
     }
 
 }

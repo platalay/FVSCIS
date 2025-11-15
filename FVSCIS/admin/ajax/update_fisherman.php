@@ -28,10 +28,10 @@ if (!empty($data['id'])) {
 }
 
 // อัปเดตข้อมูล
-$fisherman->full_name = $data['full_name'] ?? '';
-$fisherman->email = $data['email'] ?? '';
+$fisherman->full_name  = $data['full_name']  ?? '';
+$fisherman->email      = $data['email']      ?? '';
 $fisherman->citizen_id = $data['citizen_id'] ?? '';
-$fisherman->is_active = $data['is_active'] ?? 0;
+$fisherman->is_active  = $data['is_active']  ?? 0;
 $fisherman->is_approved = $data['is_approved'] ?? 0;
 $fisherman->updated_by = $current_user_id;
 $fisherman->updated_at = date('Y-m-d H:i:s');
@@ -43,15 +43,24 @@ if (empty($data['id'])) {
 
 // ✅ จัดการสถานะอนุมัติ
 if ($old_is_approved == 0 && $fisherman->is_approved == 1) {
+    // เพิ่งถูกอนุมัติครั้งแรก
     $fisherman->approved_by = $current_user_id;
     $fisherman->approved_at = date('Y-m-d H:i:s');
 } elseif ($fisherman->is_approved == 0) {
+    // ถูกยกเลิกการอนุมัติ
     $fisherman->approved_by = null;
     $fisherman->approved_at = null;
 }
 
 // บันทึก
 if ($fisherman->save()) {
+
+    // 👇 ตรงนี้คือจุดที่เราจะไปผูกข้อมูลใบรับรองเก่า
+    if ($old_is_approved == 0 && $fisherman->is_approved == 1 && !empty($fisherman->citizen_id)) {
+        // เพิ่งอนุมัติ + มีเลขบัตรประชาชน → ผูก FvSanitationCertificationOld
+        FvSanitationCertificationOld::link_to_fisherman_by_citizen($fisherman);
+    }
+
     echo json_encode(['success' => true]);
 } else {
     echo json_encode(['success' => false, 'message' => 'เกิดข้อผิดพลาดขณะบันทึก']);

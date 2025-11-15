@@ -1,5 +1,7 @@
 <?php
 require_once('../../private/initialize.php');
+$session->require_role(['admin']);
+$Officer = Officer::find_by_id($session->user_id());
 include("../../private/shared/headeradmin.php");
 include("../../private/shared/sidebaradmin.php");
 include("../../private/shared/topbaradmin.php");
@@ -268,6 +270,7 @@ $Departments = Department::find_all();
                             <div class="mb-3"><label>หน่วยงานดูแลข้อมูล</label>
                                 <select name="department[data_owner_id]" id="edit-data_owner_id" class="form-select">
                                 <option value="">-- เลือกหน่วยงานดูแลข้อมูล --</option>
+                                <option value="1">กลุ่มตรวจสอบแหล่งประมงและสิ่งแวดล้อมทางทะเล</option>
                                 <option value="2">ศูนย์วิจัยและพัฒนาประมงทะเลระยอง</option>
                                 <option value="3">ศูนย์วิจัยและพัฒนาประมงทะเลนราธิวาส</option>
                                 <option value="4">ศูนย์วิจัยและพัฒนาประมงทะเลสมุทรปราการ</option>
@@ -341,6 +344,7 @@ include("../../private/shared/footeradmin.php");
 
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="../js/fvscis.js"></script>
             <script>
             $(document).ready(function () {
                 // ✅ เริ่มต้น DataTable

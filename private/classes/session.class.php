@@ -20,9 +20,47 @@ class Session {
     }
   }
 
+
+  public function get_profile_image_url(): string {
+        if (!empty($this->profile_image)) {
+            return $this->profile_image;
+        }
+        // รูป default
+        return '../img/undraw_profile.svg';
+    }
+
+
+  public function get_user_picture(): string {
+      // ถ้าใน session มีค่าแล้ว และไม่ว่าง ใช้เลย
+      if (!empty($this->user_picture)) {
+          return $this->user_picture;
+      }
+
+      // ถ้าไม่มี ให้โหลดจาก DB ตาม role
+      $user = null;
+      if ($this->role === 'fisherman') {
+          $user = Fisherman::find_by_id($this->user_id);
+      } else {
+          $user = Officer::find_by_id($this->user_id);
+      }
+
+      if ($user && method_exists($user, 'get_profile_image_url')) {
+          $this->user_picture = $user->get_profile_image_url();
+          $_SESSION['user_picture'] = $this->user_picture;
+          return $this->user_picture;
+      }
+
+      // fallback รูป default
+      return '../img/undraw_profile.svg';
+  }
+
+
   public function login($user, $role, $picture = '', $remember_me = false) {
     if ($user && $role) {
       session_regenerate_id();
+      if (empty($picture) && method_exists($user, 'get_profile_image_url')) {
+          $picture = $user->get_profile_image_url();
+      }
 
       $this->user_id       = $_SESSION['user_id'] = $user->id;
       $this->username      = $_SESSION['username'] = $user->username;

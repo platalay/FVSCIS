@@ -1,6 +1,6 @@
 <?php
 
-class Elicense {
+class Elicense extends DatabaseObjectEl{
   public $display_name;
   public $age;
   public $nationality_id;
@@ -194,6 +194,18 @@ class Elicense {
 
     return array_map(fn($row) => new Elicense($row), $rows);
   }
+
+    public static function find_full_by_citizen_id_auto(string $citizen_id) {
+        // ดึงตัวแปร global ที่เราสร้างใน initialize.php
+        global $el_db;
+
+        // กันไว้ เผื่อกรณี $el_db ยังไม่ถูกสร้าง (หรือหลุด context)
+        if (!$el_db instanceof PDO) {
+            $el_db = db_el_connect();  // ฟังก์ชันเดิมที่เต้ยใช้เชื่อม elicense DB
+        }
+
+        return static::find_full_by_citizen_id($el_db, $citizen_id);
+    }
 
 
     public static function find_one_by_ship_code(PDO $pdo, string $ship_code, string $fishery_year = '2567') {

@@ -20,7 +20,7 @@ if ($Officer && password_verify($password, $Officer->password)) {
             );
         }
 
-        $session->login($Officer, $role, '', $remember_me);
+        $session->login($Officer, $role, '' , $remember_me);
 
         if ($remember_me) {
             $token = bin2hex(random_bytes(32));
@@ -54,7 +54,7 @@ if ($Officer && password_verify($password, $Officer->password)) {
 $fisherman = Fisherman::find_by_username($username);
 if ($fisherman && password_verify($password, $fisherman->password)) {
     if ($fisherman->is_approved) {
-        $session->login($fisherman, 'fisherman', '', $remember_me);
+        $session->login($fisherman, 'fisherman', '' , $remember_me);
         if ($remember_me) {
             $token = bin2hex(random_bytes(32));
             $expiry = time() + (30 * 24 * 60 * 60); // 30 วัน

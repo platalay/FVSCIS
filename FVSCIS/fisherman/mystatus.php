@@ -247,6 +247,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                 ajaxDelete().done((res) => {
                     if (res && res.success) {
                     Swal.fire({ icon: 'success', title: 'ลบแล้ว', timer: 1200, showConfirmButton: false });
+                    loadNotificationCount();
                     const $row = $btn.closest('tr');
                     if ($.fn.DataTable && $('#dataTable').length) {
                         $('#dataTable').DataTable().row($row).remove().draw(false);
