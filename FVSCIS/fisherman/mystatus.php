@@ -58,37 +58,73 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                     ?>
                                         <tr class="<?= $row_class ?>" style="font-size: 14px;">
                                             <td class="text-center">
-                                                <?php if ($req->status === InspectionRequest::STATUS_PENDING): ?>
+                                                <?php
+                                                $status = $req->status ?? '';
+                                                $has_confirmed_date = !empty($req->confirmed_inspect_date);
+                                                ?>
 
-                                                    <?php
-                                                    $cid = $req->confirmed_inspect_date;
-                                                    if (in_array($cid, [null, '', '0000-00-00', '0000-00-00 00:00:00'], true)): ?>
-                                                        <button class="btn btn-danger btn-sm btn-delete-request" 
-                                                                data-id="<?= h($req->id) ?>" 
-                                                                title="ยกเลิกคำขอ">
-                                                            <i class="fas fa-times-circle"></i>
-                                                        </button>
-                                                    <?php else: ?>
-                                                        <button class="btn btn-primary btn-sm btn-confirm-date" 
-                                                                data-id="<?= h($req->id) ?>" 
-                                                                title="ยืนยันวันตรวจ">
-                                                            <i class="fas fa-calendar-check"></i>
-                                                        </button>
-                                                    <?php endif; ?>
+                                                <!-- ปุ่มดูรายละเอียด (ใช้ได้ทุกสถานะ) -->
+                                                <button type="button"
+                                                        class="btn btn-sm btn-info mb-1"
+                                                        title="ดูรายละเอียดคำขอ"
+                                                        onclick="openRequestDetail('<?= h($req->id) ?>');">
+                                                    <i class="fas fa-search"></i>
+                                                </button>
 
-                                                <?php elseif ($req->status === InspectionRequest::STATUS_INSPECTING): ?>
-                                                    <span class="badge bg-warning text-dark">
-                                                        <i class="fas fa-spinner fa-spin"></i> กำลังตรวจ
-                                                    </span>
+                                                <?php if ($status === 'pending' && !$has_confirmed_date): ?>
+                                                    <!-- กรณียื่นแล้ว ยังไม่มีวันนัดตรวจ: แก้ไข + ยกเลิกได้ -->
 
-                                                <?php elseif (!in_array($req->status, [InspectionRequest::STATUS_COMPLETED, InspectionRequest::STATUS_INSPECTING])): ?>
-                                                    <button class="btn btn-danger btn-sm btn-cancel-request" 
-                                                            data-id="<?= h($req->id) ?>" 
-                                                            title="ยกเลิกคำขอ">
-                                                        <i class="fas fa-times-circle"></i>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-warning mb-1"
+                                                            title="แก้ไขคำขอตรวจเรือ"
+                                                            onclick="openRequestModal('<?= h($req->ship_code) ?>', 'edit', '<?= h($req->id) ?>');">
+                                                        <i class="fas fa-edit"></i>
                                                     </button>
+
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger btn-delete-request mb-1"
+                                                            title="ยกเลิกคำขอ"
+                                                            data-request-id="<?= h($req->id) ?>">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+
+                                                <?php elseif ($status === 'pending' && $has_confirmed_date): ?>
+                                                    <!-- เจ้าหน้าที่กำหนดวันตรวจแล้ว แต่ชาวประมงยังไม่ยืนยัน -->
+
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-success mb-1 btn-confirm-date"
+                                                            title="ยืนยันวันตรวจเรือ"
+                                                            data-request-id="<?= h($req->id) ?>">
+                                                        <i class="fas fa-calendar-check"></i>
+                                                    </button>
+
+                                                    <!-- ปุ่มแก้ไข (ปิดการใช้งาน) -->
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-secondary mb-1"
+                                                            title="ไม่สามารถแก้ไขข้อมูลหลักได้ เนื่องจากเจ้าหน้าที่กำหนดวันตรวจแล้ว"
+                                                            disabled>
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+
+                                                    <!-- ยังยกเลิกได้ -->
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger btn-delete-request mb-1"
+                                                            title="ยกเลิกคำขอ"
+                                                            data-request-id="<?= h($req->id) ?>">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+
+                                                <?php elseif ($status === 'inspecting'): ?>
+                                                    <!-- อยู่ระหว่างตรวจ / ยืนยันวันตรวจแล้ว: ดูอย่างเดียว -->
+
+                                                    <!-- (ดูรายละเอียดด้านบนมีแล้ว ไม่ต้องปุ่มเพิ่ม) -->
+
+                                                <?php else: ?>
+                                                    <!-- สถานะอื่น ๆ เช่น completed / cancelled / failed / conditional -->
+                                                    <!-- แสดงแค่ปุ่มดูรายละเอียดด้านบน ก็เพียงพอ -->
                                                 <?php endif; ?>
                                             </td>
+
 
                                             <td><?= h($req->ship_code) ?></td>
                                             <td><?= h($req->vessel_name) ?></td>
@@ -129,29 +165,8 @@ $fisherman=Fisherman::find_by_id($session->user_id());
 
 
                     </div>
-                    <!-- modalConfirmInspection date-->
-                    <div class="modal fade" id="modalConfirmInspection" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content">
-                        <form id="confirmInspectionForm">
-                            <div class="modal-header">
-                            <h5 class="modal-title">ยืนยันวันตรวจเรือ</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                            <p><strong>วันที่นัดตรวจ:</strong> <span id="confirmedDateDisplay" class="text-primary"></span></p>
-                            <input type="hidden" name="request_id" id="confirm_request_id">
-                            <input type="hidden" name="original_confirmed_date" id="original_confirmed_date">
-                            </div>
-                            <div class="modal-footer">
-                            <button id="btnSubmitConfirm" type="submit" class="btn btn-success">
-                                ยืนยันเข้ารับการตรวจ
-                            </button>
-                            </div>
-                        </form>
-                        </div>
-                    </div>
-                    </div><!-- modalConfirmInspection date-->                   
+                    <?php include("modal/confirmmodal.php"); ?> 
+                    <?php include("modal/viewrequestmodal.php"); ?>               
                 <!-- /.container-fluid -->                  
 </div><!-- <div class="container-fluid"> -->
 
@@ -167,11 +182,120 @@ $fisherman=Fisherman::find_by_id($session->user_id());
     <script src="../js/fvscis.js"></script>  
      
     <script>
+        function openRequestDetail(requestId) {
+            if (!requestId) {
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบหมายเลขคำขอ', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: 'ajax/get_view_request_detail.php',
+                method: 'GET',
+                dataType: 'json',
+                data: { id: requestId },
+                success: function (res) {
+                    if (!res.success) {
+                        Swal.fire('เกิดข้อผิดพลาด', res.message || 'ไม่สามารถดึงข้อมูลคำขอได้', 'error');
+                        return;
+                    }
+
+                    const req = res.request || {};
+
+                    // แปลงสถานะเป็น badge ภาษาไทย
+                    const statusMap = {
+                        pending:    '<span class="badge badge-warning">รอดำเนินการ</span>',
+                        inspecting: '<span class="badge badge-primary">อยู่ระหว่างตรวจ</span>',
+                        completed:  '<span class="badge badge-success">เสร็จสิ้น</span>',
+                        cancelled:  '<span class="badge badge-secondary">ยกเลิกคำขอ</span>',
+                        failed:     '<span class="badge badge-danger">ไม่ผ่านการตรวจ</span>',
+                        conditional:'<span class="badge badge-info">ผ่านแบบมีเงื่อนไข</span>'
+                    };
+
+                    // ---------- ข้อมูลเรือ ----------
+                    $('#detail-ship-code').text(req.ship_code || '-');
+                    $('#detail-vessel-name').text(req.vessel_name || '-');
+                    $('#detail-vessel-ton').text(req.vessel_ton_gross ? req.vessel_ton_gross + ' ตันกรอส' : '-');
+
+                    // แปลง fishing_area เป็นคำไทยนิดนึง
+                    let fishingAreaText = '-';
+                    if (req.fishing_area === 'andaman') fishingAreaText = 'อันดามัน';
+                    else if (req.fishing_area === 'gulf') fishingAreaText = 'อ่าวไทย';
+                    else if (req.fishing_area) fishingAreaText = req.fishing_area;
+                    $('#detail-fishing-area').text(fishingAreaText);
+
+                    // ---------- ข้อมูลคำขอ ----------
+                    
+                    $('#detail-created-at').text(req.created_at || '-');
+                    $('#detail-contact-phone').text(req.contact_phone || '-');
+
+                    // รูปแบบการตรวจ
+                    let inspectionTypeText = '-';
+                    if (req.inspection_form_type === '2' || req.inspection_form_type === 2) {
+                        inspectionTypeText = 'ตรวจเพื่อออกหนังสือรับรองส่งออกไปสหภาพยุโรป(แบบที่ 2)';
+                    } else if (req.inspection_form_type === '1' || req.inspection_form_type === 1) {
+                        inspectionTypeText = 'ตรวจทั่วไป (แบบที่ 1)';
+                    }
+                    $('#detail-inspection-type').text(inspectionTypeText);
+
+                    // เรือห้องเย็น
+                    let coldRoomText = (req.cold_room_flag === '1' || req.cold_room_flag === 1)
+                        ? 'เป็นเรือห้องเย็น / มีระบบทำความเย็น'
+                        : 'ไม่มีระบบห้องเย็น';
+                    $('#detail-cold-room').text(coldRoomText);
+
+                    // ---------- ท่าเรือและหน่วยงาน ----------
+                    $('#detail-port-province').text(req.port_province_name || '-');
+
+                    let amphurTambon = '-';
+                    if (req.port_amphur_name || req.port_tambon_name) {
+                        amphurTambon = (req.port_amphur_name || '') +
+                                    (req.port_amphur_name && req.port_tambon_name ? ' / ' : '') +
+                                    (req.port_tambon_name || '');
+                    }
+                    $('#detail-port-amphur-tambon').text(amphurTambon || '-');
+
+                    $('#detail-port-name').text(req.port_name || req.port_license_no || '-');
+                    $('#detail-department').text(req.department_name || '-');
+
+                    // ---------- วันที่ ----------
+                    let inspectRange = '-';
+                    if (req.inspect_date_start || req.inspect_date_end) {
+                        if (req.inspect_date_start === req.inspect_date_end) {
+                            inspectRange = req.inspect_date_start;
+                        } else {
+                            inspectRange = (req.inspect_date_start || '-') +
+                                        ' ถึงวันที่ ' +
+                                        (req.inspect_date_end || '-');
+                        }
+                    }
+                    $('#detail-inspect-range').text(inspectRange);
+
+                    $('#detail-confirmed-inspect-date').text(
+                        req.confirmed_inspect_date || '-'
+                    );
+
+                    // ---------- สถานะ ----------
+                    $('#detail-status-badge').html(
+                        statusMap[req.status] || '<span class="badge badge-light">ไม่ทราบสถานะ</span>'
+                    );
+
+                    // แสดง modal
+                    $('#requestDetailModal').modal('show');
+                },
+                error: function () {
+                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+                }
+            });
+        }
+
+
     $(document).ready(function () {
 
         // เปิด modal และโหลดข้อมูล
+        
+
         $('.btn-confirm-date').on('click', function () {
-            const requestId = $(this).data('id');
+            const requestId = $(this).data('request-id');
 
             $.ajax({
                 url: 'ajax/get_request_detail.php',
@@ -219,7 +343,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
             e.preventDefault();
 
             const $btn = $(this);
-            const id = $btn.data('id');
+            const id = $btn.data('request-id');
             if (!id) return;
 
             const ajaxDelete = () => $.ajax({

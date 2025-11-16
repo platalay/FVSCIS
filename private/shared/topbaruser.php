@@ -5,10 +5,22 @@ $uriPath   = is_string($uriPath) ? $uriPath : '';
 $base      = strtolower(basename($uriPath));
 
 // กำหนดว่าหน้าไหนให้แสดง search bar
-$pagesWithSearch = ['myvessel.php', 'mystatus.php'];
-
+$pagesWithSearch = [];
 $showTopSearch = in_array($base, $pagesWithSearch, true);
+
+
+$pageTitles = [
+    'index.php'    => 'หน้าภาพรวม',
+    'myvessel.php'   => 'เรือของฉัน',
+    'mystatus.php'     => 'สถานะคำขอ',
+    'myaccount.php'      => 'จัดการบัญชีผู้ใช้',
+    // เติมไฟล์อื่น ๆ ตามจริงของคุณได้เลย
+];
+
+// ถ้าไม่ตรงอะไรเลย ใช้ชื่อระบบเป็นค่าเริ่มต้น
+$page_title = $pageTitles[$base] ?? 'ระบบสารสนเทศเพื่อการรับรองสุขอนามัยเรือประมง';
 ?>
+
 <!-- Content Wrapper -->
 <div id="content-wrapper" class="d-flex flex-column">
   <!-- Main Content -->
@@ -24,28 +36,36 @@ $showTopSearch = in_array($base, $pagesWithSearch, true);
       >
         <i class="fa fa-bars"></i>
       </button>
-      <?php if ($showTopSearch): ?>
-      <!-- Topbar Search -->
-      <form
-        class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search"
-      >
-        <div class="input-group">
-          <input
-            id="topSearch"
-            type="text"
-            class="form-control bg-light border-0 small"
-            placeholder="Search for..."
-            aria-label="Search"
-            aria-describedby="basic-addon2"
-          />
-          <div class="input-group-append">
-            <button class="btn btn-primary" type="button">
-              <i class="fas fa-search fa-sm"></i>
-            </button>
+      <?php if ($showTopSearch) { ?>
+        <!-- Topbar Search (เผื่ออนาคตจะเปิดใช้บางหน้า) -->
+        <form
+          class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search"
+        >
+          <div class="input-group">
+            <input
+              id="topSearch"
+              type="text"
+              class="form-control bg-light border-0 small"
+              placeholder="ค้นหา..."
+              aria-label="Search"
+              aria-describedby="basic-addon2"
+            />
+            <div class="input-group-append">
+              <button class="btn btn-primary" type="button">
+                <i class="fas fa-search fa-sm"></i>
+              </button>
+            </div>
           </div>
+        </form>
+      <?php } else { ?>
+        <!-- แสดงชื่อหน้าแทน search -->
+        <div class="d-none d-sm-inline-block mr-auto ml-md-3 my-2 my-md-0">
+          <h1 class="h5 mb-0 text-gray-800">
+            <?= h($page_title) ?>
+          </h1>
         </div>
-      </form>
-      <?php endif; ?>
+      <?php } ?>
+
 
       <!-- Topbar Navbar -->
       <ul class="navbar-nav ml-auto">
@@ -72,7 +92,7 @@ $showTopSearch = in_array($base, $pagesWithSearch, true);
                 <input
                   type="text"
                   class="form-control bg-light border-0 small"
-                  placeholder="Search for..."
+                  placeholder="ค้นหา ..."
                   aria-label="Search"
                   aria-describedby="basic-addon2"
                 />

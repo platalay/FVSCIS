@@ -18,6 +18,15 @@ $(document).ready(function () {
     // ✅ แจ้งเตือนแบบ Ajax
     loadNotificationCount();
     setInterval(loadNotificationCount, 60000); // โหลดทุก 1 นาที
+       //Bs tootip
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+        });
+    
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
 
     $('#alertsDropdown').on('show.bs.dropdown', function () {
         $.ajax({
@@ -59,11 +68,31 @@ $(document).ready(function () {
     
 
     // ✅ DataTable เริ่มต้นพร้อม topSearch โดยตรวจสอบก่อนว่ามี element นี้หรือไม่
-    if ($('#dataTable').length > 0) {
-        var table = $('#dataTable').DataTable();
+            if ($('#dataTable').length > 0) {
 
-        $('#topSearch').on('keyup', function () {
-            table.search(this.value).draw();
-        });
-    }
+            var table = $('#dataTable').DataTable({
+                language: {
+                    lengthMenu: "แสดง _MENU_ รายการ",
+                    zeroRecords: "ไม่พบข้อมูล",
+                    info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+                    infoEmpty: "ไม่มีข้อมูล",
+                    infoFiltered: "(ค้นหาจากทั้งหมด _MAX_ รายการ)",
+                    search: "ค้นหา:",
+                    paginate: {
+                        first: "หน้าแรก",
+                        last: "หน้าสุดท้าย",
+                        next: "ถัดไป",
+                        previous: "ก่อนหน้า"
+                    }
+                }
+            });
+
+            // ให้มั่นใจว่าเจอ element topSearch
+            $('#topSearch').off('keyup').on('keyup', function () {
+                let value = $(this).val();
+                table.search(value).draw();
+            });
+        }
+
+
 });

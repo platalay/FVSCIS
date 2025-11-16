@@ -32,7 +32,7 @@ include("../../private/shared/topbaruser.php");
   <!-- Heading -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h1 class="h3 mb-1 text-gray-800">หน้าชาวประมง (Fisherman)</h1>
+      
       <p class="mb-0 text-muted">
         ยินดีต้อนรับคุณ <strong><?php echo h($fisherman->full_name ?? 'ชาวประมง'); ?></strong>
       </p>
@@ -134,7 +134,7 @@ include("../../private/shared/topbaruser.php");
                     <th style="width: 20%;">ท่าเรือ</th>
                     <th style="width: 15%;">สถานะ</th>
                     <th style="width: 15%;">วันที่ยื่นคำขอ</th>
-                    <th style="width: 15%;">นัดตรวจ</th>
+                    <th style="width: 15%;">วันที่นัดตรวจ</th>
                   </tr>
                 </thead>
                 <tbody>
