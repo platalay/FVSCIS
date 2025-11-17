@@ -98,10 +98,10 @@ function sci_to_plain(string $val): string {
  * @param array  $options  ['format' => 'long'|'short', 'show_day' => bool, 'show_time' => bool, 'null' => string]
  * @return string
  */
-function thai_date(string $dateStr, array $options = []): string
+function thai_date(?string $dateStr, array $options = []): string
 {
     // กันค่าไม่พร้อมใช้
-    if (empty($dateStr) || $dateStr === '0000-00-00' || $dateStr === '0000-00-00 00:00:00') {
+    if (empty($dateStr) || $dateStr === '0000-00-00' || $dateStr === '0000-00-00 00:00:00' || $dateStr === null) {
         return $options['null'] ?? '-';
     }
 

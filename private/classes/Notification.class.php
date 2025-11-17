@@ -49,6 +49,15 @@ class Notification extends DatabaseObject {
         return static::find_by_sql($sql);
     }
 
+    public static function recent_unread_notifications($user_id, $user_role, $limit = 10) {
+        $user_id = self::$database->escape_string($user_id);
+        $user_role = self::$database->escape_string($user_role);
+        $limit = (int)$limit;
+        $sql = "SELECT * FROM " . static::$table_name .
+               " WHERE user_id = '" . $user_id . "' AND user_role = '" . $user_role . "'  AND is_read = 0 ORDER BY created_at DESC LIMIT " . $limit;
+        return static::find_by_sql($sql);
+    }
+
     public static function mark_all_as_read($user_id, $user_role) {
         $user_id = self::$database->escape_string($user_id);
         $user_role = self::$database->escape_string($user_role);

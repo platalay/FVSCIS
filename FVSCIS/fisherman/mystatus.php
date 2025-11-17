@@ -28,6 +28,8 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                         <th>ดำเนินการ</th>
                                         <th>เลขทะเบียนเรือ</th>
                                         <th>ชื่อเรือ</th>
+                                        <th>จังหวัดที่นัดตรวจ</th>
+                                        <th>ท่าเรือ</th>
                                         <th>ช่วงวันที่ขอตรวจ</th>
                                         <th>วันนัดตรวจยืนยันแล้ว</th>
                                         <th>วันที่สร้าง</th>
@@ -77,7 +79,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                                     <button type="button"
                                                             class="btn btn-sm btn-warning mb-1"
                                                             title="แก้ไขคำขอตรวจเรือ"
-                                                            onclick="openRequestModal('<?= h($req->ship_code) ?>', 'edit', '<?= h($req->id) ?>');">
+                                                            onclick="openEditInspectionModal('<?= h($req->id) ?>');">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
 
@@ -128,6 +130,9 @@ $fisherman=Fisherman::find_by_id($session->user_id());
 
                                             <td><?= h($req->ship_code) ?></td>
                                             <td><?= h($req->vessel_name) ?></td>
+                                            <?php $province = Province::find_by_id($req->port_province_id); ?>
+                                            <td><?= h($province->name) ?></td>
+                                            <td><?= h($req->port_name) ?></td>
                                             <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
                                             <td>
                                             <?php  
@@ -166,7 +171,8 @@ $fisherman=Fisherman::find_by_id($session->user_id());
 
                     </div>
                     <?php include("modal/confirmmodal.php"); ?> 
-                    <?php include("modal/viewrequestmodal.php"); ?>               
+                    <?php include("modal/viewrequestmodal.php"); ?>     
+                    <?php include("modal/editrequestmodal.php"); ?>                
                 <!-- /.container-fluid -->                  
 </div><!-- <div class="container-fluid"> -->
 
@@ -429,6 +435,273 @@ $fisherman=Fisherman::find_by_id($session->user_id());
         });
 
     });
+</script>
+
+<script>
+
+// ====================================================================
+// 1) ฟังก์ชันโหลดข้อมูลจังหวัด → อำเภอ → ตำบล → ท่าเรือ
+// ====================================================================
+//โหลดจังหวัด
+function loadEditProvinces(selected_province_id = "") {
+  $.ajax({
+    url: 'ajax/get_provinces.php',
+    method: 'GET',
+    dataType: 'json',
+    success: function(res) {
+      let html = '<option value="">-- เลือกจังหวัด --</option>';
+      res.forEach(function(p) {
+        html += `<option value="${p.id}" ${p.id == selected_province_id ? 'selected' : ''}>
+                   ${p.name}
+                 </option>`;
+      });
+      $('#edit_port_province_id').html(html);
+    }
+  });
+}
+
+// โหลดอำเภอ
+function loadEditAmphur(province_id, selected_amphur = "") {
+  $.ajax({
+    url: 'ajax/get_districts_edit.php',
+    method: 'GET',
+    data: { province_id },
+    dataType: 'json',
+    success: function(res) {
+      let html = '<option value="">-- เลือกอำเภอ --</option>';
+      res.forEach(function(a) {
+        html += `<option value="${a.id}" ${a.id == selected_amphur ? 'selected' : ''}>
+                    ${a.name}
+                 </option>`;
+      });
+      $('#edit_port_amphur_id').html(html).trigger('change');
+    }
+  });
+}
+
+// โหลดหน่วยงาน
+function loadEditdepartment(province_id, department_id = "") {
+  $.ajax({
+    url: 'ajax/get_departments_by_province_edit.php',
+    method: 'GET',
+    data: { province_id },
+    dataType: 'json',
+    success: function(res) {
+      let html = '<option value="">-- เลือกหน่วยงาน --</option>';
+      res.forEach(function(a) {
+        html += `<option value="${a.id}" ${a.id == department_id  ? 'selected' : ''}>
+                    ${a.name}
+                 </option>`;
+      });
+      $('#edit_department_id').html(html);
+    }
+  });
+}
+
+// โหลดตำบล
+function loadEditTambon(amphur_id, selected_tambon = "") {
+  $.ajax({
+    url: 'ajax/get_subdistricts_edit.php',
+    method: 'GET',
+    data: { amphur_id },
+    dataType: 'json',
+    success: function(res) {
+      let html = '<option value="">-- เลือกตำบล --</option>';
+      res.forEach(function(t) {
+        html += `<option value="${t.id}" ${t.id == selected_tambon ? 'selected' : ''}>
+                    ${t.name}
+                 </option>`;
+      });
+      $('#edit_port_tambon_id').html(html).trigger('change');
+    }
+  });
+}
+
+// โหลดท่าเรือ
+function loadEditPort(tambon_id, selected_port = "") {
+  $.ajax({
+    url: 'ajax/get_ports_by_tambon_edit.php',
+    method: 'GET',
+    data: { tambon_id },
+    dataType: 'json',
+    success: function(res) {
+      let html = '<option value="">-- เลือกท่าเรือ --</option>';
+      res.forEach(function(p) {
+        html += `<option value="${p.license_no}" ${p.license_no == selected_port ? 'selected' : ''}>
+                    ${p.port_name}
+                 </option>`;
+      });
+      $('#edit_port_license_no').html(html);
+    }
+  });
+}
+
+
+// ====================================================================
+// 2) event: เมื่อเลือกจังหวัด → โหลดอำเภอ
+// ====================================================================
+$('#edit_port_province_id').on('change', function() {
+  const province_id = $(this).val();
+  $('#edit_port_amphur_id').html('<option value="">-- เลือกอำเภอ --</option>');
+  $('#edit_port_tambon_id').html('<option value="">-- เลือกตำบล --</option>');
+  $('#edit_port_license_no').html('<option value="">-- เลือกท่าเรือ --</option>');
+  if(province_id){
+     loadEditAmphur(province_id);
+     loadEditdepartment(province_id);
+  }
+
+});
+
+// เมื่อเลือกอำเภอ → โหลดตำบล
+$('#edit_port_amphur_id').on('change', function() {
+  const amphur_id = $(this).val();
+  $('#edit_port_tambon_id').html('<option value="">-- เลือกตำบล --</option>');
+  $('#edit_port_license_no').html('<option value="">-- เลือกท่าเรือ --</option>');
+  if(amphur_id) loadEditTambon(amphur_id);
+});
+
+// เมื่อเลือกตำบล → โหลดท่าเรือ
+$('#edit_port_tambon_id').on('change', function() {
+  const tambon_id = $(this).val();
+  $('#edit_port_license_no').html('<option value="">-- เลือกท่าเรือ --</option>');
+  if(tambon_id) loadEditPort(tambon_id);
+});
+
+
+// ====================================================================
+// 3) checkbox EU / Cold Room
+// ====================================================================
+
+// EU
+$('#edit_eu_cert_checkbox').on('change', function() {
+  $('#edit_inspection_form_type').val(this.checked ? '2' : '1');
+});
+
+// Cold room
+$('#edit_cold_room_checkbox').on('change', function() {
+  $('#edit_cold_room_flag').val(this.checked ? '1' : '0');
+});
+
+
+// ====================================================================
+// 4) ฟังก์ชันเปิด modal + preload ข้อมูล (ตัวหลัก)
+// ====================================================================
+
+function openEditInspectionModal(id) {
+
+  $.ajax({
+    url: 'ajax/get_edit_request_detail.php',
+    method: 'GET',
+    data: { id },
+    dataType: 'json',
+    success: function(res) {
+
+      if (!res.success) {
+        Swal.fire('ผิดพลาด', res.message, 'error');
+        return;
+      }
+
+      const req = res.request;
+
+      // ====== ใส่ค่าลงฟอร์ม ======
+
+      $('#edit_request_id').val(req.id);
+      $('#edit_hidden_ship_code').val(req.ship_code);
+      $('#edit_hidden_vessel_name').val(req.vessel_name);
+
+      // แสดงเรือ
+      $('#edit-modal-ship-code').text(req.ship_code);
+      $('#edit-modal-vessel-name').text(req.vessel_name);
+      $('#edit-modal-vessel-ton').text(req.gross_ton);
+      $('#edit-modal-fishing-area').text(req.fishing_area);
+
+      // Contact
+      $('#edit_contact_phone').val(req.contact_phone);
+
+      
+
+      // Date
+      $('#edit_inspect_date_start').val(req.inspect_date_start);
+      $('#edit_inspect_date_end').val(req.inspect_date_end);
+
+      // EU form
+      $('#edit_inspection_form_type').val(req.inspection_form_type);
+      $('#edit_eu_cert_checkbox').prop('checked', req.inspection_form_type == 2);
+
+      // Cold Room
+      $('#edit_cold_room_flag').val(req.cold_room_flag);
+      $('#edit_cold_room_checkbox').prop('checked', req.cold_room_flag == 1);
+
+      // ====== จังหวัด / อำเภอ / ตำบล / ท่าเรือ ======
+      loadEditProvinces(req.port_province_id);
+
+      // โหลดอำเภอ → ตั้งค่า selected
+      loadEditAmphur(req.port_province_id, req.port_amphur_id);
+
+
+      setTimeout(function() {
+      loadEditdepartment(req.port_province_id, req.department_id);
+      }, 200);
+      // โหลดตำบล → ตั้งค่า selected (ดีเลย์นิดเพราะ AJAX)
+
+      setTimeout(function() {
+        loadEditTambon(req.port_amphur_id, req.port_tambon_id);
+      }, 200);
+
+      // โหลดท่าเรือ → selected
+      setTimeout(function() {
+        loadEditPort(req.port_tambon_id, req.port_license_no);
+      }, 400);
+
+      // เปิด Modal
+      $('#editInspectionModal').modal('show');
+    }
+  });
+
+}
+
+</script>
+
+<script>
+$(document).ready(function () {
+
+  $('#editInspectionForm').on('submit', function (e) {
+    e.preventDefault();
+
+    const $form = $(this);
+    const formData = $form.serialize();
+
+    $.ajax({
+      url: $form.attr('action'),     // ajax/update_inspection.php
+      method: 'POST',
+      data: formData,
+      dataType: 'json',
+      success: function (res) {
+        if (!res.success) {
+          Swal.fire('บันทึกไม่สำเร็จ', res.message || 'เกิดข้อผิดพลาด', 'error');
+          return;
+        }
+
+        Swal.fire({
+          title: 'บันทึกสำเร็จ',
+          text: 'ระบบได้บันทึกการแก้ไขคำขอตรวจเรือแล้ว',
+          icon: 'success',
+          confirmButtonText: 'ตกลง'
+        }).then(() => {
+          // ปิด modal และรีโหลดหน้า/ตาราง
+          $('#editInspectionModal').modal('hide');
+          // ถ้าใช้ DataTable ก็ reload table ตรงนี้แทนได้
+          location.reload();
+        });
+      },
+      error: function (xhr, status, error) {
+        console.error('AJAX Error:', status, error);
+        Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
+      }
+    });
+  });
+
+});
 </script>
 
 

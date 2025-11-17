@@ -29,7 +29,9 @@ include("../../private/shared/topbarofficer.php");
                                         <th>ดำเนินการ</th>
                                         <th>หมายเลขทะเบียนเรือ</th>
                                         <th>ชื่อเรือ</th>
+                                         <th>ท่าเรือที่นัดตรวจ</th>
                                         <th>ช่วงเวลาขอตรวจ</th>
+                                        <th>วันนัดตรวจ</th>
                                         <th>ประเภทคำขอ</th>
                                         <th>วันที่ยื่นคำขอ</th>
                                         <th>สถานะ</th>
@@ -87,7 +89,9 @@ include("../../private/shared/topbarofficer.php");
 
                                             <td><?= h($req->ship_code) ?></td>
                                             <td><?= h($req->vessel_name) ?></td>
+                                            <td><?= h($req->port_name) ?></td>
                                             <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
+                                            <td><?= thai_date($req->confirmed_inspect_date) ?></td>
                                             <td class="text-center">
                                             <?php
                                                 $icons = [];

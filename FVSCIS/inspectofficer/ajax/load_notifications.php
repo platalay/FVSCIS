@@ -11,7 +11,7 @@ if (!$session->is_logged_in()) {
 $user_id = $session->user_id();
 $user_role = $session->role;
 
-$notifications = Notification::recent_notifications($user_id, $user_role);
+$notifications = Notification::recent_unread_notifications($user_id, $user_role);
 $unread = Notification::unread_count($user_id, $user_role);
 
 $data = [];
