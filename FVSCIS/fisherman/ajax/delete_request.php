@@ -29,26 +29,7 @@ try {
     $ship_code     = trim($request->ship_code ?? '');
     $license_no    = trim($request->license_number ?? $port_license_no ?? '');
 
-    // ปั้นข้อความเรือให้อ่านง่าย
-    $vessel_tag = $vessel_name !== '' ? "เรือ {$vessel_name}" : 'เรือไม่ระบุชื่อ';
-    if ($ship_code !== '')  { $vessel_tag .= " ({$ship_code})"; }
-    if ($license_no !== '') { $vessel_tag .= " เลขใบอนุญาต {$license_no}"; }
-
-    // ตรวจ role (ปรับตาม method จริงของระบบคุณ)
-    $is_admin   = method_exists($session, 'is_admin')   ? (bool)$session->is_admin()   : false;
-    $is_officer = method_exists($session, 'is_officer') ? (bool)$session->is_officer() : false;
-
-    // เลือก action code ตามผู้ลบ
-    if ($deleter_user_id === (int)$request_owner_id) {
-        $action_code = 'fisher_delete_request';
-    } elseif ($is_admin) {
-        $action_code = 'admin_delete_request';
-    } elseif ($is_officer) {
-        $action_code = 'officer_delete_request';
-    } else {
-        $action_code = 'officer_delete_request'; // fallback
-    }
-
+    
     // ใช้ transaction ถ้ามี
     if (class_exists('Database') && method_exists(Database::$database, 'begin_transaction')) {
         Database::$database->begin_transaction();
@@ -64,27 +45,12 @@ try {
         exit;
     }
 
-    // ✅ หา action
-    $action = LogAction::find_by_code($action_code);
-    if (!$action) {
-        $action = LogAction::find_by_code('submitted'); // กันพัง
-        if (!$action) {
-            throw new Exception("ไม่พบรหัส action '{$action_code}' และ 'submitted'");
-        }
-    }
 
     // 📝 Log การลบ
     $log = new InspectionLog();
     $log->inspection_request_id = $request_id;
-    $log->action_id             = $action->id;
-    $log->note                  = "{$vessel_tag} ถูกลบคำขอโดย user_id={$deleter_user_id}";
-    $log->performed_by          = $deleter_user_id;
-    $log->performed_at          = date('Y-m-d H:i:s');
-    $log->target_department_id  = $department_id;
-    // สมมติ: 1=admin, 2=fisherman, 3=officer (ปรับตามระบบจริง)
-    $log->target_usertype_id    = ($deleter_user_id === (int)$request_owner_id) ? 2 : ($is_admin ? 1 : 3);
-    $log->port_license_no       = $port_license_no;
-
+    $log->action_id             = 3;
+    $log->note                  = "{$vessel_name} ถูกลบคำขอโดย user_id={$deleter_user_id}";
     if (!$log->save()) {
         if ($in_tx) Database::$database->rollback();
         echo json_encode(['success' => false, 'message' => 'ลบสำเร็จ แต่บันทึก log ไม่สำเร็จ']);
@@ -92,31 +58,32 @@ try {
     }
 
     // 🔔 Notify เจ้าตัว (ผู้ยื่นคำขอ/หรือคนลบ)
+    //create_notification($user_id, $user_role, $inspection_request_id, $action_id, $message, $notification_type = 'info') 
+    //info/success/warning/error
+    
     Notification::create_notification(
-        $request_owner_id ?: $deleter_user_id,
-        'fisherman',
-        "{$vessel_tag} : ลบคำขอตรวจสุขอนามัยเรียบร้อย",
-        'info',
-        'inspection_request',
+        $session->user_id(),
+        $session->role,
         $request_id,
-        $log->id
+        4,//delete_request
+        "เรือ {$vessel_name} : ลบคำขอตรวจสุขอนามัยเรียบร้อย",
+        'warning'
     );
 
     // 🔔 Notify เจ้าหน้าที่ (เฉพาะกรณีผู้ลบคือผู้ยื่นคำขอเอง)
-    if ($deleter_user_id === (int)$request_owner_id && $department_id) {
+    
         $officers = Officer::find_by_department_id($department_id) ?: [];
         foreach ($officers as $officer) {
             Notification::create_notification(
                 $officer->id,
-                'inspectofficer',
-                "{$vessel_tag} : ผู้ยื่นคำขอลบคำขอตรวจสุขอนามัย",
-                'info',
-                'inspection_request',
+                $session->map_usertype_id_to_role($sission->role),
                 $request_id,
-                $log->id
+                4,//delete_request
+                "เรือ {$vessel_name} : ผู้ยื่นคำขอลบคำขอตรวจสุขอนามัย",
+                'warning'
             );
         }
-    }
+
 
     if ($in_tx) Database::$database->commit();
     echo json_encode(['success' => true]);

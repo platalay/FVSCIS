@@ -107,40 +107,29 @@ try {
         throw new Exception("ไม่สามารถบันทึกคำขอได้" . ($err ? " ({$err})" : ''));
     }
 
-    // ✅ Log
-    $action = LogAction::find_by_code('submitted');
-    if (!$action) {
-        throw new Exception("ไม่พบรหัส action 'submitted'");
-    }
 
     $log = new InspectionLog();
     $log->inspection_request_id = $request->id;
-    $log->action_id             = $action->id;
+    $log->action_id             = 2;
     $log->note                  = ($inspection_form_type === 2)
                                   ? 'ชาวประมงยื่นคำขอ: ตรวจสุขอนามัยเพื่อขอใบรับรอง EU'
                                   : 'ชาวประมงยื่นคำขอ: ตรวจสุขอนามัยแบบทั่วไป';
-    $log->performed_by          = $session->user_id() ?? 0;
-    $log->performed_at          = date('Y-m-d H:i:s');
-    $log->target_department_id  = $department_id;
-    $log->target_usertype_id    = 3; // 3 = officer (ตามที่ใช้อยู่)
-    $log->port_license_no       = $port_license;
     $log->save();
-
+    
     // 🔔 Notification → เจ้าหน้าที่หน่วยงานที่เลือก
     $officers = Officer::find_by_department_id($department_id);
     $notif_title = ($inspection_form_type === 2)
-        ? "มีคำขอ 'ตรวจ EU Export' ใหม่จากชาวประมง"
-        : "มีคำขอตรวจสุขอนามัยเรือใหม่จากชาวประมง";
+        ? "มีคำขอ 'ตรวจ EU Export' ใหม่จากชาวประมง เรือ {$request->vessel_name}"
+        : "มีคำขอตรวจสุขอนามัยเรือใหม่จากชาวประมง เรือ {$request->vessel_name}";
 
     foreach ($officers as $officer) {
         Notification::create_notification(
             $officer->id,
             'inspectofficer',
-            $notif_title,
-            'action_required',
-            'inspection_request',
             $request->id,
-            $log->id
+            2,
+            $notif_title,
+            'warning'
         );
     }
 

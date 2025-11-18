@@ -68,6 +68,8 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                                 <!-- ปุ่มดูรายละเอียด (ใช้ได้ทุกสถานะ) -->
                                                 <button type="button"
                                                         class="btn btn-sm btn-info mb-1"
+                                                        data-bs-toggle="tooltip" 
+                                                        data-bs-placement="top"
                                                         title="ดูรายละเอียดคำขอ"
                                                         onclick="openRequestDetail('<?= h($req->id) ?>');">
                                                     <i class="fas fa-search"></i>
@@ -78,14 +80,20 @@ $fisherman=Fisherman::find_by_id($session->user_id());
 
                                                     <button type="button"
                                                             class="btn btn-sm btn-warning mb-1"
+                                                            data-bs-toggle="tooltip" 
+                                                            data-bs-placement="top"
                                                             title="แก้ไขคำขอตรวจเรือ"
+                                                            
                                                             onclick="openEditInspectionModal('<?= h($req->id) ?>');">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
 
                                                     <button type="button"
                                                             class="btn btn-sm btn-outline-danger btn-delete-request mb-1"
+                                                            data-bs-toggle="tooltip" 
+                                                            data-bs-placement="top"
                                                             title="ยกเลิกคำขอ"
+                                                            
                                                             data-request-id="<?= h($req->id) ?>">
                                                         <i class="fas fa-times"></i>
                                                     </button>
@@ -95,7 +103,10 @@ $fisherman=Fisherman::find_by_id($session->user_id());
 
                                                     <button type="button"
                                                             class="btn btn-sm btn-success mb-1 btn-confirm-date"
+                                                            data-bs-toggle="tooltip" 
+                                                            data-bs-placement="top"
                                                             title="ยืนยันวันตรวจเรือ"
+                                                            
                                                             data-request-id="<?= h($req->id) ?>">
                                                         <i class="fas fa-calendar-check"></i>
                                                     </button>
@@ -103,7 +114,10 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                                     <!-- ปุ่มแก้ไข (ปิดการใช้งาน) -->
                                                     <button type="button"
                                                             class="btn btn-sm btn-secondary mb-1"
+                                                            data-bs-toggle="tooltip" 
+                                                            data-bs-placement="top"
                                                             title="ไม่สามารถแก้ไขข้อมูลหลักได้ เนื่องจากเจ้าหน้าที่กำหนดวันตรวจแล้ว"
+                                                            
                                                             disabled>
                                                         <i class="fas fa-edit"></i>
                                                     </button>
@@ -111,7 +125,10 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                                     <!-- ยังยกเลิกได้ -->
                                                     <button type="button"
                                                             class="btn btn-sm btn-outline-danger btn-delete-request mb-1"
+                                                            data-bs-toggle="tooltip" 
+                                                            data-bs-placement="top"
                                                             title="ยกเลิกคำขอ"
+                                                            
                                                             data-request-id="<?= h($req->id) ?>">
                                                         <i class="fas fa-times"></i>
                                                     </button>
@@ -160,6 +177,13 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                                         echo '<span class="badge bg-secondary">ไม่ทราบ</span>';
                                                 }
                                                 ?>
+                                                <button class="btn btn-link p-0 text-muted btn-log"
+                                                        data-bs-toggle="tooltip" 
+                                                        data-bs-placement="top"
+                                                        title="ดูประวัติ"
+                                                        data-request-id="<?= h($req->id) ?>">
+                                                    <i class="fas fa-history"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     <?php endforeach; endif; ?>
@@ -172,7 +196,8 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                     </div>
                     <?php include("modal/confirmmodal.php"); ?> 
                     <?php include("modal/viewrequestmodal.php"); ?>     
-                    <?php include("modal/editrequestmodal.php"); ?>                
+                    <?php include("modal/editrequestmodal.php"); ?> 
+                    <?php include("modal/logmodal.php"); ?>                
                 <!-- /.container-fluid -->                  
 </div><!-- <div class="container-fluid"> -->
 
@@ -299,6 +324,53 @@ $fisherman=Fisherman::find_by_id($session->user_id());
 
         // เปิด modal และโหลดข้อมูล
         
+        $(document).on('click', '.btn-log', function () {
+            const requestId = $(this).data('request-id');
+
+            $.ajax({
+                url: 'ajax/get_request_logs.php',
+                method: 'GET',
+                dataType: 'json',
+                data: { id: requestId },
+                success: function (resp) {
+                    if (!resp.success) {
+                        if (window.Swal) {
+                            Swal.fire('ผิดพลาด', resp.message || 'ไม่สามารถโหลดประวัติได้', 'error');
+                        } else {
+                            alert(resp.message || 'ไม่สามารถโหลดประวัติได้');
+                        }
+                        return;
+                    }
+
+                    const logs = resp.logs || [];
+                    let html = '';
+
+                    if (logs.length === 0) {
+                        html = `<tr><td colspan="4" class="text-center text-muted">ยังไม่มีประวัติการดำเนินการ</td></tr>`;
+                    } else {
+                        logs.forEach(function (log) {
+                            html += `
+                                <tr>
+                                    <td>${log.time}</td>
+                                    <td>${log.action}</td>
+                                    <td>${log.actor}</td>
+                                    <td>${log.note || '-'}</td>
+                                </tr>`;
+                        });
+                    }
+
+                    $('#logModalBody').html(html);
+                    $('#logModal').modal('show');
+                },
+                error: function () {
+                    if (window.Swal) {
+                        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+                    } else {
+                        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                    }
+                }
+            });
+        });
 
         $('.btn-confirm-date').on('click', function () {
             const requestId = $(this).data('request-id');

@@ -28,6 +28,7 @@ $(document).ready(function () {
     return new bootstrap.Tooltip(tooltipTriggerEl)
     })
 
+
     $('#alertsDropdown').on('show.bs.dropdown', function () {
         $.ajax({
             url: 'ajax/load_notifications.php',

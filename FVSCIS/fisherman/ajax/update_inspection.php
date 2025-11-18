@@ -78,22 +78,41 @@ try {
         throw new Exception('ไม่สามารถบันทึกการแก้ไขได้');
     }
 
+    // ✅ 2. หาค่า action_id ที่ถูกต้องจาก code
+    $action = LogAction::find_by_code('edit_request');
+    if (!$action) throw new Exception("ไม่พบ log action: fisher_confirm_date");
+
+    $log = new InspectionLog();
+    $log->inspection_request_id = $req->id;
+    $log->action_id             = 3;
+    $log->note                  = "{$vessel_name} ถูกลบคำขอโดย user_id={$deleter_user_id}";
+    if (!$log->save()) {
+        if ($in_tx) Database::$database->rollback();
+        echo json_encode(['success' => false, 'message' => 'ลบสำเร็จ แต่บันทึก log ไม่สำเร็จ']);
+        exit;
+    }
+
+    $log = new InspectionLog();
+    $log->inspection_request_id = $req->id;
+    $log->action_id             = 3;
+    $log->note                  = "มีการปรับแก้ไขคำขอตรวจเรือ {$req->vessel_name}";
+    $log->save();
+
     // 🔔 Notification → เจ้าหน้าที่หน่วยงานที่เลือก
     $officers = Officer::find_by_department_id($req->department_id);
-    $notif_title = "มีการปรับแก้ไขคำขอตรวจ";
+    $notif_title = "มีการปรับแก้ไขคำขอตรวจเรือ ".$req->vessel_name;
 
     foreach ($officers as $officer) {
-        Notification::create_notification(
-            $officer->id,
-            'inspectofficer',
-            $notif_title,
-            'action_required',
-            'inspection_request',
-            $request->id,
-            $log->id
-        );
+                Notification::create_notification(
+                    $officer->id,
+                    'inspectofficer',
+                    $req->id,
+                    3,
+                    $notif_title,
+                    'info'
+                );        
     }
-    Notification::mark_related_as_read('inspection_request', $req->id);
+    
     
     echo json_encode([
         'success' => true,

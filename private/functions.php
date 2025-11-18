@@ -100,47 +100,70 @@ function sci_to_plain(string $val): string {
  */
 function thai_date(?string $dateStr, array $options = []): string
 {
-    // กันค่าไม่พร้อมใช้
-    if (empty($dateStr) || $dateStr === '0000-00-00' || $dateStr === '0000-00-00 00:00:00' || $dateStr === null) {
+    // กันค่าที่ไม่พร้อมใช้หรือไม่ใช่วันที่
+    if (
+        empty($dateStr) ||
+        $dateStr === '0000-00-00' ||
+        $dateStr === '0000-00-00 00:00:00' ||
+        strtolower($dateStr) === 'null'
+    ) {
         return $options['null'] ?? '-';
     }
 
-    // ตั้งค่าเริ่มต้น
+    // ตั้งค่าพื้นฐาน (override ด้วย $options)
     $opt = array_merge([
-        'format'    => 'short',   // 'long' = มกราคม, 'short' = ม.ค.
-        'show_day'  => false,    // แสดงวัน จันทร์/อังคาร/...
-        'show_time' => false,    // แสดงเวลา HH:MM น.
+        'format'    => 'short',   // short = ม.ค., long = มกราคม
+        'show_day'  => false,     // แสดงวัน เช่น วันอังคาร
+        'show_time' => false,     // แสดงเวลา HH:MM น.
         'null'      => '-',
     ], $options);
 
-    // ให้แน่ใจว่าใช้เวลาไทย
+    // timezone
     date_default_timezone_set('Asia/Bangkok');
 
+    // แปลงเป็น timestamp
     $ts = strtotime($dateStr);
     if ($ts === false) return $opt['null'];
 
+    // ชื่อวัน + เดือนภาษาไทย
     $days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-    $monthsShort = [1=>'ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    $monthsLong  = [1=>'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
+    $monthsShort = [
+        1 => 'ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+        'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'
+    ];
+
+    $monthsLong  = [
+        1 => 'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+        'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'
+    ];
+
+    // ดึงข้อมูลวันที่
     $d = (int)date('j', $ts);
     $m = (int)date('n', $ts);
     $y = (int)date('Y', $ts) + 543;
 
+    // เลือกชื่อเดือนตาม format
     $monthName = ($opt['format'] === 'short') ? $monthsShort[$m] : $monthsLong[$m];
 
     $parts = [];
+
+    // วันในสัปดาห์
     if ($opt['show_day']) {
-        $parts[] = 'วัน'.$days[(int)date('w', $ts)];
+        $parts[] = 'วัน' . $days[(int)date('w', $ts)];
     }
+
+    // วันที่
     $parts[] = "{$d} {$monthName} {$y}";
 
+    // เวลา (ถ้าต้องการ)
     if ($opt['show_time']) {
         $parts[] = date('H:i', $ts) . ' น.';
     }
 
     return implode(' ', $parts);
 }
+
 
 // --- ฟังก์ชันย่อย: คืนเฉพาะชื่อวันไทย (เช่น "วันเสาร์")
 function thai_day(string $dateStr): string

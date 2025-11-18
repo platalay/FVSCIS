@@ -67,13 +67,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fisherman'])) {
                         $msg = "มีคำขอสมัครชาวประมงใหม่จาก "
                             . ($fisherman->full_name ?? $fisherman->username ?? 'ไม่ทราบชื่อ');
 
+                            $log = new InspectionLog();
+                            $log->inspection_request_id = 0;
+                            $log->action_id             = 1;
+                            $log->note                  = $msg
+                            $log->save();
+
                         Notification::create_notification(
                             $admin->id,        // user_id ของผู้รับ (admin แต่ละคน)
                             'admin',           // user_role (ฝั่ง admin ใช้คำนี้)
+                            0,                  // inspection_id 0 สำหรับ งาน ที่ไม่เกี่ยวกับคำขอ
+                            1,                  // log_action= register
                             $msg,              // message
-                            'action_required', // notification_type
-                            'fisherman',         // reference_type (ชนิดอ้างอิง)
-                            $fisherman->id       // reference_id (id ของ fisherman ที่สมัคร)
+                            'warning' // notification_type
                         );
                     }
                 }
