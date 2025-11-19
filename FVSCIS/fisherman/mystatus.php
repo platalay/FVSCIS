@@ -28,7 +28,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                         <th>ดำเนินการ</th>
                                         <th>เลขทะเบียนเรือ</th>
                                         <th>ชื่อเรือ</th>
-                                        <th>จังหวัดที่นัดตรวจ</th>
+                                        <th>ยื่นขอต่อหน่วยงาน</th>
                                         <th>ท่าเรือ</th>
                                         <th>ช่วงวันที่ขอตรวจ</th>
                                         <th>วันนัดตรวจยืนยันแล้ว</th>
@@ -147,8 +147,8 @@ $fisherman=Fisherman::find_by_id($session->user_id());
 
                                             <td><?= h($req->ship_code) ?></td>
                                             <td><?= h($req->vessel_name) ?></td>
-                                            <?php $province = Province::find_by_id($req->port_province_id); ?>
-                                            <td><?= h($province->name) ?></td>
+                                            <?php $department = Department::find_by_id($req->department_id); ?>
+                                            <td><?= h($department->name) ?></td>
                                             <td><?= h($req->port_name) ?></td>
                                             <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
                                             <td>
@@ -181,7 +181,8 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                                         data-bs-toggle="tooltip" 
                                                         data-bs-placement="top"
                                                         title="ดูประวัติ"
-                                                        data-request-id="<?= h($req->id) ?>">
+                                                        data-request-id="<?= h($req->id) ?>"
+                                                        data-vessel="<?php echo h($req->vessel_name); ?>">
                                                     <i class="fas fa-history"></i>
                                                 </button>
                                             </td>
@@ -326,7 +327,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
         
         $(document).on('click', '.btn-log', function () {
             const requestId = $(this).data('request-id');
-
+             const vessel = $(this).data('vessel');
             $.ajax({
                 url: 'ajax/get_request_logs.php',
                 method: 'GET',
@@ -358,7 +359,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                 </tr>`;
                         });
                     }
-
+                    $('#modalVesselName').text(vessel); 
                     $('#logModalBody').html(html);
                     $('#logModal').modal('show');
                 },

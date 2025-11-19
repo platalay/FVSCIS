@@ -24,7 +24,7 @@ try {
     $log = new InspectionLog();
         $log->inspection_request_id = $req->id;
         $log->action_id             = 8;
-        $log->note                  = "ยืนยันวันนัดตรวจเรือ {$req->vessel_name} วันที่ {$confirmed_date}";
+        $log->note                  = "ยืนยันวันนัดตรวจเรือ {$req->vessel_name} วันที่ {$req->confirmed_date}";
         $log->save();
 
     // ✅ 4. แจ้งเตือนเจ้าหน้าที่กลุ่มที่รับผิดชอบ
