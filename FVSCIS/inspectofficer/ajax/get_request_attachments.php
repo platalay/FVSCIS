@@ -1,5 +1,6 @@
 <?php
 require_once('../../../private/initialize.php');
+$session->require_role(['inspectofficer']);
 @ini_set('display_errors', 0);
 header('Content-Type: application/json; charset=utf-8');
 if (function_exists('ob_get_length') && ob_get_length()) { @ob_clean(); }
@@ -60,6 +61,7 @@ foreach ($atts as $a) {
     'name'      => $a->file_name,
     'type'      => $a->file_type,
     'size'      => (int)($a->file_size ?? 0),
+    'attachment_type' => $a->attachment_type,
     'url'       => $url,                    // มาตรฐาน
     'url_enc'   => encode_path($url),       // เผื่อ JS อยากใช้ที่ encode แล้ว
     'is_image'  => is_img($a->file_name, $a->file_type),

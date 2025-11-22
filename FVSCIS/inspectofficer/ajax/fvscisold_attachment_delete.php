@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once('../../../private/initialize.php');
+$session->require_role(['inspectofficer']);
 header('Content-Type: application/json; charset=utf-8');
 
 try {

@@ -15,9 +15,9 @@
 
                                 <!-- 2 : ship_code + ปุ่มค้นหา -->
                                 <div class="col-md-3">
-                                <label class="form-label">รหัสเรือ</label>
+                                <label class="form-label">ทะเบียนเรือ</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" name="FvSanitationCertificationOld[ship_code]" id="fv-ship-code" required>
+                                    <input type="text" class="form-control" name="FvSanitationCertificationOld[ship_code]" id="fv-ship-code" placeholder="" required>
                                     <button class="btn btn-outline-secondary" type="button" id="btnLookupShip">
                                     <span class="d-inline" id="btnText">ค้นหา</span>
                                     <span class="spinner-border spinner-border-sm d-none" id="btnSpin" role="status" aria-hidden="true"></span>
@@ -34,25 +34,25 @@
                                 <!-- 3 -->
                                 <div class="col-md-3">
                                 <label class="form-label">หมายเลข/สัญลักษณ์เรือ</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[vessel_mark]" id="fv-vessel-mark">
+                                <input type="text" class="form-control" name="FvSanitationCertificationOld[vessel_mark]" id="fv-vessel-mark" required>
                                 </div>
 
                                 <!-- 4 -->
                                 <div class="col-md-3">
                                 <label class="form-label">เลขที่ใบอนุญาต</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[license_number]" id="fv-license-number">
+                                <input type="text" class="form-control" name="FvSanitationCertificationOld[license_number]" id="fv-license-number" required>
                                 </div>
 
                                 <!-- 5 -->
                                 <div class="col-md-3">
                                 <label class="form-label">ชนิดเครื่องมือทำการประมง</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[gear_type]" id="fv-gear-type">
+                                <input type="text" class="form-control" name="FvSanitationCertificationOld[gear_type]" id="fv-gear-type" required>
                                 </div>
 
                                 <!-- 6 -->
                                 <div class="col-md-3">
                                 <label class="form-label">ชื่อเจ้าของเรือ</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[owner_name]" id="fv-owner-name">
+                                <input type="text" class="form-control" name="FvSanitationCertificationOld[owner_name]" id="fv-owner-name" required>
                                 </div>
 
                                 <!-- 7 -->
@@ -64,11 +64,11 @@
                                 <!-- วันที่ -->
                                 <div class="col-md-3">
                                 <label class="form-label">วันที่ยื่นคำขอ</label>
-                                <input type="date" class="form-control" name="FvSanitationCertificationOld[request_date]">
+                                <input type="date" class="form-control" name="FvSanitationCertificationOld[request_date]" required>
                                 </div>
                                 <div class="col-md-3">
                                 <label class="form-label">วันที่ลงนาม</label>
-                                <input type="date" class="form-control" name="FvSanitationCertificationOld[signature_date]">
+                                <input type="date" class="form-control" name="FvSanitationCertificationOld[signature_date]" required>
                                 </div>
                                 <div class="col-md-3">
                                 <label class="form-label">วันที่มีผล</label>
@@ -133,18 +133,22 @@
                                 </div>
                                 </div>
                                 <div class="col-12">
+                                <div class="col-12">
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">แนบเอกสารประกอบ</label>
+
                                     <input type="file"
-                                        id="certAttachments"
-                                        name="attachments[]"
-                                        class="form-control"
-                                        multiple
-                                        accept=".jpg,.jpeg,.png,.webp,.gif,.pdf">
+                                    id="certAttachments"
+                                    name="attachments[]"
+                                    class="form-control"
+                                    multiple
+                                    accept=".jpg,.jpeg,.png,.webp,.gif,.pdf">
+
                                     <small class="text-muted">รองรับ .jpg .png .webp .gif .pdf แนบได้หลายไฟล์</small>
 
-                                    <!-- พรีวิวไฟล์ที่ “เพิ่งเลือก” (ยังไม่อัปโหลด) -->
-                                    <div id="selectedFiles" class="row g-2 mt-2"></div>
+                                    <!-- กล่องพรีวิวไฟล์ -->
+                                    <div id="selectedFiles" class="row g-2 mt-3"></div>
+                                </div>
                                 </div>
                                 </div>
 

@@ -5,6 +5,7 @@ class InspectionAttachment extends DatabaseObject {
     protected static $db_columns = [
         'id',
         'request_id',
+        'attachment_type',
         'file_path',
         'file_name',
         'file_type',
@@ -15,6 +16,7 @@ class InspectionAttachment extends DatabaseObject {
 
     public $id;
     public $request_id;
+    public $attachment_type;
     public $file_path;
     public $file_name;
     public $file_type;
@@ -24,6 +26,7 @@ class InspectionAttachment extends DatabaseObject {
 
     public function __construct($args = []) {
         $this->request_id = $args['request_id'] ?? null;
+        $this->attachment_type = $args['attachment_type'] ?? null;
         $this->file_path  = $args['file_path'] ?? '';
         $this->file_name  = $args['file_name'] ?? '';
         $this->file_type  = $args['file_type'] ?? null;

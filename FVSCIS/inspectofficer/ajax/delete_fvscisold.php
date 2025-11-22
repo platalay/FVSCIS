@@ -4,31 +4,46 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 require_once('../../../private/initialize.php');
+$session->require_role(['inspectofficer']);
 
 try {
-    // ถ้ามี CSRF ให้ตรวจที่นี่
+
+    // รับ id ของใบรับรองเก่า
     $id = (int)($_POST['id'] ?? 0);
-    if ($id <= 0) throw new Exception('ไม่พบ id');
-
-    $obj = FvSanitationCertificationOld::find_by_id($id);
-    if(!$obj) throw new Exception('ไม่พบข้อมูล');
-
-    // ใช้เมธอด delete() จาก DatabaseObject ถ้ามี
-    if(method_exists($obj, 'delete')){
-        $ok = $obj->delete();
-    } else {
-        // fallback: ลบตรง ๆ
-        $db = FvSanitationCertificationOld::$database;
-        $id_esc = $db->escape_string($id);
-        $sql = "DELETE FROM ".FvSanitationCertificationOld::$table_name." WHERE id='{$id_esc}' LIMIT 1";
-        $ok = $db->query($sql);
+    if ($id <= 0) {
+        throw new Exception('ไม่พบ id');
     }
 
-    if($ok){
-        echo json_encode(['success'=>true]);
-    }else{
+    /** @var FvSanitationCertificationOld|null $obj */
+    $obj = FvSanitationCertificationOld::find_by_id($id);
+    if (!$obj) {
+        throw new Exception('ไม่พบข้อมูล');
+    }
+
+    // 1) ดึงไฟล์แนบทั้งหมดของใบรับรองนี้
+    /** @var FvCertificateAttachment[] $attachments */
+    $attachments = FvCertificateAttachment::find_by_certificate_id($id);
+
+    // 2) ลบไฟล์จริง + เรคคอร์ด attachment ทีละตัว
+    foreach ($attachments as $att) {
+        // delete_with_file() จะ unlink(PUBLIC_PATH . file_path) + delete()
+        $att->delete_with_file();
+    }
+
+    // 3) ลบเรคคอร์ดใบรับรองหลัก
+    $ok = $obj->delete();
+    if (!$ok) {
         throw new Exception('ไม่สามารถลบข้อมูลได้');
     }
+
+    echo json_encode(['success' => true], JSON_UNESCAPED_UNICODE);
+    exit;
+
 } catch (Throwable $e) {
-    echo json_encode(['success'=>false, 'message'=>$e->getMessage()]);
+
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
 }

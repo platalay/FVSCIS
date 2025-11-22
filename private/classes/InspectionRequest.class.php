@@ -15,6 +15,7 @@ class InspectionRequest extends DatabaseObject {
         'vessel_name',
         'vessel_mark',
         'license_number',
+        'license_status',
         'gear_type',
         'owner_name',
         'contact_phone',
@@ -46,6 +47,7 @@ class InspectionRequest extends DatabaseObject {
     public $vessel_name;
     public $vessel_mark;
     public $license_number;
+    public $license_status;
     public $gear_type;
     public $owner_name;
     public $contact_phone;

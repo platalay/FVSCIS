@@ -5,6 +5,7 @@ class FvCertificateAttachment extends DatabaseObject {
     protected static $db_columns = [
         'id',
         'certificate_id',
+        'attachment_type',
         'file_path',
         'file_name',
         'file_type',
@@ -15,6 +16,7 @@ class FvCertificateAttachment extends DatabaseObject {
 
     public $id;
     public $certificate_id;
+    public $attachment_type;
     public $file_path;
     public $file_name;
     public $file_type;
@@ -24,6 +26,7 @@ class FvCertificateAttachment extends DatabaseObject {
 
     public function __construct($args = []) {
         $this->certificate_id = $args['certificate_id'] ?? null;
+        $this->attachment_type      = $args['attachment_type'] ?? '';
         $this->file_path      = $args['file_path'] ?? '';
         $this->file_name      = $args['file_name'] ?? '';
         $this->file_type      = $args['file_type'] ?? '';
@@ -54,7 +57,7 @@ class FvCertificateAttachment extends DatabaseObject {
     }
 
     /** 🆕 บันทึกไฟล์แนบใหม่ไปที่ /uploads/certificationold/ */
-    public static function create_from_upload($certificate_id, $file, $created_by) {
+    public static function create_from_upload($certificate_id, $file, $created_by, $attachment_type) {
         if (empty($file['tmp_name']) || ($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) return false;
 
         $upload_dir = '/uploads/certificationold/';   // << ใช้โฟลเดอร์ใหม่นี้
@@ -73,6 +76,7 @@ class FvCertificateAttachment extends DatabaseObject {
                 'certificate_id' => $certificate_id,
                 'file_path'      => $relative_path,
                 'file_name'      => $original,                 // เก็บชื่อเดิมเพื่อแสดงผล
+                'attachment_type'      => $attachment_type,
                 'file_type'      => $file['type'] ?? '',
                 'file_size'      => $file['size'] ?? 0,
                 'created_by'     => $created_by

@@ -23,6 +23,7 @@ try {
 
   $form_type   = (int)($data['inspection_form_type'] ?? 1); // 1/2
   $cold_flag   = (int)($data['cold_room_flag'] ?? 0);       // 0/1
+  $license_status = $data['license_status'] ?? 'none';
 
   if ($ship_code==='' || $vessel_name==='' || $owner_name==='' || !$dept_id || !$tambon_id || $port_no==='') {
     throw new Exception('กรุณากรอกข้อมูลบังคับให้ครบ');
@@ -50,9 +51,21 @@ try {
   $req->owner_name          = $owner_name;
   $req->contact_phone       = $phone;
 
-  $req->vessel_mark         = $VesselData->fishing_mark ?? null;
-  $req->license_number      = $VesselData->license_no   ?? null;
-  $req->gear_type           = $VesselData->geartype     ?? null;
+  // --- Logic ใบอนุญาต / เครื่องมือ / สัญลักษณ์ ---
+  if ($VesselData && !empty($VesselData->license_no)) {
+      // เจอใน eLicense
+      $req->vessel_mark    = $VesselData->fishing_mark ?? null;
+      $req->license_number = $VesselData->license_no   ?? null;
+      $req->gear_type      = $VesselData->geartype     ?? null;
+      $req->license_status = 'normal';
+  } else {
+      // ไม่เจอใน eLicense → ไม่มีใบอนุญาต
+      $req->vessel_mark    = null;
+      $req->license_number = null;
+      $req->gear_type      = null;
+      $req->license_status = 'none';
+  }
+
 
   $groupInfo = Department::get_department_group_id($dept_id);
   $req->department_id       = $dept_id;
@@ -85,13 +98,14 @@ try {
 
   // อัปโหลดรูปแนบ (เฉพาะรูป)
   if (!empty($_FILES['attachments'])) {
+    $types = $_POST['attachment_types'] ?? [];
     $allowed = ['image/jpeg','image/png','image/gif','image/webp'];
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $cnt = count($_FILES['attachments']['name']);
 
     for ($i=0; $i<$cnt; $i++) {
       if ($_FILES['attachments']['error'][$i] !== UPLOAD_ERR_OK) continue;
-
+      
       $tmp  = $_FILES['attachments']['tmp_name'][$i];
       $name = $_FILES['attachments']['name'][$i];
       $mime = $finfo->file($tmp) ?: 'application/octet-stream';
@@ -107,9 +121,11 @@ try {
       $abs = PUBLIC_PATH . $rel;
       if (!is_dir(dirname($abs))) { mkdir(dirname($abs), 0775, true); }
       if (!move_uploaded_file($tmp,$abs)) continue;
-
+      $type = $types[$i] ?? '';
+      
       $att = new InspectionAttachment([
         'request_id' => $req->id,
+        'attachment_type' => $type,
         'file_path'  => $rel,
         'file_name'  => $name,
         'file_type'  => $mime,
@@ -121,21 +137,32 @@ try {
   }
 
   // log + แจ้งเตือน (ย่อ)
-  $action = LogAction::find_by_code('submitted');
+  $action = LogAction::find_by_code('request_created_by_officer');
   if ($action) {
     $log = new InspectionLog();
-    $log->inspection_request_id = $req->id;
-    $log->action_id             = $action->id;
-    $log->note                  = ($req->inspection_form_type==2)
-                                  ? 'เจ้าหน้าที่สร้างคำขอ EU'
-                                  : 'เจ้าหน้าที่สร้างคำขอทั่วไป';
-    $log->performed_by          = $session->user_id() ?? 0;
-    $log->performed_at          = date('Y-m-d H:i:s');
-    $log->target_department_id  = $dept_id;
-    $log->target_usertype_id    = 3;
-    $log->port_license_no       = $port_no;
-    $log->save();
+        $log->inspection_request_id = $req->id;
+        $log->action_id             = $action->id;
+        $log->note                  = "เจ้าหน้าที่บันทึกคำขอตรวจเรือแทนชาวประมง เรือ".$req->vessel_name;
+        $log->save();
   }
+  $message = "เจ้าหน้าที่บันทึกคำขอตรวจเรือแทนชาวประมง เรือ".$req->vessel_name;
+  $officers = Officer::find_by_department_id($req->department_id);
+    foreach ($officers as $officer) {
+        Notification::create_notification(
+            $officer->id,
+            'inspectofficer',
+            $req->id,
+            $action->id,
+            $message,
+            'warning'
+        );
+    }
+
+    /*$officers = Officer::find_by_department_id($req->department_id);
+    foreach ($officers as $officer) {
+    Notification::mark_action_taken($officer->id, 'inspectofficer', $req->id, [2,3]);
+    }
+    Notification::mark_action_taken($session->user_id(), 'fisherman', $req->id, 7);*/
 
   echo json_encode(['success'=>true,'message'=>'บันทึกคำขอเรียบร้อยแล้ว']);
   exit;

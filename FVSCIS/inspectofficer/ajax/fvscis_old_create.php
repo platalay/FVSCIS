@@ -4,6 +4,7 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 require_once('../../../private/initialize.php');
+$session->require_role(['inspectofficer']);
 
 try {
     if (empty($_POST['FvSanitationCertificationOld'])) {

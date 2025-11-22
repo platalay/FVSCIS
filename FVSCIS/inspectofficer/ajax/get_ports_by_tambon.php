@@ -1,5 +1,6 @@
 <?php
 require_once('../../../private/initialize.php');
+$session->require_role(['inspectofficer']);
 
 if (!isset($_GET['tambon_id'])) {
     echo '<option value="">-- เลือกท่าเรือ --</option>';

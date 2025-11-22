@@ -140,7 +140,7 @@ include("../../private/shared/topbarofficer.php");
       <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
           <h6 class="m-0 font-weight-bold text-primary">คำขอที่รอดำเนินการในหน่วยของท่าน</h6>
-          <a href="request_list.php" class="small">ดูทั้งหมด</a>
+          <a href="incoming_requests.php" class="small">ดูทั้งหมด</a>
         </div>
         <div class="card-body">
           <?php if (empty($pending_list)) { ?>

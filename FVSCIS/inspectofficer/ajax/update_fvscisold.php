@@ -4,7 +4,7 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 require_once('../../../private/initialize.php');
-
+$session->require_role(['inspectofficer']);
 try {
     if (empty($_POST['FvSanitationCertificationOld'])) {
         throw new Exception('ไม่มีข้อมูลฟอร์ม');
@@ -20,6 +20,7 @@ try {
 
     unset($attrs['id']);
 
+    // อัปเดตฟิลด์หลัก
     if(method_exists($obj, 'merge_attributes')){
         $obj->merge_attributes($attrs);
     } else {
@@ -32,24 +33,21 @@ try {
         }
     }
 
-    // บันทึกตัวข้อมูลหลัก
     if(!$obj->save()){
         throw new Exception('บันทึกไม่สำเร็จ');
     }
 
     // ===== แนบไฟล์ใหม่ (append) =====
     $certificate_id = $obj->id;
-    $files_saved = 0; 
-    $files_failed = 0; 
-    $file_errors = [];
-    $files_seen = 0;
+    $files_saved  = 0;
+    $files_failed = 0;
+    $file_errors  = [];
+    $files_seen   = 0;
 
-    // ดีบักเบื้องต้น: ช่วยบอกทันทีถ้า post_max_size / upload_max_filesize เล็กไป
     $ini_upload_max = ini_get('upload_max_filesize');
     $ini_post_max   = ini_get('post_max_size');
     $ini_max_files  = ini_get('max_file_uploads');
 
-    // mapping ข้อผิดพลาด upload
     $upload_err_msg = [
         UPLOAD_ERR_OK         => 'OK',
         UPLOAD_ERR_INI_SIZE   => 'ไฟล์เกิน upload_max_filesize',
@@ -61,14 +59,23 @@ try {
         UPLOAD_ERR_EXTENSION  => 'ส่วนขยาย PHP หยุดการอัปโหลด',
     ];
 
+    // 👉 อ่านประเภทเอกสารของไฟล์ใหม่จากฟอร์ม (มาจาก dropdown ในหน้า Edit)
+    $attachment_types_new = $_POST['attachment_type_new'] ?? [];
+    if (!is_array($attachment_types_new)) {
+        $attachment_types_new = [];
+    }
+
     if (!empty($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
         $allow_ext = ['jpg','jpeg','png','gif','webp','pdf'];
 
-        // current user id (แล้วแต่ระบบของคุณ)
+        // current user id
         $currentUserId = null;
         if (isset($session)) {
-            if (is_object($session) && method_exists($session, 'user_id')) $currentUserId = $session->user_id();
-            elseif (isset($session->user_id)) $currentUserId = $session->user_id;
+            if (is_object($session) && method_exists($session, 'user_id')) {
+                $currentUserId = $session->user_id();
+            } elseif (isset($session->user_id)) {
+                $currentUserId = $session->user_id;
+            }
         }
 
         foreach ($_FILES['attachments']['name'] as $i => $name) {
@@ -83,7 +90,6 @@ try {
             ];
 
             if ($file['error'] !== UPLOAD_ERR_OK) {
-                // ข้าม ถ้าไม่ได้เลือกไฟล์ แต่บันทึกข้อความดีบักไว้
                 if ($file['error'] !== UPLOAD_ERR_NO_FILE) {
                     $files_failed++;
                     $file_errors[] = "{$file['name']}: " . ($upload_err_msg[$file['error']] ?? "error={$file['error']}");
@@ -94,19 +100,34 @@ try {
             // ตรวจนามสกุล
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             if (!in_array($ext, $allow_ext, true)) {
-                $files_failed++; 
+                $files_failed++;
                 $file_errors[] = "ไม่รองรับ: {$file['name']}";
                 continue;
             }
 
-            error_log("DEBUG: saving file {$file['name']} for cert_id={$certificate_id}");
+            // 👉 ดึงประเภทเอกสารตาม index เดียวกับไฟล์
+            $attachment_type = null;
+            if (array_key_exists($i, $attachment_types_new)) {
+                $attachment_type = trim((string)$attachment_types_new[$i]);
+                if ($attachment_type === '') {
+                    $attachment_type = null;
+                }
+            }
 
+            //error_log("DEBUG: saving file {$file['name']} for cert_id={$certificate_id}, type={$attachment_type}");
 
-            // เรียกเมธอดบันทึกของคุณ
-            $ok = FvCertificateAttachment::create_from_upload($certificate_id, $file, $currentUserId);
-            if ($ok) $files_saved++;
-            else { 
-                $files_failed++; 
+            // เรียกเมธอดบันทึก (รองรับพารามิเตอร์ที่ 4 = attachment_type)
+            $ok = FvCertificateAttachment::create_from_upload(
+                $certificate_id,
+                $file,
+                $currentUserId,
+                $attachment_type
+            );
+
+            if ($ok) {
+                $files_saved++;
+            } else {
+                $files_failed++;
                 $file_errors[] = "อัปโหลดไม่สำเร็จ: {$file['name']}";
             }
         }
@@ -118,13 +139,14 @@ try {
         'files_saved'    => $files_saved,
         'files_failed'   => $files_failed,
         'errors'         => $file_errors,
-        // debug เพิ่มเติมช่วยตอนติดปัญหา
         'debug'          => "files_seen={$files_seen}; upload_max_filesize={$ini_upload_max}; post_max_size={$ini_post_max}; max_file_uploads={$ini_max_files}"
     ], JSON_UNESCAPED_UNICODE);
     exit;
 
 } catch (Throwable $e) {
-    echo json_encode(['success'=>false, 'message'=>$e->getMessage()], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'success'=>false,
+        'message'=>$e->getMessage()
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
-

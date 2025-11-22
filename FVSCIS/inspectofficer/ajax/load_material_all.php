@@ -1,5 +1,6 @@
 <?php
 require_once('../../../private/initialize.php');
+$session->require_role(['inspectofficer']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $request_id = $_POST['request_id'] ?? '';

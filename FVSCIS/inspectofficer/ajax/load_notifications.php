@@ -1,5 +1,6 @@
 <?php
 require_once('../../../private/initialize.php');
+$session->require_role(['inspectofficer']);
 
 header('Content-Type: application/json');
 

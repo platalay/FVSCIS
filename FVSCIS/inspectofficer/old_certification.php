@@ -1,773 +1,1050 @@
 <?php
 require_once('../../private/initialize.php');
-$session->require_role(['inspectofficer']);
-$Officer = Officer::find_by_id($session->user_id());
-$department = Department::find_by_id($Officer->departments_id);
-$departmentgroup = DepartmentGroup::find_by_id($department->parent_department);
-$evaluation_agency = $department->name;
-$signing_unit = $departmentgroup->name;
-$ownerobj = DepartmentGroup::find_by_id($departmentgroup->responsible_unit);
+$session->require_role(['inspectofficer']); $Officer =
+Officer::find_by_id($session->user_id()); $department =
+Department::find_by_id($Officer->departments_id); $departmentgroup =
+DepartmentGroup::find_by_id($department->parent_department); $evaluation_agency
+= $department->name; $signing_unit = $departmentgroup->name; $ownerobj =
+DepartmentGroup::find_by_id($departmentgroup->responsible_unit);
 $responsible_unit = $ownerobj->name;
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarofficer.php");
-include("../../private/shared/topbarofficer.php");
-?>
+include("../../private/shared/topbarofficer.php"); ?>
 
 <!-- Begin Page Content -->
 <div class="container-fluid">
-
-                    <!-- DataTales Example -->
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <!-- ปุ่ม Add -->
-                                <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalFvscisOldAdd">
-                                <i class="fas fa-plus"></i> เพิ่มข้อมูล
-                                </button>
-                                
-
-
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr style="font-size: 14px;">
-                                        <th>ดำเนินการ</th>
-                                        <th>ชื่อเรือ</th>
-                                        <th>เลขทะเบียนเรือ</th>
-                                        <th>วันที่ขอตรวจ</th>
-                                        <th>วันที่บังคับใช้</th>
-                                        <th>วันที่หมดอายุ</th>
-                                        <th>ประเภท สร.3</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
+  <!-- DataTales Example -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+        <!-- ปุ่ม Add -->
+        <button
+          class="btn btn-primary mb-3"
+          data-bs-toggle="modal"
+          data-bs-target="#modalFvscisOldAdd"
+        >
+          <i class="fas fa-plus"></i> บันทึกผลตรวจจากเอกสาร
+        </button>
+      </h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table
+          class="table table-bordered"
+          id="dataTable"
+          width="100%"
+          cellspacing="0"
+        >
+          <thead>
+            <tr style="font-size: 14px">
+              <th>ดำเนินการ</th>
+              <th>ชื่อเรือ</th>
+              <th>เลขทะเบียนเรือ</th>
+              <th>วันที่ขอตรวจ</th>
+              <th>วันที่บังคับใช้</th>
+              <th>วันที่หมดอายุ</th>
+              <th>ประเภท สร.3</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
                                     // ✅ ดึงเฉพาะคำขอที่ department_id ตรงกับเจ้าหน้าที่
                                     // $DepartmentgroupObj = DepartmentGroup::find_one_by_officer_id($Officer->id);
-                                    $FvSanitationCertificationOlds = FvSanitationCertificationOld::find_all_by_evaluation_agency($Officer->departments_id); 
-
-                                    if (empty($FvSanitationCertificationOlds)) :
-                                    ?>
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted">ไม่พบข้อมูล สร.3 ที่รับผิดชอบ</td>
-                                        </tr>
-                                    <?php
+            $FvSanitationCertificationOlds =
+            FvSanitationCertificationOld::find_all_by_evaluation_agency($Officer->departments_id);
+            if (empty($FvSanitationCertificationOlds)) : ?>
+            <tr>
+              <td colspan="7" class="text-center text-muted">
+                ไม่พบข้อมูล สร.3 ที่รับผิดชอบ
+              </td>
+            </tr>
+            <?php
                                     else:
                                         foreach ($FvSanitationCertificationOlds as $req) :
                                     ?>
-                                        <tr style="font-size: 14px;">
-                                            <td>
-                                                <button type="button" title="ดูข้อมูลเก่า" class="btn btn-info btn-sm"
-                                                        onclick="openOldCertificationModalById(<?= h($req->id) ?>)">
-                                                <i class="fas fa-search"></i>
-                                                </button>
-                                                <button type="button" title="ดูข้อมูลเก่า"
-                                                        class="btn btn-primary btn-sm btn-edit-fvscisold"
-                                                        data-id="<?= h($req->id) ?>">
-                                                <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" title="ลบข้อมูลเก่า"
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="deleteOldCertification(<?= h($req->id) ?>, this)">
-                                                <i class="fas fa-trash"></i>
-                                                </button>
-                                                <?php
+            <tr style="font-size: 14px">
+              <td>
+                
+                <button
+                  type="button"
+                  title="แก้ไขข้อมูลเก่า"
+                  class="btn btn-primary btn-sm btn-edit-fvscisold"
+                  data-id="<?= h($req->id) ?>"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button
+                  type="button"
+                  title="ลบข้อมูลเก่า"
+                  class="btn btn-danger btn-sm"
+                  onclick="deleteOldCertification(<?= h($req->id) ?>, this)"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+                <?php
                                                 $attCount = FvCertificateAttachment::count_by_certificate_id($req->id);
-                                                if ($attCount > 0): ?>
-                                                <button class="btn btn-sm btn-warning btn-attachments"
-                                                        title="ไฟล์แนบ (<?= $attCount ?>)"
-                                                        data-id="<?= $req->id ?>">
-                                                    <i class="fas fa-paperclip"></i>
-                                                </button>
-                                                <?php endif; ?>  
+                if ($attCount > 0): ?>
+                <button
+                  type="button"
+                  title="ดูข้อมูลเก่า"
+                  class="btn btn-info btn-sm"
+                  onclick="openOldCertificationModalById(<?= h($req->id) ?>)"
+                >
+                  <i class="fas fa-search"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-warning btn-attachments"
+                  title="ไฟล์แนบ (<?= $attCount ?>)"
+                  data-id="<?= $req->id ?>"
+                >
+                  <i class="fas fa-paperclip"></i>
+                </button>
+                <?php endif; ?>
+              </td>
+              <td><?= h($req->vessel_name) ?></td>
+              <td><?= h($req->ship_code) ?></td>
+              <td><?= thai_date($req->request_date) ?></td>
+              <td><?= thai_date($req->effective_date) ?></td>
+              <td><?= thai_date($req->expiration_date) ?></td>
+              <td><?= h($req->certificate_status) ?></td>
+            </tr>
+            <?php endforeach; endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-                                            </td>
-                                            <td><?= h($req->vessel_name) ?></td>
-                                            <td><?= h($req->ship_code) ?></td>
-                                            <td><?= thai_date($req->request_date) ?></td>
-                                            <td><?= thai_date($req->effective_date) ?></td>
-                                            <td><?= thai_date($req->expiration_date) ?></td>
-                                            <td><?= h($req->certificate_status) ?></td>
-                                        </tr>
-                                    <?php endforeach; endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+  <?php include(__DIR__ . '/modal/modal_view_fvsanitation_old.php'); ?>
+  <?php include(__DIR__ . '/modal/modal_add_fvsanitation_old.php'); ?>
+  <?php include(__DIR__ . '/modal/modal_edit_fvsanitation_old.php'); ?>
+  <?php include(__DIR__ . '/modal/modal_attachment.php'); ?>
+</div>
+<!-- <div class="container-fluid"> -->
 
-
-                    </div>
-                    
-                    <?php include(__DIR__ . '/modal/modal_view_fvsanitation_old.php'); ?>
-                    <?php include(__DIR__ . '/modal/modal_add_fvsanitation_old.php'); ?>
-                    <?php include(__DIR__ . '/modal/modal_edit_fvsanitation_old.php'); ?>
-                    <?php include(__DIR__ . '/modal/modal_attachment.php'); ?>  
-                    
-                               
-</div><!-- <div class="container-fluid"> -->
-
-  
 <?php include("../../private/shared/footerofficer.php"); ?>
 <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
-    
-                    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-                                                
-    <script src="../js/fvscis.js"></script> 
-    <script>
-    $(function () {
-    // ใช้อินสแตนซ์เดิมถ้ามีอยู่แล้ว ไม่รีอินิท
-    var table = $.fn.dataTable.isDataTable('#dataTable')
-        ? $('#dataTable').DataTable()
-        : $('#dataTable').DataTable({
-            language: {
-            search: "ค้นหา:",
-            lengthMenu: "แสดง _MENU_ รายการ",
-            info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
-            infoFiltered: "(กรองจากทั้งหมด _MAX_ รายการ)"
-            }
-        });
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../vendor/datatables/jquery.dataTables.min.js"></script>
+<script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
-    // สร้าง badge แสดงจำนวนไว้ข้างช่องค้นหา
-    var $filter = $('#dataTable_wrapper .dataTables_filter');
-    if ($('#totalCount').length === 0) {
-        $filter.prepend('<span id="totalCount" class="badge bg-info me-2 mb-2 mb-md-0"></span>');
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="../js/fvscis.js"></script>
+
+<script>
+// ===================== DataTable + Badge จำนวนรายการ =====================
+$(function () {
+  var table = $.fn.dataTable.isDataTable('#dataTable')
+    ? $('#dataTable').DataTable()
+    : $('#dataTable').DataTable({
+        language: {
+          search: 'ค้นหา:',
+          lengthMenu: 'แสดง _MENU_ รายการ',
+          info: 'แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ',
+          infoFiltered: '(กรองจากทั้งหมด _MAX_ รายการ)',
+        },
+      })
+
+  var $filter = $('#dataTable_wrapper .dataTables_filter')
+  if ($('#totalCount').length === 0) {
+    $filter.prepend(
+      '<span id="totalCount" class="badge bg-info me-2 mb-2 mb-md-0"></span>'
+    )
+  }
+
+  function updateCount() {
+    var info = table.page.info()
+    var total = info.recordsTotal
+    var display = info.recordsDisplay
+
+    var text = 'ทั้งหมด ' + total.toLocaleString('th-TH') + ' รายการ'
+    if (display !== total) {
+      text += ' (กำลังแสดง ' + display.toLocaleString('th-TH') + ')'
     }
+    $('#totalCount').text(text)
+  }
 
-    function updateCount() {
-        var info = table.page.info(); // {recordsTotal, recordsDisplay, ...}
-        var total = info.recordsTotal;
-        var display = info.recordsDisplay;
+  updateCount()
+  table.on('draw.dt', updateCount)
+})
 
-        var text = 'ทั้งหมด ' + total.toLocaleString('th-TH') + ' รายการ';
-        if (display !== total) {
-        text += ' (กำลังแสดง ' + display.toLocaleString('th-TH') + ')';
-        }
-        $('#totalCount').text(text);
+
+// ===================== Helpers: วันที่ / Badge สถานะ =====================
+function formatThaiDate(isoDate) {
+  if (!isoDate || isoDate === '0000-00-00') return '-'
+  const months = [
+    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+  ]
+  const d = new Date(isoDate)
+  if (isNaN(d)) return isoDate
+  const dd = d.getDate()
+  const mm = months[d.getMonth()]
+  const yyyy = d.getFullYear() + 543
+  return `${dd} ${mm} ${yyyy}`
+}
+
+function badge(text, type = 'secondary') {
+  return `<span class="badge bg-${type}">${text || '-'}</span>`
+}
+
+function statusToBadge(status) {
+  if (!status) return badge('-', 'secondary')
+  const s = String(status).toLowerCase()
+  if (['active', 'ผ่าน', 'valid', 'approved'].some((k) => s.includes(k)))
+    return badge(status, 'success')
+  if (['temporary', 'ชั่วคราว', 'pending', 'รอ'].some((k) => s.includes(k)))
+    return badge(status, 'warning')
+  if (['expired', 'หมดอายุ', 'reject', 'ไม่ผ่าน'].some((k) => s.includes(k)))
+    return badge(status, 'danger')
+  return badge(status, 'primary')
+}
+
+
+// ===================== Modal ดูข้อมูลใบเก่า =====================
+function openOldCertificationModalById(id) {
+  $('#oldCertError').hide().text('')
+  $('#oldCertContent').hide()
+  $('#oldCertLoading').show()
+
+  const modalEl = document.getElementById('oldCertificationModal')
+  const bsModal = new bootstrap.Modal(modalEl)
+  bsModal.show()
+
+  $.ajax({
+    url: 'ajax/get_old_certification_by_id.php',
+    type: 'GET',
+    dataType: 'json',
+    data: { id: id },
+    success: function (res) {
+      $('#oldCertLoading').hide()
+
+      if (!res || !res.success) {
+        $('#oldCertError')
+          .text(res && res.message ? res.message : 'ไม่พบข้อมูล')
+          .show()
+        return
+      }
+
+      const d = res.data || {}
+
+      $('#oc_vessel_name').text(d.vessel_name || '-')
+      $('#oc_ship_code').text(d.ship_code || '-')
+      $('#oc_vessel_mark').text(d.vessel_mark || '-')
+      $('#oc_license_number').text(d.license_number || '-')
+      $('#oc_gear_type').text(d.gear_type || '-')
+      $('#oc_owner_name').text(d.owner_name || '-')
+      $('#oc_certificate_number').text(d.certificate_number || '-')
+      $('#oc_request_date').text(formatThaiDate(d.request_date))
+      $('#oc_signature_date').text(formatThaiDate(d.signature_date))
+      $('#oc_effective_date').text(formatThaiDate(d.effective_date))
+      $('#oc_expiration_date').text(formatThaiDate(d.expiration_date))
+      $('#oc_evaluation_agency').text(d.evaluation_agency || '-')
+      $('#oc_signing_unit').text(d.signing_unit || '-')
+      $('#oc_responsible_unit').text(d.responsible_unit || '-')
+      $('#oc_vessel_status').html(statusToBadge(d.vessel_status))
+      $('#oc_certificate_status').html(statusToBadge(d.certificate_status))
+      $('#oc_temporary_reason').text(d.temporary_reason || '-')
+      $('#oc_remark').text(d.remark || '-')
+      $('#oldCertContent').show()
+    },
+    error: function (xhr) {
+      $('#oldCertLoading').hide()
+      $('#oldCertError')
+        .text('เกิดข้อผิดพลาดในการดึงข้อมูล (' + xhr.status + ')')
+        .show()
+    },
+  })
+}
+
+
+// ===================== ค้นหาเรือจาก eLicense ด้วย ship_code =====================
+;(function () {
+  function setBusy(isBusy) {
+    $('#btnLookupShip').prop('disabled', isBusy)
+    $('#btnText').toggleClass('d-none', isBusy)
+    $('#btnSpin').toggleClass('d-none', !isBusy)
+  }
+
+  function fillFromElicense(data) {
+    $('#fv-vessel-name').val(data.vessel_name || '')
+    $('#fv-license-number').val(data.license_no || '')
+    $('#fv-owner-name').val(data.display_name || '')
+    $('#fv-gear-type').val(data.geartype || '')
+    $('#fv-vessel-mark').val(data.fishing_mark || '')
+  }
+
+  function lookupShip() {
+    const shipCode = ($('#fv-ship-code').val() || '').trim()
+    if (!shipCode) {
+      Swal.fire({ icon: 'warning', title: 'กรุณากรอกรหัสเรือ (ship_code)' })
+      return
     }
+    setBusy(true)
 
-    updateCount();
-    table.on('draw.dt', updateCount);
-    });
-    </script>
- 
-    <script>
-        // แปลงวันที่ (YYYY-MM-DD) -> ไทย (D MMM YYYY)
-        function formatThaiDate(isoDate) {
-        if (!isoDate || isoDate === '0000-00-00') return '-';
-        const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-        const d = new Date(isoDate);
-        if (isNaN(d)) return isoDate;
-        const dd = d.getDate();
-        const mm = months[d.getMonth()];
-        const yyyy = d.getFullYear() + 543;
-        return `${dd} ${mm} ${yyyy}`;
+    $.ajax({
+      url: 'ajax/get_elicense_by_ship_code.php',
+      type: 'POST',
+      dataType: 'json',
+      data: { ship_code: shipCode },
+      success: function (res) {
+        if (res && res.success && res.data) {
+          fillFromElicense(res.data)
+          Swal.fire({
+            icon: 'success',
+            title: 'ดึงข้อมูลสำเร็จ',
+            timer: 900,
+            showConfirmButton: false,
+          })
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ไม่พบข้อมูล',
+            text: res?.message || 'ตรวจสอบรหัสเรืออีกครั้ง',
+          })
         }
-
-        function badge(text, type='secondary') {
-        return `<span class="badge bg-${type}">${text || '-'}</span>`;
-        }
-
-        function statusToBadge(status) {
-        if (!status) return badge('-', 'secondary');
-        const s = String(status).toLowerCase();
-        if (['active','ผ่าน','valid','approved'].some(k => s.includes(k))) return badge(status, 'success');
-        if (['temporary','ชั่วคราว','pending','รอ'].some(k => s.includes(k))) return badge(status, 'warning');
-        if (['expired','หมดอายุ','reject','ไม่ผ่าน'].some(k => s.includes(k))) return badge(status, 'danger');
-        return badge(status, 'primary');
-        }
-
-        // ✅ เปิด modal ด้วย id
-        function openOldCertificationModalById(id) {
-        $('#oldCertError').hide().text('');
-        $('#oldCertContent').hide();
-        $('#oldCertLoading').show();
-
-        const modalEl = document.getElementById('oldCertificationModal');
-        const bsModal = new bootstrap.Modal(modalEl);
-        bsModal.show();
-
-        $.ajax({
-            url: 'ajax/get_old_certification_by_id.php',
-            type: 'GET',
-            dataType: 'json',
-            data: { id: id },
-            success: function(res) {
-            $('#oldCertLoading').hide();
-
-            if (!res || !res.success) {
-                $('#oldCertError').text(res && res.message ? res.message : 'ไม่พบข้อมูล').show();
-                return;
-            }
-
-            const d = res.data || {};
-
-            $('#oc_vessel_name').text(d.vessel_name || '-');
-            $('#oc_ship_code').text(d.ship_code || '-');
-            $('#oc_vessel_mark').text(d.vessel_mark || '-');
-            $('#oc_license_number').text(d.license_number || '-');
-            $('#oc_gear_type').text(d.gear_type || '-');
-            $('#oc_owner_name').text(d.owner_name || '-');
-            $('#oc_certificate_number').text(d.certificate_number || '-');
-            $('#oc_request_date').text(formatThaiDate(d.request_date));
-            $('#oc_signature_date').text(formatThaiDate(d.signature_date));
-            $('#oc_effective_date').text(formatThaiDate(d.effective_date));
-            $('#oc_expiration_date').text(formatThaiDate(d.expiration_date));
-            $('#oc_evaluation_agency').text(d.evaluation_agency || '-');
-            $('#oc_signing_unit').text(d.signing_unit || '-');
-            $('#oc_responsible_unit').text(d.responsible_unit || '-');
-            $('#oc_vessel_status').html(statusToBadge(d.vessel_status));
-            $('#oc_certificate_status').html(statusToBadge(d.certificate_status));
-            $('#oc_temporary_reason').text(d.temporary_reason || '-');
-            $('#oc_remark').text(d.remark || '-');
-            $('#oldCertContent').show();
-            },
-            error: function(xhr) {
-            $('#oldCertLoading').hide();
-            $('#oldCertError').text('เกิดข้อผิดพลาดในการดึงข้อมูล (' + xhr.status + ')').show();
-            }
-        });
-        }
-        </script>
-
-
-        // ajax search ship code
-        <script>
-        (function() {
-        function setBusy(isBusy) {
-            $('#btnLookupShip').prop('disabled', isBusy);
-            $('#btnText').toggleClass('d-none', isBusy);
-            $('#btnSpin').toggleClass('d-none', !isBusy);
-        }
-
-        function fillFromElicense(data) {
-            // map ค่าไปยังฟิลด์ในฟอร์ม
-            $('#fv-vessel-name').val(data.vessel_name || '');
-            $('#fv-license-number').val(data.license_no || '');
-            $('#fv-owner-name').val(data.display_name || '');
-            $('#fv-gear-type').val(data.geartype || '');
-            $('#fv-vessel-mark').val(data.fishing_mark || '');
-        }
-
-        function lookupShip() {
-            const shipCode = ($('#fv-ship-code').val() || '').trim();
-            if (!shipCode) {
-            Swal.fire({ icon: 'warning', title: 'กรุณากรอกรหัสเรือ (ship_code)' });
-            return;
-            }
-            setBusy(true);
-
-            $.ajax({
-            url: 'ajax/get_elicense_by_ship_code.php',
-            type: 'POST',
-            dataType: 'json',
-            data: { ship_code: shipCode }, // จะส่ง fishery_year เพิ่มก็ได้ เช่น 2567
-            success: function(res) {
-                if (res && res.success && res.data) {
-                fillFromElicense(res.data);
-                Swal.fire({ icon: 'success', title: 'ดึงข้อมูลสำเร็จ', timer: 900, showConfirmButton: false });
-                } else {
-                Swal.fire({ icon: 'error', title: 'ไม่พบข้อมูล', text: res?.message || 'ตรวจสอบรหัสเรืออีกครั้ง' });
-                }
-            },
-            error: function(xhr) {
-                Swal.fire({ icon: 'error', title: 'เชื่อมต่อไม่ได้', text: xhr.responseText || 'โปรดลองใหม่' });
-            },
-            complete: function() { setBusy(false); }
-            });
-        }
-
-        // คลิกปุ่มค้นหา
-        $(document).on('click', '#btnLookupShip', lookupShip);
-
-        // กด Enter ในช่อง ship_code ให้ค้นหา
-        $(document).on('keydown', '#fv-ship-code', function(e) {
-            if (e.key === 'Enter') {
-            e.preventDefault();
-            lookupShip();
-            }
-        });
-        })();
-        </script>
-
-
-
-        // ajax เพิ่มข้อมูล
-        <script>
-        // ส่งฟอร์มด้วย AJAX
-            $(document).off('submit.fvscisold').on('submit.fvscisold', '#form-fvscisold-edit', function(e){
-            e.preventDefault();
-            const $form = $(this);
-            const $btn  = $form.find('button[type=submit]').prop('disabled', true);
-
-            // ใช้ FormData เปล่า แล้วเพิ่มฟิลด์/ไฟล์เอง
-            const fd = new FormData();
-            // ฟิลด์ข้อความทั้งหมด
-            $form.serializeArray().forEach(p => fd.append(p.name, p.value));
-            // ไฟล์ (เพิ่มรอบเดียว)
-            const input = document.getElementById('certAttachmentsEdit');
-            if (input?.files?.length) {
-                for (const f of input.files) fd.append('attachments[]', f, f.name);
-            }
-
-            $.ajax({
-                url: 'ajax/update_fvscisold.php',
-                type: 'POST',
-                data: fd,
-                processData: false,
-                contentType: false,
-                dataType: 'json',
-                success(res){
-                if(res?.success){
-                    const msg = res.files_saved>0
-                    ? `บันทึกสำเร็จ + เพิ่มไฟล์ใหม่ ${res.files_saved} ไฟล์`
-                    : `บันทึกสำเร็จ (ไม่มีไฟล์ใหม่)`;
-                    Swal.fire({icon:'success',title:msg,timer:1000,showConfirmButton:false})
-                    .then(()=>location.reload());
-                }else{
-                    Swal.fire({icon:'error',title:'ผิดพลาด',text:res?.message||''});
-                }
-                },
-                error(xhr){
-                Swal.fire({icon:'error',title:'เชื่อมต่อไม่ได้',text:xhr.responseText||'โปรดลองใหม่'});
-                },
-                complete(){ $btn.prop('disabled', false); }
-            });
-            });
-
-
-        </script>
-
-
-        // update
-
-        <script>
-        // ============== Helpers ==============
-        function bytesFmt(n){ if(n<1024) return n+' B'; if(n<1048576) return (n/1024).toFixed(1)+' KB'; return (n/1048576).toFixed(1)+' MB'; }
-        function isImgFile(f){ return /^image\//i.test(f.type) || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(f.name); }
-
-        // ============== 1) โหลดไฟล์เดิมของใบรับรอง ==============
-        window.renderExistingAttachments = function(certId){
-        const $modal = $('#modalFvscisOldEdit');
-        const $wrap  = $modal.find('#existingFiles').empty();
-
-        $.getJSON('ajax/get_certification_attachments.php', { id: certId }, function(res){
-            if(!res || !res.success || !Array.isArray(res.attachments)) return;
-
-            res.attachments.forEach(a=>{
-            const url   = a.url_enc || a.url;
-            const isImg = !!a.is_image;
-            const thumb = isImg
-                ? `<div class="thumb-wrap"><img src="${url}" alt="${a.name}"></div>`
-                : `<div class="icon-pdf">PDF</div>`;
-
-            $wrap.append(`
-                <div class="col-6 col-md-3" data-attach-id="${a.id}">
-                <div class="file-card shadow-sm">
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-del-existing"
-                            data-id="${a.id}" title="ลบไฟล์">
-                    <i class="bi bi-trash"></i>
-                    </button>
-                    <a href="${url}" target="_blank" title="เปิดดู">${thumb}</a>
-                    <div class="file-name mt-2 text-truncate" title="${a.name}">${a.name}</div>
-                    <div class="text-muted small">${bytesFmt(a.size||0)}</div>
-                </div>
-                </div>
-            `);
-            });
-        });
-        };
-
-        // โหลดไฟล์เดิมอัตโนมัติเมื่อโมดัลเปิด (อาศัยค่า #edit-id)
-        $('#modalFvscisOldEdit').on('shown.bs.modal', function(){
-        const id = $('#edit-id').val();
-        if(id) window.renderExistingAttachments(id);
-        });
-
-        // ============== 2) พรีวิวไฟล์ใหม่เฉพาะในโมดัลแก้ไข ==============
-        function syncInputFilesEdit(){
-        const $modal   = $('#modalFvscisOldEdit');
-        const $input   = $modal.find('#certAttachmentsEdit');
-        const selected = $input.data('selected') || [];
-        const dt = new DataTransfer();
-        selected.forEach(f => dt.items.add(f));
-        if($input[0]) $input[0].files = dt.files; // จะถูกส่งพร้อมฟอร์มตอนกดบันทึก
-        }
-
-        function renderSelectedPreviewEdit(){
-        const $modal   = $('#modalFvscisOldEdit');
-        const $input   = $modal.find('#certAttachmentsEdit');
-        const $list    = $modal.find('#selectedFilesEdit');
-        const selected = $input.data('selected') || [];
-
-        if(!selected.length){ $list.empty(); return; }
-
-        let html = '';
-        selected.forEach((f, idx)=>{
-            const isImg = isImgFile(f);
-            const src   = isImg ? URL.createObjectURL(f) : '';
-            html += `
-            <div class="col-6 col-md-3">
-                <div class="border rounded p-2 shadow-sm file-card">
-                <button type="button" class="btn btn-sm btn-danger btn-remove-new-edit" data-idx="${idx}" title="เอาไฟล์นี้ออก">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-                ${isImg ? `<div class="thumb-wrap"><img src="${src}" alt="${f.name}"></div>` : `<div class="icon-pdf">PDF</div>`}
-                <div class="file-name mt-2 text-truncate" title="${f.name}">${f.name}</div>
-                <div class="text-muted small">${bytesFmt(f.size||0)}</div>
-                </div>
-            </div>`;
-        });
-        $list.html(html);
-        }
-
-        // ผูกอีเวนต์กับคอนเทนเนอร์ของโมดัล (กันชนกับโมดัลอื่น และกัน rebind)
-        $('#modalFvscisOldEdit')
-        .off('change.certAttachEdit')
-        .on('change.certAttachEdit', '#certAttachmentsEdit', function(){
-            const $modal   = $('#modalFvscisOldEdit');
-            const $input   = $modal.find('#certAttachmentsEdit');
-
-            let selected   = $input.data('selected') || [];
-            const files    = Array.from(this.files || []);
-
-            // กันซ้ำ ชื่อ+ขนาด (เติม validation ชนิด/ขนาดได้ตรงนี้)
-            files.forEach(f=>{
-            if(!selected.some(x => x.name===f.name && x.size===f.size)){
-                selected.push(f);
-            }
-            });
-
-            $input.data('selected', selected);
-            syncInputFilesEdit();
-            renderSelectedPreviewEdit();
+      },
+      error: function (xhr) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เชื่อมต่อไม่ได้',
+          text: xhr.responseText || 'โปรดลองใหม่',
         })
-        .off('click.removeNewEdit')
-        .on('click.removeNewEdit', '.btn-remove-new-edit', function(){
-            const $modal   = $('#modalFvscisOldEdit');
-            const $input   = $modal.find('#certAttachmentsEdit');
-            let selected   = $input.data('selected') || [];
-            const idx      = +$(this).data('idx');
+      },
+      complete: function () {
+        setBusy(false)
+      },
+    })
+  }
 
-            if(idx>=0){ selected.splice(idx,1); }
-            $input.data('selected', selected);
-            syncInputFilesEdit();
-            renderSelectedPreviewEdit();
-        });
+  // คลิกปุ่มค้นหา
+  $(document).on('click', '#btnLookupShip', lookupShip)
 
-        // ============== 3) ลบไฟล์เดิม (DB + ไฟล์จริง) ==============
-        $(document).on('click', '.btn-del-existing', function(){
-        const attachId = $(this).data('id');
-        if(!attachId) return;
-        if(!confirm('ต้องการลบไฟล์นี้ใช่หรือไม่?')) return;
+  // กด Enter ในช่อง ship_code ให้ค้นหา
+  $(document).on('keydown', '#fv-ship-code', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      lookupShip()
+    }
+  })
+})();
 
-        $.post('ajax/fvscisold_attachment_delete.php', { attachment_id: attachId }, function(res){
-            if(res && res.success){
-            $(`[data-attach-id="${attachId}"]`).remove();
-            }else{
-            alert(res?.message || 'ลบไฟล์ไม่สำเร็จ');
+
+// ===================== Add Modal: เลือกไฟล์ + ประเภทเอกสาร =====================
+;(function () {
+  function addBytesFmt(n) {
+    if (n < 1024) return n + ' B'
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB'
+    return (n / 1024 / 1024).toFixed(1) + ' MB'
+  }
+
+  function addIsImg(f) {
+    return /^image\//i.test(f.type)
+  }
+
+  function syncInputFilesAdd(input) {
+    const selected = input._selectedFiles || []
+    const dt = new DataTransfer()
+    selected.forEach((f) => dt.items.add(f))
+    input.files = dt.files
+  }
+
+  function renderSelectedPreviewAdd(input, wrap) {
+    const selected = input._selectedFiles || []
+    wrap.innerHTML = ''
+
+    selected.forEach((file, idx) => {
+      const col = document.createElement('div')
+      col.className = 'col-6 col-md-4'
+      col.dataset.idx = idx
+
+      const thumb = addIsImg(file)
+        ? `<img src="${URL.createObjectURL(file)}"
+                 style="width:100%;height:100px;object-fit:cover;border-radius:6px;">`
+        : `<div class="d-flex justify-content-center align-items-center"
+                 style="width:100%;height:100px;background:#f5f5f5;border-radius:6px;">
+               <strong>PDF</strong></div>`
+
+      col.innerHTML = `
+        <div class="border rounded p-2 position-relative bg-light small">
+          <button type="button"
+                  class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 btn-del-file">
+              <i class="bi bi-x"></i>
+          </button>
+          ${thumb}
+          <div class="mt-1 text-truncate" title="${file.name}">${file.name}</div>
+          <div class="text-muted">${addBytesFmt(file.size)}</div>
+          <select class="form-select form-select-sm mt-1" name="attachment_type[]">
+            <option value="ทะเบียนเรือ">ทะเบียนเรือ</option>
+            <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
+            <option value="บัตรประชาชน">บัตรประชาชน</option>
+            <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
+            <option value="ผลตรวจสุขอนามัยเรือ">ผลตรวจสุขอนามัยเรือ</option>
+            <option value="ใบแจ้งผลตรวจ">ใบแจ้งผลตรวจ</option>
+            <option value="ใบรับรอง สร.3">ใบรับรอง สร.3</option>
+            <option value="อื่น ๆ">อื่น ๆ</option>
+          </select>
+        </div>
+      `
+      wrap.appendChild(col)
+    })
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('certAttachments')
+    const wrap = document.getElementById('selectedFiles')
+    if (!input || !wrap) return
+
+    input.addEventListener('change', function () {
+      let selected = this._selectedFiles || []
+      const newFiles = Array.from(this.files || [])
+
+      newFiles.forEach((f) => {
+        if (!selected.some((x) => x.name === f.name && x.size === f.size)) {
+          selected.push(f)
+        }
+      })
+
+      this._selectedFiles = selected
+      syncInputFilesAdd(this)
+      renderSelectedPreviewAdd(this, wrap)
+    })
+
+    wrap.addEventListener('click', function (e) {
+      const btn = e.target.closest('.btn-del-file')
+      if (!btn) return
+
+      const box = btn.closest('[data-idx]')
+      if (!box) return
+
+      const idx = Number(box.dataset.idx)
+      let selected = input._selectedFiles || []
+
+      if (idx >= 0 && idx < selected.length) {
+        selected.splice(idx, 1)
+        input._selectedFiles = selected
+        syncInputFilesAdd(input)
+        renderSelectedPreviewAdd(input, wrap)
+      }
+    })
+
+    $('#modalFvscisOldAdd').on('hidden.bs.modal', function () {
+      input.value = ''
+      input._selectedFiles = []
+      wrap.innerHTML = ''
+    })
+  })
+})();
+
+
+// ===================== AJAX: บันทึก ADD =====================
+$(document)
+  .off('submit.fvscisoldAdd')
+  .on('submit.fvscisoldAdd', '#form-fvscisold-add', function (e) {
+    e.preventDefault()
+
+    const $form = $(this)
+    const $btn = $form.find('button[type=submit]').prop('disabled', true)
+    const fd = new FormData()
+
+    $form.serializeArray().forEach((p) => fd.append(p.name, p.value))
+
+    const input = document.getElementById('certAttachments')
+    if (input?.files?.length) {
+      const types = $('select[name="attachment_type[]"]')
+        .map(function () {
+          return $(this).val() || ''
+        })
+        .get()
+
+      Array.from(input.files).forEach((f, idx) => {
+        fd.append('attachments[]', f, f.name)
+        fd.append('attachment_type[]', types[idx] || '')
+      })
+    }
+
+    $.ajax({
+      url: 'ajax/create_fvscisold.php',
+      type: 'POST',
+      data: fd,
+      processData: false,
+      contentType: false,
+      dataType: 'json',
+      success(res) {
+        if (res?.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'บันทึกสำเร็จ',
+            timer: 1000,
+            showConfirmButton: false,
+          }).then(() => location.reload())
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ผิดพลาด',
+            text: res?.message || '',
+          })
+        }
+      },
+      error(xhr) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เชื่อมต่อไม่ได้',
+          text: xhr.responseText || 'โปรดลองใหม่',
+        })
+      },
+      complete() {
+        $btn.prop('disabled', false)
+      },
+    })
+  })
+
+
+// ===================== Edit Modal: ไฟล์เดิม + ไฟล์ใหม่ =====================
+;(function () {
+  function bytesFmt(n) {
+    if (n < 1024) return n + ' B'
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'
+    return (n / 1048576).toFixed(1) + ' MB'
+  }
+
+  function isImgFile(f) {
+    return (
+      /^image\//i.test(f.type) ||
+      /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(f.name)
+    )
+  }
+
+  // โหลดไฟล์เดิมของใบรับรอง
+  window.renderExistingAttachments = function (certId) {
+    const $modal = $('#modalFvscisOldEdit')
+    const $wrap = $modal.find('#existingFiles').empty()
+
+    $.getJSON(
+      'ajax/get_certification_attachments.php',
+      { id: certId },
+      function (res) {
+        if (!res || !res.success || !Array.isArray(res.attachments)) return
+
+        res.attachments.forEach((a) => {
+          const url = a.url_enc || a.url
+          const isImg = !!a.is_image
+          const thumb = isImg
+            ? `<div class="thumb-wrap"><img src="${url}" alt="${a.name}"></div>`
+            : `<div class="icon-pdf">PDF</div>`
+
+          $wrap.append(`
+            <div class="col-6 col-md-3" data-attach-id="${a.id}">
+              <div class="file-card shadow-sm">
+                <button type="button" class="btn btn-sm btn-outline-danger btn-del-existing"
+                        data-id="${a.id}" title="ลบไฟล์">
+                  <i class="bi bi-trash"></i>
+                </button>
+                <a href="${url}" target="_blank" title="เปิดดู">${thumb}</a>
+                <div class="file-name mt-2 text-truncate" title="${a.name}">${a.name}</div>
+                <div class="text-muted small">${bytesFmt(a.size || 0)}</div>
+                <div class="text-muted small">
+                    ${a.attachment_type ? a.attachment_type : ''}
+                </div>
+              </div>
+            </div>
+          `)
+        })
+      }
+    )
+  }
+
+  $('#modalFvscisOldEdit').on('shown.bs.modal', function () {
+    const id = $('#edit-id').val()
+    if (id) window.renderExistingAttachments(id)
+  })
+
+  function syncInputFilesEdit() {
+    const $modal = $('#modalFvscisOldEdit')
+    const $input = $modal.find('#certAttachmentsEdit')
+    const selected = $input.data('selected') || []
+    const dt = new DataTransfer()
+    selected.forEach((f) => dt.items.add(f))
+    if ($input[0]) $input[0].files = dt.files
+  }
+
+  function renderSelectedPreviewEdit() {
+    const $modal = $('#modalFvscisOldEdit')
+    const $input = $modal.find('#certAttachmentsEdit')
+    const $list = $modal.find('#selectedFilesEdit')
+    const selected = $input.data('selected') || []
+
+    if (!selected.length) {
+        $list.empty()
+        return
+    }
+
+    let html = ''
+    selected.forEach((f, idx) => {
+        const isImg = isImgFile(f)
+        const src = isImg ? URL.createObjectURL(f) : ''
+
+        html += `
+        <div class="col-6 col-md-3">
+            <div class="border rounded p-2 shadow-sm file-card">
+
+            <button type="button"
+                    class="btn btn-sm btn-danger btn-remove-new-edit"
+                    data-idx="${idx}"
+                    title="เอาไฟล์นี้ออก">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+            ${
+                isImg
+                ? `<div class="thumb-wrap"><img src="${src}" alt="${f.name}"></div>`
+                : `<div class="icon-pdf">PDF</div>`
             }
-        }, 'json');
-        });
 
-        // ============== 4) รีเซ็ตสถานะเมื่อปิดโมดัล ==============
-        $('#modalFvscisOldEdit').on('hidden.bs.modal', function(){
-        const $modal = $('#modalFvscisOldEdit');
-        const $input = $modal.find('#certAttachmentsEdit');
-        $input.val('').removeData('selected');
-        $modal.find('#selectedFilesEdit').empty();
-        $modal.find('#existingFiles').empty();
-        });
-        </script>
+            <div class="file-name mt-2 text-truncate" title="${f.name}">
+                ${f.name}
+            </div>
+            <div class="text-muted small">${bytesFmt(f.size || 0)}</div>
+
+            <select class="form-select form-select-sm mt-1" name="attachment_type_new[]">
+                <option value="ทะเบียนเรือ">ทะเบียนเรือ</option>
+                <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
+                <option value="บัตรประชาชน">บัตรประชาชน</option>
+                <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
+                <option value="ผลตรวจสุขอนามัยเรือ">ผลตรวจสุขอนามัยเรือ</option>
+                <option value="ใบแจ้งผลตรวจ">ใบแจ้งผลตรวจ</option>
+                <option value="ใบรับรอง สร.3">ใบรับรอง สร.3</option>
+                <option value="อื่น ๆ">อื่น ๆ</option>
+            </select>
+
+            </div>
+        </div>
+        `
+    })
+
+    $list.html(html)
+    }
 
 
+  $('#modalFvscisOldEdit')
+    .off('change.certAttachEdit')
+    .on('change.certAttachEdit', '#certAttachmentsEdit', function () {
+      const $modal = $('#modalFvscisOldEdit')
+      const $input = $modal.find('#certAttachmentsEdit')
+
+      let selected = $input.data('selected') || []
+      const files = Array.from(this.files || [])
+
+      files.forEach((f) => {
+        if (!selected.some((x) => x.name === f.name && x.size === f.size)) {
+          selected.push(f)
+        }
+      })
+
+      $input.data('selected', selected)
+      syncInputFilesEdit()
+      renderSelectedPreviewEdit()
+    })
+    .off('click.removeNewEdit')
+    .on('click.removeNewEdit', '.btn-remove-new-edit', function () {
+      const $modal = $('#modalFvscisOldEdit')
+      const $input = $modal.find('#certAttachmentsEdit')
+      let selected = $input.data('selected') || []
+      const idx = +$(this).data('idx')
+
+      if (idx >= 0) {
+        selected.splice(idx, 1)
+      }
+      $input.data('selected', selected)
+      syncInputFilesEdit()
+      renderSelectedPreviewEdit()
+    })
+
+  // ลบไฟล์เดิม
+  $(document).on('click', '.btn-del-existing', function () {
+  const attachId = $(this).data('id')
+  if (!attachId) return
+
+  const $btn = $(this)
+
+  Swal.fire({
+    title: 'ยืนยันการลบไฟล์?',
+    text: 'ไฟล์นี้จะถูกลบออกจากระบบถาวร',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'ลบไฟล์',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#6c757d'
+  }).then((result) => {
+
+    if (!result.isConfirmed) return
+
+    // ป้องกันกดซ้ำ
+    $btn.prop('disabled', true)
+
+    $.post(
+      'ajax/fvscisold_attachment_delete.php',
+      { attachment_id: attachId },
+      function (res) {
+        if (res && res.success) {
+
+          // ลบการ์ดไฟล์ออกจาก DOM
+          $(`[data-attach-id="${attachId}"]`).remove()
+
+          Swal.fire({
+            icon: 'success',
+            title: 'ลบไฟล์เรียบร้อย',
+            timer: 900,
+            showConfirmButton: false
+          })
+
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ลบไม่สำเร็จ',
+            text: res?.message || 'เกิดข้อผิดพลาด'
+          })
+        }
+      },
+      'json'
+    ).fail(() => {
+      Swal.fire({
+        icon: 'error',
+        title: 'เชื่อมต่อไม่ได้',
+        text: 'โปรดลองใหม่อีกครั้ง'
+      })
+    }).always(() => {
+      $btn.prop('disabled', false)
+    })
+  })
+})
 
 
+  // รีเซ็ตเมื่อปิดโมดัล
+  $('#modalFvscisOldEdit').on('hidden.bs.modal', function () {
+    const $modal = $('#modalFvscisOldEdit')
+    const $input = $modal.find('#certAttachmentsEdit')
+    $input.val('').removeData('selected')
+    $modal.find('#selectedFilesEdit').empty()
+    $modal.find('#existingFiles').empty()
+  })
+})();
 
-        <script>
-        (function(){
-        function fillAgencyDisplay(evalTxt, signTxt, respTxt){
-            $('#show-eval').text(evalTxt || 'ไม่ระบุ').toggleClass('text-muted', !evalTxt);
-            $('#show-sign').text(signTxt || 'ไม่ระบุ').toggleClass('text-muted', !signTxt);
-            $('#show-resp').text(respTxt || 'ไม่ระบุ').toggleClass('text-muted', !respTxt);
+
+// ===================== AJAX: บันทึก EDIT =====================
+$(document)
+  .off('submit.fvscisold')
+  .on('submit.fvscisold', '#form-fvscisold-edit', function (e) {
+    e.preventDefault()
+    const $form = $(this)
+    const $btn = $form.find('button[type=submit]').prop('disabled', true)
+
+    const fd = new FormData()
+    $form.serializeArray().forEach((p) => fd.append(p.name, p.value))
+
+    const input = document.getElementById('certAttachmentsEdit')
+    if (input?.files?.length) {
+    const types = $('select[name="attachment_type_new[]"]')
+        .map(function () {
+        return $(this).val() || ''
+        })
+        .get()
+
+    Array.from(input.files).forEach((f, idx) => {
+        fd.append('attachments[]', f, f.name)
+        fd.append('attachment_type_new[]', types[idx] || '')
+    })
+    }
+
+
+    $.ajax({
+      url: 'ajax/update_fvscisold.php',
+      type: 'POST',
+      data: fd,
+      processData: false,
+      contentType: false,
+      dataType: 'json',
+      success(res) {
+        if (res?.success) {
+          const msg =
+            res.files_saved > 0
+              ? `บันทึกสำเร็จ + เพิ่มไฟล์ใหม่ ${res.files_saved} ไฟล์`
+              : `บันทึกสำเร็จ (ไม่มีไฟล์ใหม่)`
+          Swal.fire({
+            icon: 'success',
+            title: msg,
+            timer: 1000,
+            showConfirmButton: false,
+          }).then(() => location.reload())
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ผิดพลาด',
+            text: res?.message || '',
+          })
+        }
+      },
+      error(xhr) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เชื่อมต่อไม่ได้',
+          text: xhr.responseText || 'โปรดลองใหม่',
+        })
+      },
+      complete() {
+        $btn.prop('disabled', false)
+      },
+    })
+  })
+
+
+// ===================== เปิดโมดัลแก้ไขจากปุ่ม Edit =====================
+;(function () {
+  $(document).on('click', '.btn-edit-fvscisold', function () {
+    const id = $(this).data('id')
+    if (!id) return
+
+    $('#form-fvscisold-edit')[0].reset()
+    $('#edit-id').val(id)
+
+    $.ajax({
+      url: 'ajax/get_fvscisold.php',
+      type: 'POST',
+      dataType: 'json',
+      data: { id: id },
+      success: function (res) {
+        if (res && res.success && res.data) {
+          const d = res.data
+
+          $('#edit-ship-code').val(d.ship_code || '')
+          $('#edit-vessel-name').val(d.vessel_name || '')
+          $('#edit-vessel-mark').val(d.vessel_mark || '')
+          $('#edit-license-number').val(d.license_number || '')
+          $('#edit-gear-type').val(d.gear_type || '')
+          $('#edit-owner-name').val(d.owner_name || '')
+          $('#edit-certificate-number').val(d.certificate_number || '')
+
+          $('#edit-request-date').val(d.request_date || '')
+          $('#edit-signature-date').val(d.signature_date || '')
+          $('#edit-effective-date').val(d.effective_date || '')
+          $('#edit-expiration-date').val(d.expiration_date || '')
+
+          $('#edit-certificate-status').val(d.certificate_status || '')
+          $('#edit-evaluation-agency').val(d.evaluation_agency || '')
+          $('#edit-signing-unit').val(d.signing_unit || '')
+          $('#edit-responsible-unit').val(d.responsible_unit || '')
+
+          window.renderExistingAttachments(id)
+          new bootstrap.Modal(
+            document.getElementById('modalFvscisOldEdit')
+          ).show()
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ไม่พบข้อมูล',
+            text: res?.message || '',
+          })
+        }
+      },
+      error: function (xhr) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เชื่อมต่อไม่ได้',
+          text: xhr.responseText || 'โปรดลองใหม่',
+        })
+      },
+    })
+  })
+})();
+
+
+// ===================== ลบใบรับรองเก่า =====================
+function deleteOldCertification(id, btn) {
+  if (!id) return
+
+  Swal.fire({
+    title: 'ยืนยันการลบ?',
+    text: 'ลบแล้วไม่สามารถกู้คืนได้',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'ลบ',
+    cancelButtonText: 'ยกเลิก',
+  }).then(function (result) {
+    if (!result.isConfirmed) return
+
+    const $btn = $(btn).prop('disabled', true)
+
+    $.ajax({
+      url: 'ajax/delete_fvscisold.php',
+      type: 'POST',
+      dataType: 'json',
+      data: { id: id },
+      success: function (res) {
+        if (res && res.success) {
+          const $tr = $($btn).closest('tr')
+          const dt =
+            ($.fn.DataTable && $('#dataTable').data('DataTable')) ||
+            $('#dataTable').DataTable?.()
+          if (dt) {
+            dt.row($tr).remove().draw(false)
+          } else {
+            $tr.remove()
+          }
+          Swal.fire({
+            icon: 'success',
+            title: 'ลบแล้ว',
+            timer: 900,
+            showConfirmButton: false,
+          })
+        } else {
+          $btn.prop('disabled', false)
+          Swal.fire({
+            icon: 'error',
+            title: 'ลบไม่สำเร็จ',
+            text: res?.message || '',
+          })
+        }
+      },
+      error: function (xhr) {
+        $btn.prop('disabled', false)
+        Swal.fire({
+          icon: 'error',
+          title: 'เชื่อมต่อไม่ได้',
+          text: xhr.responseText || 'โปรดลองใหม่',
+        })
+      },
+    })
+  })
+}
+
+
+// ===================== Modal ดูรูปไฟล์แนบ (Photo Attachments) =====================
+;(function () {
+  $(document).on('click', '.btn-attachments', function () {
+    const reqId = $(this).data('id')
+    if (!reqId) return
+
+    $('#photoModalReqId').text('')
+    $('#photoGrid').empty()
+    $('#photoEmpty').addClass('d-none').text('กำลังโหลด...')
+    $('#photoPreviewWrap').addClass('d-none')
+    $('#photoPreviewImg').attr('src', '')
+
+    $('#modalPhotoAttachments').modal('show')
+
+    const pDetail = $.ajax({
+      url: 'ajax/get_certification_detail.php',
+      method: 'GET',
+      data: { id: reqId },
+      dataType: 'json',
+    })
+
+    const pAttach = $.ajax({
+      url: 'ajax/get_certification_attachments.php',
+      method: 'GET',
+      data: { id: reqId },
+      dataType: 'json',
+    })
+
+    $.when(pDetail, pAttach)
+      .done(function (detailRes, attachRes) {
+        const detail = detailRes[0]
+        const attach = attachRes[0]
+
+        let vesselName = ''
+        let shipCode = ''
+        if (detail && detail.success && detail.request) {
+          vesselName = detail.request.vessel_name || ''
+          shipCode = detail.request.ship_code || ''
         }
 
-        // เปิดโมดัลแก้ไข + โหลดข้อมูลจาก find_by_id()
-        $(document).on('click', '.btn-edit-fvscisold', function(){
-            const id = $(this).data('id');
-            if(!id) return;
+        let photos = []
+        if (attach && attach.success && Array.isArray(attach.attachments)) {
+          photos = attach.attachments.filter((a) => a.is_image)
+          photos = photos.map((p) => ({
+            ...p,
+            _url: p.url_enc ? p.url_enc : encodeURI(p.url || ''),
+          }))
+        } else {
+          $('#photoEmpty')
+            .removeClass('d-none')
+            .text('ไม่สามารถโหลดไฟล์แนบได้')
+        }
 
-            // เคลียร์ฟอร์ม
-            $('#form-fvscisold-edit')[0].reset();
-            $('#edit-id').val(id);
+        renderPhotoGrid(photos)
 
-            $.ajax({
-            url: 'ajax/get_fvscisold.php',
-            type: 'POST',
-            dataType: 'json',
-            data: { id: id },
-            success: function(res){
-                if(res && res.success && res.data){
-                const d = res.data;
+        const parts = []
+        if (vesselName) parts.push(`ชื่อเรือ ${vesselName}`)
+        if (shipCode) parts.push(`ทะเบียน ${shipCode}`)
+        const leftText = parts.length ? parts.join(' • ') : `คำขอ #${reqId}`
+        const rightText = `— ${photos.length} รูป`
+        $('#photoModalReqId').text(`${leftText} ${rightText}`)
+      })
+      .fail(function () {
+        $('#photoEmpty')
+          .removeClass('d-none')
+          .text('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้')
+      })
+  })
 
-                // กำหนดค่า field จาก record ที่ได้มา (ทุกฟิลด์)
-                $('#edit-ship-code').val(d.ship_code || '');
-                $('#edit-vessel-name').val(d.vessel_name || '');
-                $('#edit-vessel-mark').val(d.vessel_mark || '');
-                $('#edit-license-number').val(d.license_number || '');
-                $('#edit-gear-type').val(d.gear_type || '');
-                $('#edit-owner-name').val(d.owner_name || '');
-                $('#edit-certificate-number').val(d.certificate_number || '');
+  function renderPhotoGrid(photos) {
+    const $grid = $('#photoGrid')
+    const $empty = $('#photoEmpty')
+    const $pvW = $('#photoPreviewWrap')
+    const $pv = $('#photoPreviewImg')
 
-                $('#edit-request-date').val(d.request_date || '');
-                $('#edit-signature-date').val(d.signature_date || '');
-                $('#edit-effective-date').val(d.effective_date || '');
-                $('#edit-expiration-date').val(d.expiration_date || '');
+    const valid = photos
+      .filter((p) => p.is_image)
+      .filter((p) => p.exists !== false)
 
-                $('#edit-certificate-status').val(d.certificate_status || '');
+    if (!valid.length) {
+      $grid.empty()
+      $empty.removeClass('d-none').text('ยังไม่มีรูปภาพแนบ')
+      $pvW.addClass('d-none')
+      return
+    }
 
-                $('#edit-evaluation-agency').val(d.evaluation_agency || '');
-                $('#edit-signing-unit').val(d.signing_unit || '');
-                $('#edit-responsible-unit').val(d.responsible_unit || '');
-                //fillAgencyDisplay(d.evaluation_agency, d.signing_unit, d.responsible_unit);
-                window.renderExistingAttachments(id);       
-                new bootstrap.Modal(document.getElementById('modalFvscisOldEdit')).show();
-                }else{
-                Swal.fire({icon:'error', title:'ไม่พบข้อมูล', text: res?.message || ''});
-                }
-            },
-            error: function(xhr){
-                Swal.fire({icon:'error', title:'เชื่อมต่อไม่ได้', text: xhr.responseText || 'โปรดลองใหม่'});
-            }
-            });
-        });
-        })();
-        </script>
+    $empty.addClass('d-none')
 
-        <script>
-            function deleteOldCertification(id, btn){
-            if(!id) return;
+    let html = ''
+    valid.forEach((p) => {
+      const u = p.url_enc || encodeURI(p.url || '')
+      html += `
+        <div class="border rounded p-1 shadow-sm me-2 mb-2" style="width:180px;">
+          <a href="${u}" class="photo-thumb" data-url="${u}">
+            <img src="${u}"
+                 alt="${p.name}"
+                 class="img-thumbnail w-100"
+                 style="height:120px; object-fit:cover;">
+          </a>
+          <div class="small text-truncate mt-1" title="${p.name}">${p.name}</div>
+          <div class="text-muted small">
+            ${p.attachment_type ? p.attachment_type : ''}
+          </div>
+        </div>`
+    })
+    $grid.html(html)
 
-            Swal.fire({
-                title: 'ยืนยันการลบ?',
-                text: 'ลบแล้วไม่สามารถกู้คืนได้',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'ลบ',
-                cancelButtonText: 'ยกเลิก'
-            }).then(function(result){
-                if(!result.isConfirmed) return;
+    const first = valid[0]
+    const firstUrl = first.url_enc || encodeURI(first.url || '')
+    $pv.attr('src', firstUrl)
+    $pvW.removeClass('d-none')
 
-                // กันกดซ้ำ
-                const $btn = $(btn).prop('disabled', true);
+    $grid
+      .off('click', 'a.photo-thumb')
+      .on('click', 'a.photo-thumb', function (e) {
+        e.preventDefault()
+        const u = $(this).data('url')
+        $pv.attr('src', u)
+        $pvW.removeClass('d-none')
+      })
+  }
+})();
+</script>
 
-                $.ajax({
-                url: 'ajax/delete_fvscisold.php',
-                type: 'POST',
-                dataType: 'json',
-                data: { id: id }, // ถ้ามี CSRF ให้ส่ง token มาด้วย
-                success: function(res){
-                    if(res && res.success){
-                    // เอาแถวออกจากตาราง (รองรับทั้ง DataTable และ table ธรรมดา)
-                    const $tr = $($btn).closest('tr');
-                    const dt = $.fn.DataTable && $('#dataTable').data('DataTable') || $('#dataTable').DataTable?.();
-                    if(dt){
-                        dt.row($tr).remove().draw(false);
-                    }else{
-                        $tr.remove();
-                    }
-                    Swal.fire({icon:'success', title:'ลบแล้ว', timer:900, showConfirmButton:false});
-                    }else{
-                    $btn.prop('disabled', false);
-                    Swal.fire({icon:'error', title:'ลบไม่สำเร็จ', text: res?.message || ''});
-                    }
-                },
-                error: function(xhr){
-                    $btn.prop('disabled', false);
-                    Swal.fire({icon:'error', title:'เชื่อมต่อไม่ได้', text: xhr.responseText || 'โปรดลองใหม่'});
-                }
-                });
-            });
-            }
-            </script>
-
-            <script>
-            // ===== พรีวิวไฟล์ก่อนอัปโหลด =====
-            (function(){
-            const $input  = $('#certAttachments');
-            const $list   = $('#selectedFiles');
-            let selected  = []; // เก็บ File objects
-
-            // สร้าง/อัปเดต FileList ใน input จาก selected[]
-            function syncInputFiles(){
-                const dt = new DataTransfer();
-                selected.forEach(f => dt.items.add(f));
-                $input[0].files = dt.files;
-            }
-
-            // เรนเดอร์การ์ดพรีวิว
-            function renderSelected(){
-                if(!selected.length){ $list.empty(); return; }
-                let html = '';
-                selected.forEach((f,idx)=>{
-                const ext = (f.name.split('.').pop() || '').toLowerCase();
-                const isImg = ['jpg','jpeg','png','webp','gif'].includes(ext);
-                const src = isImg ? URL.createObjectURL(f) : '';
-                html += `
-                    <div class="col-6 col-md-3">
-                        <div class="border rounded p-2 shadow-sm file-card">
-                        <button type="button" class="btn btn-sm btn-danger btn-remove" data-idx="${idx}" title="เอาไฟล์นี้ออก">
-                            <i class="fas fa-times"></i>
-                        </button>
-                        ${isImg
-                            ? `<div class="thumb-wrap"><img src="${src}" alt="${f.name}"></div>`
-                            : `<div class="icon-pdf">PDF</div>`
-                        }
-                        <div class="file-name mt-2 text-truncate" title="${f.name}">${f.name}</div>
-                        </div>
-                    </div>`;
-                });
-                $list.html(html);
-            }
-
-            // เมื่อเลือกไฟล์
-            $input.on('change', function(){
-                const files = Array.from(this.files || []);
-                // ต่อท้ายรายการ (กัน duplicate ด้วยชื่อ+ขนาด)
-                files.forEach(f=>{
-                if(!selected.some(x => x.name===f.name && x.size===f.size)){ selected.push(f); }
-                });
-                syncInputFiles(); renderSelected();
-            });
-
-            // ลบไฟล์ออกจากพรีวิว/อินพุต
-            $list.on('click', '.btn-remove', function(){
-                const idx = +$(this).data('idx');
-                if(idx>=0){ selected.splice(idx,1); syncInputFiles(); renderSelected(); }
-            });
-            })();
-            </script>
-
-            <script>
-                    // 📎 เมื่อคลิกปุ่มไฟล์แนบ (เวอร์ชันใหม่)
-                    $(document).on('click', '.btn-attachments', function () {
-                    const reqId = $(this).data('id');
-                    if (!reqId) return;
-
-                    // เคลียร์ UI เดิม
-                    $('#photoModalReqId').text('');          // เราจะใส่ "ชื่อเรือ (ทะเบียน ...) — N รูป" ทีหลัง
-                    $('#photoGrid').empty();
-                    $('#photoEmpty').addClass('d-none').text('กำลังโหลด...');
-                    $('#photoPreviewWrap').addClass('d-none');
-                    $('#photoPreviewImg').attr('src', '');
-
-                    // เปิดโมดัลก่อน (ให้ผู้ใช้เห็นว่าเริ่มทำงานแล้ว)
-                    $('#modalPhotoAttachments').modal('show');
-
-                    // สร้าง Promise สองตัว (ดึงรายละเอียดคำขอ + ไฟล์แนบ)
-                    const pDetail = $.ajax({
-                        url: 'ajax/get_certification_detail.php',
-                        method: 'GET',
-                        data: { id: reqId },
-                        dataType: 'json'
-                    });
-
-                    const pAttach = $.ajax({
-                        url: 'ajax/get_certification_attachments.php',
-                        method: 'GET',
-                        data: { id: reqId },
-                        dataType: 'json'
-                    });
-
-                    // รอทั้งสองอย่างเสร็จ แล้วค่อยอัปเดตหัวข้อ + แสดงรูป
-                    $.when(pDetail, pAttach).done(function (detailRes, attachRes) {
-                        // jQuery.when คืนค่าเป็น array [data, statusText, jqXHR]
-                        const detail = detailRes[0];
-                        const attach = attachRes[0];
-
-                        // ----- 1) เตรียมชื่อเรือ/ทะเบียน -----
-                        let vesselName = '';
-                        let shipCode   = '';
-                        if (detail && detail.success && detail.request) {
-                        vesselName = detail.request.vessel_name || '';
-                        shipCode   = detail.request.ship_code   || '';
-                        }
-
-                        // ----- 2) เรนเดอร์รูป -----
-                        let photos = [];
-                        if (attach && attach.success && Array.isArray(attach.attachments)) {
-                        photos = attach.attachments.filter(a => a.is_image);
-                        // ใช้ url ที่ encode แล้ว ถ้า API ส่งมา
-                        photos = photos.map(p => ({
-                            ...p,
-                            _url: p.url_enc ? p.url_enc : (encodeURI(p.url || ''))
-                        }));
-                        } else {
-                        $('#photoEmpty').removeClass('d-none').text('ไม่สามารถโหลดไฟล์แนบได้');
-                        }
-                        renderPhotoGrid(photos);
-
-                        // ----- 3) ตั้งหัวโมดัล: "ชื่อเรือ (ทะเบียน xxx) — N รูป" -----
-                        const parts = [];
-                        if (vesselName) parts.push(`ชื่อเรือ ${vesselName}`);
-                        if (shipCode)   parts.push(`ทะเบียน ${shipCode}`);
-                        const leftText = parts.length ? parts.join(' • ') : `คำขอ #${reqId}`;
-                        const rightText = `— ${photos.length} รูป`;
-                        $('#photoModalReqId').text(`${leftText} ${rightText}`);
-
-                    }).fail(function () {
-                        $('#photoEmpty').removeClass('d-none').text('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
-                    });
-                    });
-
-
-                    function renderPhotoGrid(photos) {
-                    const $grid = $('#photoGrid'), $empty = $('#photoEmpty');
-                    const $pvW = $('#photoPreviewWrap'), $pv = $('#photoPreviewImg');
-
-                    const imgs = photos.filter(p => p.is_image);
-                    if (!imgs.length) { $empty.removeClass('d-none').text('ยังไม่มีรูปภาพแนบ'); return; }
-                    $empty.addClass('d-none');
-
-                    // ใช้ url_enc ถ้ามี (กันชื่อไทย/ช่องว่าง), และข้ามไฟล์ที่ exists=false
-                    const valid = imgs.filter(p => p.exists !== false);
-
-                    let html = '';
-                    valid.forEach(p => {
-                        const u = p.url_enc || encodeURI(p.url);
-                        html += `
-                        <div class="border rounded p-1 shadow-sm" style="width:140px;">
-                            <a href="${u}" class="photo-thumb" data-url="${u}">
-                            <img src="${u}" alt="${p.name}" class="img-thumbnail w-100" style="height:120px; object-fit:cover;">
-                            </a>
-                            <div class="small text-truncate mt-1" title="${p.name}">${p.name}</div>
-                        </div>`;
-                    });
-                    $grid.html(html);
-
-                    if (valid.length) {
-                        $pv.attr('src', valid[0].url_enc || encodeURI(valid[0].url));
-                        $pvW.removeClass('d-none');
-                    }
-
-                    $grid.off('click','a.photo-thumb').on('click','a.photo-thumb', function(e){
-                        e.preventDefault();
-                        $pv.attr('src', $(this).data('url'));
-                        $pvW.removeClass('d-none');
-                    });
-                    }
-
-
-                    </script>
-
-                    
-                
 
 <?php 
 include("../../private/shared/footerall.php");

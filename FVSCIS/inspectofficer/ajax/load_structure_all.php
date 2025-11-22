@@ -1,5 +1,6 @@
 <?php
 require_once('../../../private/initialize.php');
+$session->require_role(['inspectofficer']);
 
 if (!isset($_POST['request_id'])) {
     echo json_encode(['success' => false, 'message' => 'ไม่พบ request_id']);

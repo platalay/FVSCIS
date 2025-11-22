@@ -126,6 +126,29 @@
       .thumb-wrap img{max-width:100%;max-height:100%;object-fit:cover}
       .icon-pdf{width:100%;height:140px;border-radius:.5rem;background:#f8f9fa;display:flex;align-items:center;justify-content:center;font-weight:700}
       .file-name{font-size:.85rem;word-break:break-all}
+    
+      .thumb-wrap {
+          position: relative;
+        }
+
+        .thumb-wrap img {
+          width: 100%;
+          height: 140px;
+          object-fit: cover;
+          display: block;
+        }
+
+        .thumb-wrap .btn-del-existing-manual,
+        .thumb-wrap .btn-remove-new-manual {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          z-index: 10;
+        }
+
+    
+    
+    
     </style>
     
   </head>
