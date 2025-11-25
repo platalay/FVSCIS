@@ -147,7 +147,14 @@
         }
 
     
-    
+        .file-card .btn-del-existing-x {
+  width: auto !important;
+  display: inline-flex !important;
+  justify-content: center;
+  align-items: center;
+  padding: 0.15rem 0.3rem;
+  border-radius: 0.25rem;
+}
     
     </style>
     

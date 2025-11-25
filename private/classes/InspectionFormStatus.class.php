@@ -158,7 +158,7 @@ class InspectionFormStatus extends DatabaseObject {
 
         $sql = "SELECT * FROM " . static::$table_name;
         $sql .= " WHERE request_id = '{$escaped}'";
-        ////error_log($sql);
+        //error_log($sql);
         $result = static::find_by_sql($sql);
         return !empty($result) ? array_shift($result) : null;
     }

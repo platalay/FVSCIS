@@ -14,10 +14,28 @@
                             <input type="hidden" name="FvSanitationCertificationOld[id]" id="edit-id">
 
                             <div class="row g-3">
+                               
+
                                 <div class="col-md-3">
-                                <label class="form-label">รหัสเรือ</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[ship_code]" id="edit-ship-code" required>
+                                <label class="form-label">ทะเบียนเรือ</label>
+                                <div class="input-group">
+                                        <input type="text"
+                                        class="form-control"
+                                        id="edit-ship-code"
+                                        name="FvSanitationCertificationOld[ship_code]"
+                                        required>
+                                        <button class="btn btn-outline-secondary"
+                                                type="button"
+                                                id="btnLookupShipEdit">
+                                        <span id="btnEditText">ค้นหา</span>
+                                        <span id="btnEditSpin" class="d-none">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        </span>
+                                        </button>
+                                </div>
+                                <div class="form-text">
+                                        กรณีมีข้อมูลใน eLicense สามารถกดค้นหาเพื่อตั้งค่าข้อมูลอัตโนมัติ
+                                </div>
                                 </div>
 
                                 <div class="col-md-3">
@@ -27,28 +45,30 @@
                                 </div>
 
                                 <div class="col-md-3">
+                                <label class="form-label">ชื่อเจ้าของเรือ</label>
+                                <input type="text" class="form-control"
+                                        name="FvSanitationCertificationOld[owner_name]" id="edit-owner-name">
+                                </div>
+
+                                <div class="col-md-3 elicense-only">
                                 <label class="form-label">หมายเลข/สัญลักษณ์เรือ</label>
                                 <input type="text" class="form-control"
                                         name="FvSanitationCertificationOld[vessel_mark]" id="edit-vessel-mark">
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-3 elicense-only">
                                 <label class="form-label">เลขที่ใบอนุญาต</label>
                                 <input type="text" class="form-control"
                                         name="FvSanitationCertificationOld[license_number]" id="edit-license-number">
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-3 elicense-only">
                                 <label class="form-label">ชนิดเครื่องมือทำการประมง</label>
                                 <input type="text" class="form-control"
                                         name="FvSanitationCertificationOld[gear_type]" id="edit-gear-type">
                                 </div>
 
-                                <div class="col-md-3">
-                                <label class="form-label">ชื่อเจ้าของเรือ</label>
-                                <input type="text" class="form-control"
-                                        name="FvSanitationCertificationOld[owner_name]" id="edit-owner-name">
-                                </div>
+                                
 
                                 <div class="col-md-3">
                                 <label class="form-label">เลขที่ใบรับรอง</label>
@@ -99,7 +119,7 @@
                                 <input type="hidden" name="FvSanitationCertificationOld[signing_unit]" id="edit-signing-unit">
                                 <input type="hidden" name="FvSanitationCertificationOld[responsible_unit]" id="edit-responsible-unit">
                                 <input type="hidden" name="FvSanitationCertificationOld[type]" id="edit-type" value="0">
-
+                                <input type="hidden" name="FvSanitationCertificationOld[license_status]" id="edit-license-status">
                                 <!-- สรุปหน่วยงาน -->
                                 <?php
                                 $eval  = $evaluation_agency  ?? '';

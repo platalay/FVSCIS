@@ -13,6 +13,8 @@ class InspectionFormCrew extends DatabaseObject {
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
+
+   
     public $id;
     public $request_id;
     public $status_3_1;
@@ -146,9 +148,95 @@ class InspectionFormCrew extends DatabaseObject {
 
             $sql = "SELECT * FROM " . static::$table_name;
             $sql .= " WHERE request_id = '{$escaped}'";
-            ////error_log($sql);
+            //error_log($sql);
             $result = static::find_by_sql($sql);
             return !empty($result) ? array_shift($result) : null;
         }
 
+        public static $statusMap = [
+            '3_1' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 120],
+                'fail' => ['x' => 147, 'y' => 120],
+            ],
+            '3_2' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 133],
+                'fail' => ['x' => 147, 'y' => 133],
+            ],
+            '3_3' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 142],
+                'fail' => ['x' => 147, 'y' => 142],
+            ],
+            '3_4' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 152],
+                'fail' => ['x' => 147, 'y' => 152],
+            ],
+            '3_5' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 160],
+                'fail' => ['x' => 147, 'y' => 160],
+            ],
+        ];
+
+         public static $failSubMap = [
+            '3_1' => ['fail_3_1_1', 'fail_3_1_2', 'fail_3_1_3', 'fail_3_1_4'],
+            '3_2' => ['fail_3_2_1'],
+            '3_3' => ['fail_3_3_1'],
+            '3_4' => ['fail_3_4_1'],
+            '3_5' => ['fail_3_5_1'],
+        ];
+
+           /**
+     * นับจำนวนประเด็นบกพร่องของข้อหนึ่ง ๆ
+     * - นับ fail_1_x_y ที่เป็น 1
+     * - ถ้ามี remark_1_x → +1
+     */
+    public static function countFails($form, string $section): int
+    {
+        $count = 0;
+
+        $subs = self::$failSubMap[$section] ?? [];
+
+        // 1) นับ fail_1_x_y == 1
+        foreach ($subs as $field) {
+            if (!empty($form->$field) && (int)$form->$field === 1) {
+                $count++;
+            }
+        }
+
+        // 2) ถ้ามี remark_1_x → บวกเพิ่ม 1
+        $remarkField = "remark_" . $section;
+        if (!empty($form->$remarkField)) {
+            $count++;
+        }
+
+        return $count;
+    }
+
+        /**
+        * วาด X ที่ช่อง pass/fail ตามค่า status
+        * $status = 'pass' หรือ 'fail'
+        */
+        public static function drawStatus(\FPDF $pdf, string $status, array $pos, string $mark = 'X'): void
+        {
+            $xy = ($status === 'pass') ? $pos['pass'] : $pos['fail'];
+            $mark = ($status === 'pass') ? '/' : 'X';
+            $pdf->SetXY($xy['x'], $xy['y']);
+            $pdf->SetFont('THSarabunPSK', '', 16);
+            $pdf->Cell(4, 4, $mark, 0, 0, 'C');
+        }
+
+        /**
+        * helper สำหรับ text "บกพร่อง x ประเด็น / รายละเอียดใน สร.2-4"
+        */
+        public static function buildFailSummaryText(int $count): string
+        {
+            if ($count <= 0) {
+                return '';
+            }
+            return "บกพร่อง {$count} ประเด็น";
+        }
 }

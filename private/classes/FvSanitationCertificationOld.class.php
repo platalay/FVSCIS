@@ -4,7 +4,7 @@ class FvSanitationCertificationOld extends DatabaseObject
 {
     protected static $table_name = "fv_sanitation_certification_old";
     protected static $db_columns = [
-        'id', 'vessel_name', 'ship_code', 'fisherman_id', 'vessel_mark', 'license_number',
+        'id', 'vessel_name', 'ship_code', 'fisherman_id', 'vessel_mark', 'license_number', 'license_status',
         'gear_type', 'owner_name', 'certificate_number',
         'request_date', 'signature_date', 'effective_date', 'expiration_date', 'status',
         'vessel_status', 'evaluation_agency', 'signing_unit', 'temporary_reason', 'responsible_unit', 'certificate_status', 'remark', 'type'
@@ -16,6 +16,7 @@ class FvSanitationCertificationOld extends DatabaseObject
     public $fisherman_id;
     public $vessel_mark;
     public $license_number;
+    public $license_status;
     public $gear_type;
     public $owner_name;
     public $certificate_number;

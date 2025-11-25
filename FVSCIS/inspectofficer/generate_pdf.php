@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 require_once('../../private/initialize.php');
-require_once('../../private/fpdf.php');
+require_once('../../private/fpdf/fpdf.php');
 require_once('../../private/phpqrcode/qrlib.php');
 
 // รับ token

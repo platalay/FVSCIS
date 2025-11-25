@@ -137,9 +137,79 @@ class InspectionFormWaterAndIce extends DatabaseObject {
 
             $sql = "SELECT * FROM " . static::$table_name;
             $sql .= " WHERE request_id = '{$escaped}'";
-            ////error_log($sql);
+            //error_log($sql);
             $result = static::find_by_sql($sql);
             return !empty($result) ? array_shift($result) : null;
         }
+        public static $statusMap = [
+            '4_1' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 183],
+                'fail' => ['x' => 147, 'y' => 183],
+            ],
+            '4_2' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 198],
+                'fail' => ['x' => 147, 'y' => 198],
+            ],
+            '4_3' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 212],
+                'fail' => ['x' => 147, 'y' => 212],
+            ],
+            '4_4' => [
+                'page' => 1,
+                'pass' => ['x' => 133, 'y' => 219],
+                'fail' => ['x' => 147, 'y' => 219],
+            ],
+        ];
 
+         public static $failSubMap = [
+            '4_1' => ['fail_4_1_1', 'fail_4_1_2', 'fail_4_1_3', 'fail_4_1_4'],
+            '4_2' => [],
+            '4_3' => ['fail_4_3_1'],
+            '4_4' => [],
+        ];
+
+       
+    public static function countFails($form, string $section): int
+    {
+        $count = 0;
+
+        $subs = self::$failSubMap[$section] ?? [];
+
+        // 1) นับ fail_1_x_y == 1
+        foreach ($subs as $field) {
+            if (!empty($form->$field) && (int)$form->$field === 1) {
+                $count++;
+            }
+        }
+
+        // 2) ถ้ามี remark_1_x → บวกเพิ่ม 1
+        $remarkField = "remark_" . $section;
+        if (!empty($form->$remarkField)) {
+            $count++;
+        }
+
+        return $count;
+    }
+
+       
+        public static function drawStatus(\FPDF $pdf, string $status, array $pos, string $mark = 'X'): void
+        {
+            $xy = ($status === 'pass') ? $pos['pass'] : $pos['fail'];
+            $mark = ($status === 'pass') ? '/' : 'X';
+            $pdf->SetXY($xy['x'], $xy['y']);
+            $pdf->SetFont('THSarabunPSK', '', 16);
+            $pdf->Cell(4, 4, $mark, 0, 0, 'C');
+        }
+
+        
+        public static function buildFailSummaryText(int $count): string
+        {
+            if ($count <= 0) {
+                return '';
+            }
+            return "บกพร่อง {$count} ประเด็น";
+        }
 }

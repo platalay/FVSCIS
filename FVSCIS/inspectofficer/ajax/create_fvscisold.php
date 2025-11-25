@@ -89,6 +89,27 @@ try {
         }
     }
 
+    // log + แจ้งเตือน (ย่อ)
+  $action = LogAction::find_by_code('fvscis_created_by_officer');
+  if ($action) {
+    $log = new InspectionLog();
+        $log->inspection_request_id = $cert->id;
+        $log->action_id             = $action->id;
+        $log->note                  = "เจ้าหน้าที่บันทึกผลตรวจจากเอกสารของเรือ ".$cert->vessel_name;
+        $log->save();
+  }
+  $message = "เจ้าหน้าที่บันทึกผลตรวจจากเอกสารของเรือ ".$cert->vessel_name;
+  $officers = Officer::find_by_department_id($cert->evaluation_agency);
+    foreach ($officers as $officer) {
+        Notification::create_notification(
+            $officer->id,
+            'inspectofficer',
+            $cert->id,
+            $action->id,
+            $message,
+            'warning'
+        );
+    }
     // -----------------------------
     // 4) ส่งผลลัพธ์กลับ
     // -----------------------------

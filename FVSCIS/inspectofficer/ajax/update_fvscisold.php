@@ -133,6 +133,34 @@ try {
         }
     }
 
+    $action = LogAction::find_by_code('fvscis_updated_by_officer');
+    if ($action) {
+        $log = new InspectionLog();
+            $log->inspection_request_id = $obj->id;
+            $log->action_id             = $action->id;
+            $log->note                  = "เจ้าหน้าที่แก้ไขผลตรวจจากเอกสารของเรือ ".$obj->vessel_name;
+            $log->save();
+    }
+    $message = "เจ้าหน้าที่แก้ไขผลตรวจจากเอกสารของเรือ ".$obj->vessel_name;
+    $officers = Officer::find_by_department_id($obj->evaluation_agency);
+        foreach ($officers as $officer) {
+            Notification::create_notification(
+                $officer->id,
+                'inspectofficer',
+                $obj->id,
+                $action->id,
+                $message,
+                'warning'
+            );
+        }
+        $action1 = LogAction::find_by_code('request_created_by_officer');
+        
+        /*$officers = Officer::find_by_department_id($obj->evaluation_agency);
+        foreach ($officers as $officer) {
+        Notification::mark_action_taken($officer->id, 'inspectofficer', $obj->id, [2,3]);
+        }*/
+        Notification::mark_action_taken($session->user_id(), 'inspectofficer', $obj->id, $action1->id);
+
     echo json_encode([
         'success'        => true,
         'certificate_id' => $certificate_id,

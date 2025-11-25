@@ -31,29 +31,31 @@
                                 <input type="text" class="form-control" name="FvSanitationCertificationOld[vessel_name]" id="fv-vessel-name" required>
                                 </div>
 
-                                <!-- 3 -->
-                                <div class="col-md-3">
-                                <label class="form-label">หมายเลข/สัญลักษณ์เรือ</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[vessel_mark]" id="fv-vessel-mark" required>
-                                </div>
-
-                                <!-- 4 -->
-                                <div class="col-md-3">
-                                <label class="form-label">เลขที่ใบอนุญาต</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[license_number]" id="fv-license-number" required>
-                                </div>
-
-                                <!-- 5 -->
-                                <div class="col-md-3">
-                                <label class="form-label">ชนิดเครื่องมือทำการประมง</label>
-                                <input type="text" class="form-control" name="FvSanitationCertificationOld[gear_type]" id="fv-gear-type" required>
-                                </div>
-
                                 <!-- 6 -->
                                 <div class="col-md-3">
                                 <label class="form-label">ชื่อเจ้าของเรือ</label>
                                 <input type="text" class="form-control" name="FvSanitationCertificationOld[owner_name]" id="fv-owner-name" required>
                                 </div>
+
+                                <!-- 3 -->
+                                <div class="col-md-3 elicense-only d-none">
+                                <label class="form-label">หมายเลข/สัญลักษณ์เรือ</label>
+                                <input type="text" class="form-control" name="FvSanitationCertificationOld[vessel_mark]" id="fv-vessel-mark" required>
+                                </div>
+
+                                <!-- 4 -->
+                                <div class="col-md-3 elicense-only d-none">
+                                <label class="form-label">เลขที่ใบอนุญาต</label>
+                                <input type="text" class="form-control" name="FvSanitationCertificationOld[license_number]" id="fv-license-number" required>
+                                </div>
+
+                                <!-- 5 -->
+                                <div class="col-md-3 elicense-only d-none">
+                                <label class="form-label">ชนิดเครื่องมือทำการประมง</label>
+                                <input type="text" class="form-control" name="FvSanitationCertificationOld[gear_type]" id="fv-gear-type" required>
+                                </div>
+
+                                
 
                                 <!-- 7 -->
                                 <div class="col-md-3">
@@ -83,7 +85,7 @@
                                 <input type="hidden" name="FvSanitationCertificationOld[evaluation_agency]" value="<?= h($Officer->departments_id ?? '') ?>">
                                 <input type="hidden" name="FvSanitationCertificationOld[signing_unit]"        value="<?= h($department->parent_department ?? '') ?>">
                                 <input type="hidden" name="FvSanitationCertificationOld[responsible_unit]"   value="<?= h($departmentgroup->responsible_unit ?? '') ?>">
-
+                                <input type="hidden" name="FvSanitationCertificationOld[license_status]"  id="fv-license-status" value="none">
                                 <!-- สถานะ -->
                                 <div class="col-md-3">
                                 <label class="form-label">สถานะใบรับรอง (certificate_status)</label>

@@ -45,7 +45,7 @@ include("../../private/shared/topbarofficer.php");
                                     if (empty($requests)) :
                                     ?>
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือที่รับผิดชอบ</td>
+                                            <td colspan="9" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือที่รับผิดชอบ</td>
                                         </tr>
                                     <?php
                                     else:
@@ -174,6 +174,14 @@ include("../../private/shared/topbarofficer.php");
                                                         echo '<span class="badge bg-dark">ไม่ทราบ</span>';
                                                 }
                                                 ?>
+                                                <button class="btn btn-link p-0 text-muted btn-log"
+                                                        data-bs-toggle="tooltip" 
+                                                        data-bs-placement="top"
+                                                        title="ดูประวัติ"
+                                                        data-request-id="<?= h($req->id) ?>"
+                                                        data-vessel="<?php echo h($req->vessel_name); ?>">
+                                                    <i class="fas fa-history"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     <?php endforeach; endif; ?>
@@ -187,7 +195,8 @@ include("../../private/shared/topbarofficer.php");
                     <?php include(__DIR__ . '/modal/modalRequestDetail.php'); ?>
                     <?php include(__DIR__ . '/modal/modal_request_manual_case.php'); ?>  
                     <?php include(__DIR__ . '/modal/modal_attachment.php'); ?>  
-                    <?php include(__DIR__ . '/modal/modal_edit_manual_case.php'); ?>                        
+                    <?php include(__DIR__ . '/modal/modal_edit_manual_case.php'); ?>  
+                    <?php include("modal/logmodal.php"); ?>                      
                                
 </div><!-- <div class="container-fluid"> -->
 
@@ -351,14 +360,78 @@ $(document).on('click', '.btn-edit-manual', function () {
       }
 
       const r = res.request || {}
-
-      $('#edit-ship-code').val(r.ship_code || '')
-      $('#edit-vessel-name').val(r.vessel_name || '')
-      $('#edit-owner-name').val(r.owner_name || '')
-      $('#edit-vessel-mark').val(r.vessel_mark || '')
-      $('#edit-license-number').val(r.license_number || '')
-      $('#edit-gear-type').val(r.gear_type || '')
       $('#edit-contact-phone').val(r.contact_phone || '')
+
+      // เซ็ตค่าเดิมให้ฟิลด์ต่าง ๆ
+      $('#edit-ship-code').val(r.ship_code || '');
+      $('#edit-vessel-name').val(r.vessel_name || '');
+      $('#edit-owner-name').val(r.owner_name || '');
+      $('#edit-vessel-mark').val(r.vessel_mark || '');
+      $('#edit-license-number').val(r.license_number || '');
+      $('#edit-gear-type').val(r.gear_type || '');
+
+      // กำหนดสิทธิ์แก้ไขตาม license_status
+      const licenseStatus = r.license_status || 'none'; // กันกรณีไม่มีค่า
+
+      if (licenseStatus === 'normal') {
+        // มี license ปกติ → แก้ไขไม่ได้ทั้งหมด
+        $('#edit-ship-code')
+          .prop('readonly', true);
+        $('#edit-vessel-name')
+          .prop('readonly', true);
+        $('#edit-owner-name')
+          .prop('readonly', true);
+        $('#edit-vessel-mark')
+          .prop('readonly', true);
+        $('#edit-license-number')
+          .prop('readonly', true);
+        $('#edit-gear-type')
+          .prop('readonly', true);
+
+        // ปิดปุ่มค้นหา (ไม่จำเป็นให้แก้แล้ว)
+        $('#btnLookupShipEdit').prop('disabled', true);
+
+      } else if (licenseStatus === 'none') {
+        // ยังไม่มี license ใน eLicense
+        // ทะเบียนเรือ / mark / license / gear → แก้ไม่ได้
+        $('#edit-ship-code')
+          .prop('readonly', true);
+        $('#edit-vessel-mark')
+          .prop('readonly', true);
+        $('#edit-license-number')
+          .prop('readonly', true);
+        $('#edit-gear-type')
+          .prop('readonly', true);
+
+        // ชื่อเรือ / ชื่อเจ้าของ → แก้ได้
+        $('#edit-vessel-name')
+          .prop('readonly', false);
+        $('#edit-owner-name')
+          .prop('readonly', false);
+
+        // ปุ่มค้นหา → ใช้งานได้ เผื่ออนาคตมี eLicense
+        $('#btnLookupShipEdit').prop('disabled', false);
+
+      } else {
+        // กรณีอื่น ๆ (กันเหนียว) → ทุกอย่างแก้ได้ + ค้นหาได้
+        $('#edit-ship-code')
+          .prop('readonly', false);
+        $('#edit-vessel-name')
+          .prop('readonly', false);
+        $('#edit-owner-name')
+          .prop('readonly', false);
+        $('#edit-vessel-mark')
+          .prop('readonly', false);
+        $('#edit-license-number')
+          .prop('readonly', false);
+        $('#edit-gear-type')
+          .prop('readonly', false);
+
+        $('#btnLookupShipEdit').prop('disabled', false);
+      }
+
+
+      
 
       const minDate =
         r.inspect_date_start && r.inspect_date_start !== '0000-00-00'
@@ -920,91 +993,102 @@ $(function () {
     $('#btnManualSpin').toggleClass('d-none', !isBusy);
   }
 
-  function fillFromElicenseManual(data) {
-    $('#manual-vessel-name').val(data.vessel_name || '');
-    $('#manual-license-number').val(data.license_no || '');
-    $('#manual-owner-name').val(data.display_name || '');
-    $('#manual-gear-type').val(data.geartype || '');
-    $('#manual-vessel-mark').val(data.fishing_mark || '');
+  function applyElicenseFoundState(v) {
+    const $licenseStatus = $('#manual-license-status');
+
+    // เซ็ตค่าจาก eLicense
+    $('#manual-vessel-name').val(v.vessel_name || '');
+    $('#manual-owner-name').val(v.display_name || '');
+    $('#manual-vessel-mark').val(v.fishing_mark || '');
+    $('#manual-license-number').val(v.license_no || '');
+    $('#manual-gear-type').val(v.geartype || '');
+
+    // โชว์เฉพาะฟิลด์ที่เป็น eLicense-only
+    $('.elicense-only').removeClass('d-none');
+
+    // ฟิลด์ที่มาจากกลาง → ไม่ให้แก้
+    $('#manual-vessel-name').prop('readonly', true);
+    $('#manual-owner-name').prop('readonly', true);
+    $('#manual-vessel-mark').prop('readonly', true);
+    $('#manual-license-number').prop('readonly', true);
+    $('#manual-gear-type').prop('readonly', true);
+
+    // ระบุสถานะมีใบอนุญาต
+    $licenseStatus.val('normal');
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ดึงข้อมูลจาก eLicense สำเร็จ',
+      timer: 900,
+      showConfirmButton: false,
+    });
+  }
+
+  function applyElicenseNotFoundState() {
+    const $licenseStatus = $('#manual-license-status');
+
+    // เคลียร์ field ที่ควรต้องมาจากฐานกลางเท่านั้น
+    $('#manual-vessel-mark').val('');
+    $('#manual-license-number').val('');
+    $('#manual-gear-type').val('');
+
+    // ซ่อนฟิลด์ eLicense-only (เช่น mark / license / gear)
+    $('.elicense-only').addClass('d-none');
+
+    // ชื่อเรือ / ชื่อเจ้าของ → ให้แก้ได้ (กรณีพิมพ์เอง)
+    $('#manual-vessel-name').prop('readonly', false);
+    $('#manual-owner-name').prop('readonly', false);
+
+    // สถานะไม่มีใบอนุญาต
+    $licenseStatus.val('none');
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'ไม่พบข้อมูลใน eLicense',
+      text: 'ระบบจะถือว่าเรือยังไม่มีใบอนุญาตทำการประมง',
+    });
   }
 
   function lookupShipManual() {
-  const shipCode = ($('#manual-ship-code').val() || '').trim();
-  if (!shipCode) {
-    Swal.fire({ icon: 'warning', title: 'กรุณากรอกทะเบียนเรือ' });
-    return;
+    const shipCode = ($('#manual-ship-code').val() || '').trim();
+    if (!shipCode) {
+      Swal.fire({ icon: 'warning', title: 'กรุณากรอกทะเบียนเรือ' });
+      return;
+    }
+
+    setBusyManual(true);
+
+    $.ajax({
+      url: 'ajax/get_elicense_by_ship_code.php',
+      type: 'POST',
+      dataType: 'json',
+      data: { ship_code: shipCode },
+    })
+      .done(function (res) {
+        if (res && res.success && res.data) {
+          // ─── พบใน eLicense ──────────────────────
+          applyElicenseFoundState(res.data);
+        } else {
+          // ─── ไม่พบใน eLicense ────────────────────
+          applyElicenseNotFoundState();
+        }
+      })
+      .fail(function (xhr) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เชื่อมต่อ eLicense ไม่ได้',
+          text: xhr.responseText || 'โปรดลองใหม่',
+        });
+      })
+      .always(function () {
+        setBusyManual(false);
+      });
   }
 
-  // hidden ที่ใช้บอก PHP ว่าเรือนี้มีใบอนุญาตหรือไม่
-  const $licenseStatus = $('#manual-license-status');
-
-  setBusyManual(true);
-
-  $.ajax({
-    url: 'ajax/get_elicense_by_ship_code.php',
-    type: 'POST',
-    dataType: 'json',
-    data: { ship_code: shipCode },
-  })
-    .done(function (res) {
-      if (res && res.success && res.data) {
-        const v = res.data;
-
-        // ─── ถูกพบใน eLicense ──────────────────────
-        $('#manual-vessel-name').val(v.vessel_name || '');
-        $('#manual-owner-name').val(v.display_name || '');
-        $('#manual-vessel-mark').val(v.fishing_mark || '');
-        $('#manual-license-number').val(v.license_no || '');
-        $('#manual-gear-type').val(v.geartype || '');
-
-        // โชว์ช่องที่เป็น eLicense-only
-        $('.elicense-only').removeClass('d-none');
-
-        // มาจากระบบกลาง →normal
-        $licenseStatus.val('normal');
-
-        Swal.fire({
-          icon: 'success',
-          title: 'ดึงข้อมูลจาก eLicense สำเร็จ',
-          timer: 900,
-          showConfirmButton: false,
-        });
-
-      } else {
-        // ─── ไม่พบใน eLicense ──────────────────────
-        // เคลียร์ field ที่มาจากฐานกลาง
-        $('#manual-vessel-mark').val('');
-        $('#manual-license-number').val('');
-        $('#manual-gear-type').val('');
-
-        // ซ่อนช่อง eLicense-only
-        $('.elicense-only').addClass('d-none');
-
-        // ถือว่าไม่มีใบอนุญาต
-        $licenseStatus.val('none');
-
-        Swal.fire({
-          icon: 'warning',
-          title: 'ไม่พบข้อมูลใน eLicense',
-          text: 'ระบบจะถือว่าเรือยังไม่มีใบอนุญาตทำการประมง',
-        });
-      }
-    })
-    .fail(function (xhr) {
-      Swal.fire({
-        icon: 'error',
-        title: 'เชื่อมต่อ eLicense ไม่ได้',
-        text: xhr.responseText || 'โปรดลองใหม่',
-      });
-    })
-    .always(function () {
-      setBusyManual(false);
-    });
-}
-
-
-
+  // คลิกปุ่มค้นหา
   $(document).on('click', '#btnLookupShipManual', lookupShipManual);
+
+  // กด Enter ที่ช่องทะเบียนเรือ
   $(document).on('keydown', '#manual-ship-code', function (e) {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -1034,6 +1118,54 @@ $(document).ready(function () {
     $('#eu_cert_checkbox').prop('checked', false);
     $('#cold_room_checkbox').prop('checked', false);
   });
+
+  $(document).on('click', '.btn-log', function () {
+            const requestId = $(this).data('request-id');
+             const vessel = $(this).data('vessel');
+            $.ajax({
+                url: 'ajax/get_request_logs.php',
+                method: 'GET',
+                dataType: 'json',
+                data: { id: requestId },
+                success: function (resp) {
+                    if (!resp.success) {
+                        if (window.Swal) {
+                            Swal.fire('ผิดพลาด', resp.message || 'ไม่สามารถโหลดประวัติได้', 'error');
+                        } else {
+                            alert(resp.message || 'ไม่สามารถโหลดประวัติได้');
+                        }
+                        return;
+                    }
+
+                    const logs = resp.logs || [];
+                    let html = '';
+
+                    if (logs.length === 0) {
+                        html = `<tr><td colspan="4" class="text-center text-muted">ยังไม่มีประวัติการดำเนินการ</td></tr>`;
+                    } else {
+                        logs.forEach(function (log) {
+                            html += `
+                                <tr>
+                                    <td>${log.time}</td>
+                                    <td>${log.action}</td>
+                                    <td>${log.actor}</td>
+                                    <td>${log.note || '-'}</td>
+                                </tr>`;
+                        });
+                    }
+                    $('#modalVesselName').text(vessel); 
+                    $('#logModalBody').html(html);
+                    $('#logModal').modal('show');
+                },
+                error: function () {
+                    if (window.Swal) {
+                        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+                    } else {
+                        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                    }
+                }
+            });
+        });
 });
 </script>
 
@@ -1191,9 +1323,9 @@ $(document).ready(function () {
 
             <div class="thumb-wrap">
               <button type="button"
-                      class="btn btn-sm btn-outline-danger btn-del-existing-manual"
+                      class="btn btn-sm btn-danger btn-del-existing-manual"
                       data-id="${a.id}" title="ลบไฟล์เดิม">
-                <i class="bi bi-trash"></i>
+                <i class="bi bi-x-lg"></i>
               </button>
 
               <a href="${url}" target="_blank" title="เปิดดูไฟล์เดิม">

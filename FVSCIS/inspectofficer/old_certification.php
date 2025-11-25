@@ -260,76 +260,344 @@ function openOldCertificationModalById(id) {
 }
 
 
-// ===================== ค้นหาเรือจาก eLicense ด้วย ship_code =====================
+// ===================== ค้นหาเรือจาก eLicense ด้วย ship_code หน้า add =====================
 ;(function () {
+
+  // เก็บ AJAX ล่าสุด และ token สำหรับกัน response เก่า
+  let xhrLookup = null;
+  let lastRequestToken = 0;
+
   function setBusy(isBusy) {
-    $('#btnLookupShip').prop('disabled', isBusy)
-    $('#btnText').toggleClass('d-none', isBusy)
-    $('#btnSpin').toggleClass('d-none', !isBusy)
+    $('#btnLookupShip').prop('disabled', isBusy);
+    $('#btnText').toggleClass('d-none', isBusy);
+    $('#btnSpin').toggleClass('d-none', !isBusy);
   }
 
-  function fillFromElicense(data) {
-    $('#fv-vessel-name').val(data.vessel_name || '')
-    $('#fv-license-number').val(data.license_no || '')
-    $('#fv-owner-name').val(data.display_name || '')
-    $('#fv-gear-type').val(data.geartype || '')
-    $('#fv-vessel-mark').val(data.fishing_mark || '')
+  // รีเซ็ตค่าและสถานะก่อนค้นหา
+  function resetBeforeLookup() {
+    $('#fv-vessel-name')
+      .val('')
+      .prop('readonly', false);
+
+    $('#fv-owner-name')
+      .val('')
+      .prop('readonly', false);
+
+    $('#fv-vessel-mark').val('');
+    $('#fv-license-number').val('');
+    $('#fv-gear-type').val('');
+
+    $('.elicense-only').addClass('d-none');
+
+    $('#fv-license-status').val('');
+  }
+
+  // กรณีพบใน eLicense
+  function applyElicenseFound(data) {
+    const $status = $('#fv-license-status');
+
+    $('#fv-vessel-name').val(data.vessel_name || '');
+    $('#fv-owner-name').val(data.display_name || '');
+    $('#fv-vessel-mark').val(data.fishing_mark || '');
+    $('#fv-license-number').val(data.license_no || '');
+    $('#fv-gear-type').val(data.geartype || '');
+
+    // แสดง field ที่ใช้เมื่อมีใบอนุญาต
+    $('.elicense-only').removeClass('d-none');
+
+    // กรอกอัตโนมัติ → ล็อกแก้ไข
+    $('#fv-vessel-name').prop('readonly', true);
+    $('#fv-owner-name').prop('readonly', true);
+    $('#fv-vessel-mark').prop('readonly', true);
+    $('#fv-license-number').prop('readonly', true);
+    $('#fv-gear-type').prop('readonly', true);
+
+    $status.val('normal');
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ดึงข้อมูลสำเร็จ',
+      timer: 900,
+      showConfirmButton: false,
+    });
+  }
+
+  // กรณีไม่พบใน eLicense
+  function applyElicenseNotFound() {
+    const $status = $('#fv-license-status');
+
+    // เคลียร์ข้อมูลที่ต้องมาจากใบอนุญาต
+    $('#fv-vessel-name')
+      .val('')
+      .prop('readonly', false);
+
+    $('#fv-owner-name')
+      .val('')
+      .prop('readonly', false);
+
+    $('#fv-vessel-mark').val('');
+    $('#fv-license-number').val('');
+    $('#fv-gear-type').val('');
+
+    $('.elicense-only').addClass('d-none');
+
+    $status.val('none');
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'ไม่พบข้อมูลใน eLicense',
+      text: 'สามารถกรอกข้อมูลเรือด้วยตนเองได้',
+    });
   }
 
   function lookupShip() {
-    const shipCode = ($('#fv-ship-code').val() || '').trim()
-    if (!shipCode) {
-      Swal.fire({ icon: 'warning', title: 'กรุณากรอกรหัสเรือ (ship_code)' })
-      return
-    }
-    setBusy(true)
 
-    $.ajax({
+    // 1) abort AJAX เก่า (กัน response เก่า)
+    if (xhrLookup && xhrLookup.readyState !== 4) {
+      xhrLookup.abort();
+    }
+
+    // 2) token ใหม่ (กัน response เก่าไม่ให้แตะ DOM)
+    const requestToken = ++lastRequestToken;
+
+    // 3) clear ค่าเก่าทั้งหมดทุกครั้งก่อนเริ่มค้นหา
+    resetBeforeLookup();
+
+    const shipCode = ($('#fv-ship-code').val() || '').trim();
+    if (!shipCode) {
+      Swal.fire({ icon: 'warning', title: 'กรุณากรอกทะเบียนเรือ' });
+      return;
+    }
+
+    setBusy(true);
+
+    // 4) AJAX ใหม่ต้องเก็บใน xhrLookup เสมอ
+    xhrLookup = $.ajax({
       url: 'ajax/get_elicense_by_ship_code.php',
       type: 'POST',
       dataType: 'json',
       data: { ship_code: shipCode },
+
       success: function (res) {
+
+        // ไม่ใช่คำขอล่าสุด → ห้ามแตะ DOM
+        if (requestToken !== lastRequestToken) return;
+
         if (res && res.success && res.data) {
-          fillFromElicense(res.data)
-          Swal.fire({
-            icon: 'success',
-            title: 'ดึงข้อมูลสำเร็จ',
-            timer: 900,
-            showConfirmButton: false,
-          })
+          applyElicenseFound(res.data);
         } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'ไม่พบข้อมูล',
-            text: res?.message || 'ตรวจสอบรหัสเรืออีกครั้ง',
-          })
+          applyElicenseNotFound();
         }
       },
+
       error: function (xhr) {
+
+        // ไม่ใช่คำขอล่าสุด → ห้ามแตะ DOM
+        if (requestToken !== lastRequestToken) return;
+
+        // ถ้า error = abort → ไม่ต้องแจ้งเตือน
+        if (xhr.status === 0) return;
+
         Swal.fire({
           icon: 'error',
           title: 'เชื่อมต่อไม่ได้',
           text: xhr.responseText || 'โปรดลองใหม่',
-        })
+        });
       },
+
       complete: function () {
-        setBusy(false)
+
+        // ไม่ใช่คำขอล่าสุด → ไม่ต้องยุ่ง
+        if (requestToken !== lastRequestToken) return;
+
+        setBusy(false);
       },
-    })
+    });
   }
 
   // คลิกปุ่มค้นหา
-  $(document).on('click', '#btnLookupShip', lookupShip)
+  $(document).on('click', '#btnLookupShip', lookupShip);
 
-  // กด Enter ในช่อง ship_code ให้ค้นหา
+  // กด Enter เพื่อค้นหา
   $(document).on('keydown', '#fv-ship-code', function (e) {
     if (e.key === 'Enter') {
-      e.preventDefault()
-      lookupShip()
+      e.preventDefault();
+      lookupShip();
     }
-  })
+  });
+
 })();
+
+// ===================== ค้นหาเรือจาก eLicense ด้วย ship_code หน้า edit =====================
+;(function () {
+
+  // เก็บ AJAX ล่าสุด และ token สำหรับกัน response เก่า
+  let xhrLookup = null;
+  let lastRequestToken = 0;
+
+  function setBusy(isBusy) {
+    $('#btnLookupShipEdit').prop('disabled', isBusy);
+    $('#btnEditText').toggleClass('d-none', isBusy);
+    $('#btnEditSpin').toggleClass('d-none', !isBusy);
+  }
+
+  // รีเซ็ตค่าและสถานะก่อนค้นหา (โซน EDIT)
+  function resetBeforeLookupEdit() {
+    /*$('#edit-vessel-name')
+      .val('')
+      .prop('readonly', false);
+
+    $('#edit-owner-name')
+      .val('')
+      .prop('readonly', false);*/
+
+    $('#edit-vessel-mark').val('');
+    $('#edit-license-number').val('');
+    $('#edit-gear-type').val('');
+
+    $('.elicense-only').addClass('d-none');
+
+    $('#edit-license-status').val('');
+  }
+
+  // กรณีพบใน eLicense (EDIT)
+  function applyElicenseFoundEdit(data) {
+    const $status = $('#edit-license-status');
+
+    $('#edit-vessel-name').val(data.vessel_name || '');
+    $('#edit-owner-name').val(data.display_name || '');
+    $('#edit-vessel-mark').val(data.fishing_mark || '');
+    $('#edit-license-number').val(data.license_no || '');
+    $('#edit-gear-type').val(data.geartype || '');
+
+    // แสดง field ที่ใช้เมื่อมีใบอนุญาต
+    $('.elicense-only').removeClass('d-none');
+
+    // กรอกอัตโนมัติ → ล็อกแก้ไข
+    $('#edit-vessel-name').prop('readonly', true);
+    $('#edit-owner-name').prop('readonly', true);
+    $('#edit-vessel-mark').prop('readonly', true);
+    $('#edit-license-number').prop('readonly', true);
+    $('#edit-gear-type').prop('readonly', true);
+
+    $status.val('normal');
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ดึงข้อมูลจาก eLicense สำเร็จ',
+      timer: 900,
+      showConfirmButton: false,
+    });
+  }
+
+  // กรณีไม่พบใน eLicense (EDIT)
+  function applyElicenseNotFoundEdit() {
+    const $status = $('#edit-license-status');
+
+    // เคลียร์ข้อมูลที่ต้องมาจากใบอนุญาต
+    /*$('#edit-vessel-name')
+      .val('')
+      .prop('readonly', false);
+
+    $('#edit-owner-name')
+      .val('')
+      .prop('readonly', false);*/
+
+    $('#edit-vessel-mark').val('');
+    $('#edit-license-number').val('');
+    $('#edit-gear-type').val('');
+
+    $('.elicense-only').addClass('d-none');
+
+    $status.val('none');
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'ไม่พบข้อมูลใน eLicense',
+      text: 'สามารถกรอกข้อมูลเรือด้วยตนเองได้',
+    });
+  }
+
+  function lookupShipEdit() {
+
+    // 1) abort AJAX เก่า (กัน response เก่า)
+    if (xhrLookup && xhrLookup.readyState !== 4) {
+      xhrLookup.abort();
+    }
+
+    // 2) token ใหม่ (กัน response เก่าไม่ให้แตะ DOM)
+    const requestToken = ++lastRequestToken;
+
+    // 3) clear ค่าเก่าทั้งหมดทุกครั้งก่อนเริ่มค้นหา
+    resetBeforeLookupEdit();
+
+    const shipCode = ($('#edit-ship-code').val() || '').trim();
+    if (!shipCode) {
+      Swal.fire({ icon: 'warning', title: 'กรุณากรอกทะเบียนเรือ' });
+      return;
+    }
+
+    setBusy(true);
+
+    // 4) AJAX ใหม่ต้องเก็บใน xhrLookup เสมอ
+    xhrLookup = $.ajax({
+      url: 'ajax/get_elicense_by_ship_code.php',
+      type: 'POST',
+      dataType: 'json',
+      data: { ship_code: shipCode },
+
+      success: function (res) {
+
+        // ไม่ใช่คำขอล่าสุด → ห้ามแตะ DOM
+        if (requestToken !== lastRequestToken) return;
+
+        if (res && res.success && res.data) {
+          applyElicenseFoundEdit(res.data);
+        } else {
+          applyElicenseNotFoundEdit();
+        }
+      },
+
+      error: function (xhr) {
+
+        // ไม่ใช่คำขอล่าสุด → ห้ามแตะ DOM
+        if (requestToken !== lastRequestToken) return;
+
+        // ถ้า error = abort → ไม่ต้องแจ้งเตือน
+        if (xhr.status === 0) return;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'เชื่อมต่อไม่ได้',
+          text: xhr.responseText || 'โปรดลองใหม่',
+        });
+      },
+
+      complete: function () {
+
+        // ไม่ใช่คำขอล่าสุด → ไม่ต้องยุ่ง
+        if (requestToken !== lastRequestToken) return;
+
+        setBusy(false);
+      },
+    });
+  }
+
+  // คลิกปุ่มค้นหา (EDIT)
+  $(document).on('click', '#btnLookupShipEdit', lookupShipEdit);
+
+  // กด Enter เพื่อค้นหา (EDIT)
+  $(document).on('keydown', '#edit-ship-code', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      lookupShipEdit();
+    }
+  });
+
+})();
+
+
+
 
 
 // ===================== Add Modal: เลือกไฟล์ + ประเภทเอกสาร =====================
@@ -517,49 +785,66 @@ $(document)
     )
   }
 
-  // โหลดไฟล์เดิมของใบรับรอง
+  // =============== โหลดไฟล์เดิมของใบรับรอง (EDIT) ===============
   window.renderExistingAttachments = function (certId) {
     const $modal = $('#modalFvscisOldEdit')
     const $wrap = $modal.find('#existingFiles').empty()
 
-    $.getJSON(
-      'ajax/get_certification_attachments.php',
-      { id: certId },
-      function (res) {
-        if (!res || !res.success || !Array.isArray(res.attachments)) return
+    $.getJSON('ajax/get_certification_attachments.php', { id: certId }, function (res) {
+      if (!res || !res.success || !Array.isArray(res.attachments)) return
 
-        res.attachments.forEach((a) => {
-          const url = a.url_enc || a.url
-          const isImg = !!a.is_image
-          const thumb = isImg
-            ? `<div class="thumb-wrap"><img src="${url}" alt="${a.name}"></div>`
-            : `<div class="icon-pdf">PDF</div>`
+      res.attachments.forEach((a) => {
+        const url = a.url_enc || a.url
+        const isImg = !!a.is_image
+        const name = a.name || ''
+        const typeLabel = a.attachment_type ? a.attachment_type : ''
 
-          $wrap.append(`
-            <div class="col-6 col-md-3" data-attach-id="${a.id}">
-              <div class="file-card shadow-sm">
-                <button type="button" class="btn btn-sm btn-outline-danger btn-del-existing"
-                        data-id="${a.id}" title="ลบไฟล์">
-                  <i class="bi bi-trash"></i>
-                </button>
-                <a href="${url}" target="_blank" title="เปิดดู">${thumb}</a>
-                <div class="file-name mt-2 text-truncate" title="${a.name}">${a.name}</div>
-                <div class="text-muted small">${bytesFmt(a.size || 0)}</div>
-                <div class="text-muted small">
-                    ${a.attachment_type ? a.attachment_type : ''}
-                </div>
+        const thumb = isImg
+          ? `<div class="thumb-wrap">
+                <img src="${url}" alt="${name}"
+                     class="img-thumbnail w-100"
+                     style="height:120px; object-fit:cover;">
+             </div>`
+          : `<div class="border rounded p-2 text-center">
+                <i class="bi bi-file-earmark"></i>
+             </div>`
+
+        $wrap.append(`
+          <div class="col-6 col-md-3 mb-2" data-attach-id="${a.id}">
+            <div class="file-card shadow-sm p-2 position-relative">
+
+              <button type="button"
+                      class="btn btn-sm btn-danger btn-del-existing-x position-absolute"
+                      style="top:4px; left:4px; z-index:5;"
+                      data-id="${a.id}"
+                      title="ลบไฟล์นี้ออกจากระบบ">
+                <i class="bi bi-x-lg"></i>
+              </button>
+
+              <a href="${url}" target="_blank" title="เปิดดูไฟล์">
+                ${thumb}
+              </a>
+
+              <div class="small text-truncate mt-1" title="${name}">
+                ${name}
+              </div>
+              <div class="text-muted small">
+                ${typeLabel}
               </div>
             </div>
-          `)
-        })
-      }
-    )
+          </div>
+        `)
+      })
+    })
   }
 
+  // เปิด modal แล้วโหลดไฟล์เดิม
   $('#modalFvscisOldEdit').on('shown.bs.modal', function () {
     const id = $('#edit-id').val()
     if (id) window.renderExistingAttachments(id)
   })
+
+  // =============== จัดการไฟล์ใหม่ที่เลือก (EDIT) ===============
 
   function syncInputFilesEdit() {
     const $modal = $('#modalFvscisOldEdit')
@@ -577,57 +862,60 @@ $(document)
     const selected = $input.data('selected') || []
 
     if (!selected.length) {
-        $list.empty()
-        return
+      $list.empty()
+      return
     }
 
     let html = ''
     selected.forEach((f, idx) => {
-        const isImg = isImgFile(f)
-        const src = isImg ? URL.createObjectURL(f) : ''
+      const isImg = isImgFile(f)
+      const src = isImg ? URL.createObjectURL(f) : ''
 
-        html += `
+      html += `
         <div class="col-6 col-md-3">
-            <div class="border rounded p-2 shadow-sm file-card">
+          <div class="border rounded p-2 shadow-sm file-card position-relative">
 
             <button type="button"
-                    class="btn btn-sm btn-danger btn-remove-new-edit"
+                    class="btn btn-sm btn-danger btn-del-existing-x position-absolute"
+                      style="top:4px; left:4px; z-index:5;"
                     data-idx="${idx}"
                     title="เอาไฟล์นี้ออก">
-                <i class="bi bi-x-lg"></i>
+              <i class="bi bi-x-lg"></i>
             </button>
 
             ${
-                isImg
-                ? `<div class="thumb-wrap"><img src="${src}" alt="${f.name}"></div>`
+              isImg
+                ? `<div class="thumb-wrap">
+                     <img src="${src}" alt="${f.name}">
+                   </div>`
                 : `<div class="icon-pdf">PDF</div>`
             }
 
             <div class="file-name mt-2 text-truncate" title="${f.name}">
-                ${f.name}
+              ${f.name}
             </div>
             <div class="text-muted small">${bytesFmt(f.size || 0)}</div>
 
             <select class="form-select form-select-sm mt-1" name="attachment_type_new[]">
-                <option value="ทะเบียนเรือ">ทะเบียนเรือ</option>
-                <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
-                <option value="บัตรประชาชน">บัตรประชาชน</option>
-                <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
-                <option value="ผลตรวจสุขอนามัยเรือ">ผลตรวจสุขอนามัยเรือ</option>
-                <option value="ใบแจ้งผลตรวจ">ใบแจ้งผลตรวจ</option>
-                <option value="ใบรับรอง สร.3">ใบรับรอง สร.3</option>
-                <option value="อื่น ๆ">อื่น ๆ</option>
+              <option value="ทะเบียนเรือ">ทะเบียนเรือ</option>
+              <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
+              <option value="บัตรประชาชน">บัตรประชาชน</option>
+              <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
+              <option value="ผลตรวจสุขอนามัยเรือ">ผลตรวจสุขอนามัยเรือ</option>
+              <option value="ใบแจ้งผลตรวจ">ใบแจ้งผลตรวจ</option>
+              <option value="ใบรับรอง สร.3">ใบรับรอง สร.3</option>
+              <option value="อื่น ๆ">อื่น ๆ</option>
             </select>
 
-            </div>
+          </div>
         </div>
-        `
+      `
     })
 
     $list.html(html)
-    }
+  }
 
-
+  // เมื่อเลือกไฟล์ใหม่
   $('#modalFvscisOldEdit')
     .off('change.certAttachEdit')
     .on('change.certAttachEdit', '#certAttachmentsEdit', function () {
@@ -647,6 +935,7 @@ $(document)
       syncInputFilesEdit()
       renderSelectedPreviewEdit()
     })
+    // ลบไฟล์ใหม่ที่เพิ่งเลือก
     .off('click.removeNewEdit')
     .on('click.removeNewEdit', '.btn-remove-new-edit', function () {
       const $modal = $('#modalFvscisOldEdit')
@@ -662,66 +951,62 @@ $(document)
       renderSelectedPreviewEdit()
     })
 
-  // ลบไฟล์เดิม
+  // =============== ลบไฟล์เดิม (existing) ===============
   $(document).on('click', '.btn-del-existing', function () {
-  const attachId = $(this).data('id')
-  if (!attachId) return
+    const attachId = $(this).data('id')
+    if (!attachId) return
 
-  const $btn = $(this)
+    const $btn = $(this)
 
-  Swal.fire({
-    title: 'ยืนยันการลบไฟล์?',
-    text: 'ไฟล์นี้จะถูกลบออกจากระบบถาวร',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'ลบไฟล์',
-    cancelButtonText: 'ยกเลิก',
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#6c757d'
-  }).then((result) => {
+    Swal.fire({
+      title: 'ยืนยันการลบไฟล์?',
+      text: 'ไฟล์นี้จะถูกลบออกจากระบบถาวร',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ลบไฟล์',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+    }).then((result) => {
+      if (!result.isConfirmed) return
 
-    if (!result.isConfirmed) return
+      $btn.prop('disabled', true)
 
-    // ป้องกันกดซ้ำ
-    $btn.prop('disabled', true)
+      $.post(
+        'ajax/fvscisold_attachment_delete.php',
+        { attachment_id: attachId },
+        function (res) {
+          if (res && res.success) {
+            $(`[data-attach-id="${attachId}"]`).remove()
 
-    $.post(
-      'ajax/fvscisold_attachment_delete.php',
-      { attachment_id: attachId },
-      function (res) {
-        if (res && res.success) {
-
-          // ลบการ์ดไฟล์ออกจาก DOM
-          $(`[data-attach-id="${attachId}"]`).remove()
-
-          Swal.fire({
-            icon: 'success',
-            title: 'ลบไฟล์เรียบร้อย',
-            timer: 900,
-            showConfirmButton: false
-          })
-
-        } else {
+            Swal.fire({
+              icon: 'success',
+              title: 'ลบไฟล์เรียบร้อย',
+              timer: 900,
+              showConfirmButton: false,
+            })
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'ลบไม่สำเร็จ',
+              text: res?.message || 'เกิดข้อผิดพลาด',
+            })
+          }
+        },
+        'json'
+      )
+        .fail(() => {
           Swal.fire({
             icon: 'error',
-            title: 'ลบไม่สำเร็จ',
-            text: res?.message || 'เกิดข้อผิดพลาด'
+            title: 'เชื่อมต่อไม่ได้',
+            text: 'โปรดลองใหม่อีกครั้ง',
           })
-        }
-      },
-      'json'
-    ).fail(() => {
-      Swal.fire({
-        icon: 'error',
-        title: 'เชื่อมต่อไม่ได้',
-        text: 'โปรดลองใหม่อีกครั้ง'
-      })
-    }).always(() => {
-      $btn.prop('disabled', false)
+        })
+        .always(() => {
+          $btn.prop('disabled', false)
+        })
     })
   })
-})
-
 
   // รีเซ็ตเมื่อปิดโมดัล
   $('#modalFvscisOldEdit').on('hidden.bs.modal', function () {
@@ -732,6 +1017,7 @@ $(document)
     $modal.find('#existingFiles').empty()
   })
 })();
+
 
 
 // ===================== AJAX: บันทึก EDIT =====================
@@ -803,12 +1089,36 @@ $(document)
 
 // ===================== เปิดโมดัลแก้ไขจากปุ่ม Edit =====================
 ;(function () {
-  $(document).on('click', '.btn-edit-fvscisold', function () {
-    const id = $(this).data('id')
-    if (!id) return
 
-    $('#form-fvscisold-edit')[0].reset()
-    $('#edit-id').val(id)
+  $(document).on('click', '.btn-edit-fvscisold', function () {
+    const id = $(this).data('id');
+    if (!id) return;
+
+    // reset form + reset readonly/visibility ทุกครั้งก่อนโหลดข้อมูลใหม่
+    const $form = $('#form-fvscisold-edit')[0];
+    if ($form) $form.reset();
+
+    $('#edit-id').val(id);
+
+    // เคลียร์ค่าและสถานะเริ่มต้น
+    $('#edit-license-status').val('');
+
+    // เปิดให้แก้ทุกช่องก่อน (เดี๋ยวค่อยล็อกตาม license_status)
+    $('#edit-ship-code')
+      .prop('readonly', false);
+    $('#edit-vessel-name')
+      .prop('readonly', false);
+    $('#edit-owner-name')
+      .prop('readonly', false);
+    $('#edit-vessel-mark')
+      .prop('readonly', false);
+    $('#edit-license-number')
+      .prop('readonly', false);
+    $('#edit-gear-type')
+      .prop('readonly', false);
+
+    // เริ่มจากซ่อน field ที่เป็น eLicense-only
+    $('.elicense-only').addClass('d-none');
 
     $.ajax({
       url: 'ajax/get_fvscisold.php',
@@ -817,36 +1127,87 @@ $(document)
       data: { id: id },
       success: function (res) {
         if (res && res.success && res.data) {
-          const d = res.data
+          const d = res.data;
 
-          $('#edit-ship-code').val(d.ship_code || '')
-          $('#edit-vessel-name').val(d.vessel_name || '')
-          $('#edit-vessel-mark').val(d.vessel_mark || '')
-          $('#edit-license-number').val(d.license_number || '')
-          $('#edit-gear-type').val(d.gear_type || '')
-          $('#edit-owner-name').val(d.owner_name || '')
-          $('#edit-certificate-number').val(d.certificate_number || '')
+          // เติมค่าพื้นฐาน
+          $('#edit-ship-code').val(d.ship_code || '');
+          $('#edit-vessel-name').val(d.vessel_name || '');
+          $('#edit-vessel-mark').val(d.vessel_mark || '');
+          $('#edit-license-number').val(d.license_number || '');
+          $('#edit-gear-type').val(d.gear_type || '');
+          $('#edit-owner-name').val(d.owner_name || '');
+          $('#edit-certificate-number').val(d.certificate_number || '');
 
-          $('#edit-request-date').val(d.request_date || '')
-          $('#edit-signature-date').val(d.signature_date || '')
-          $('#edit-effective-date').val(d.effective_date || '')
-          $('#edit-expiration-date').val(d.expiration_date || '')
+          $('#edit-request-date').val(d.request_date || '');
+          $('#edit-signature-date').val(d.signature_date || '');
+          $('#edit-effective-date').val(d.effective_date || '');
+          $('#edit-expiration-date').val(d.expiration_date || '');
 
-          $('#edit-certificate-status').val(d.certificate_status || '')
-          $('#edit-evaluation-agency').val(d.evaluation_agency || '')
-          $('#edit-signing-unit').val(d.signing_unit || '')
-          $('#edit-responsible-unit').val(d.responsible_unit || '')
+          $('#edit-certificate-status').val(d.certificate_status || '');
+          $('#edit-evaluation-agency').val(d.evaluation_agency || '');
+          $('#edit-signing-unit').val(d.signing_unit || '');
+          $('#edit-responsible-unit').val(d.responsible_unit || '');
+          $('#edit-temporary-reason').val(d.temporary_reason || '');
+          $('#edit-remark').val(d.remark || '');
 
-          window.renderExistingAttachments(id)
+          // ----------------- จัดการ license_status -----------------
+          const licenseStatus = d.license_status || 'none';
+          $('#edit-license-status').val(licenseStatus);
+
+          if (licenseStatus === 'normal') {
+            // เคส: มีใน eLicense → แสดง field eLicense-only + ล็อกทั้งหมด
+            $('.elicense-only').removeClass('d-none');
+
+            $('#edit-ship-code').prop('readonly', true);
+            $('#edit-vessel-name').prop('readonly', true);
+            $('#edit-owner-name').prop('readonly', true);
+            $('#edit-vessel-mark').prop('readonly', true);
+            $('#edit-license-number').prop('readonly', true);
+            $('#edit-gear-type').prop('readonly', true);
+
+          } else if (licenseStatus === 'none') {
+            // เคส: ไม่มีใน eLicense
+            // ซ่อน mark / license_number / gear_type (ถ้าออกแบบให้ใช้เฉพาะตอนมีใบอนุญาต)
+            $('.elicense-only').addClass('d-none');
+
+            // ทะเบียนเรือไม่ให้แก้ (สำคัญ/unique)
+            $('#edit-ship-code').prop('readonly', true);
+
+            // ชื่อเรือ/ชื่อเจ้าของ → อนุญาตให้แก้ (กรณีพิมพ์ผิด)
+            $('#edit-vessel-name').prop('readonly', false);
+            $('#edit-owner-name').prop('readonly', false);
+
+            // mark / license_number / gear_type → ไม่ให้แก้ (มาจากกรม/หรือไม่ใช้ใน none)
+            $('#edit-vessel-mark').prop('readonly', true);
+            $('#edit-license-number').prop('readonly', true);
+            $('#edit-gear-type').prop('readonly', true);
+
+          } else {
+            // กันเหนียว: ถ้าค่าอื่น ๆ ที่ไม่คาดคิด → เปิดให้แก้ทุกช่อง
+            $('.elicense-only').removeClass('d-none');
+            $('#edit-ship-code').prop('readonly', false);
+            $('#edit-vessel-name').prop('readonly', false);
+            $('#edit-owner-name').prop('readonly', false);
+            $('#edit-vessel-mark').prop('readonly', false);
+            $('#edit-license-number').prop('readonly', false);
+            $('#edit-gear-type').prop('readonly', false);
+          }
+          // --------------------------------------------------------
+
+          // โหลดไฟล์แนบเดิม
+          window.renderExistingAttachments(id);
+
+          // เปิด modal
           new bootstrap.Modal(
             document.getElementById('modalFvscisOldEdit')
-          ).show()
+          ).show();
+
         } else {
           Swal.fire({
             icon: 'error',
             title: 'ไม่พบข้อมูล',
             text: res?.message || '',
-          })
+          });
         }
       },
       error: function (xhr) {
@@ -854,11 +1215,13 @@ $(document)
           icon: 'error',
           title: 'เชื่อมต่อไม่ได้',
           text: xhr.responseText || 'โปรดลองใหม่',
-        })
+        });
       },
-    })
-  })
+    });
+  });
+
 })();
+
 
 
 // ===================== ลบใบรับรองเก่า =====================

@@ -69,6 +69,7 @@ try {
         'owner_name'           => $req->owner_name,
         'vessel_mark'          => $req->vessel_mark,
         'license_number'       => $req->license_number,
+        'license_status'       => $req->license_status,//normal none
         'gear_type'            => $req->gear_type,
         'port_tambon_id'       => $req->port_tambon_id,
         'port_amphur_id'       => $req->port_amphur_id,

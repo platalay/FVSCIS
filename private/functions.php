@@ -185,4 +185,64 @@ function cleanup_social_tmp() {
   }
 }
 
+function th_wordwrap($text, $width = 50) {
+    $result = '';
+    $len = mb_strlen($text, 'UTF-8');
+    $line = '';
+
+    for ($i=0; $i < $len; $i++) {
+        $char = mb_substr($text, $i, 1, 'UTF-8');
+        $line .= $char;
+
+        if (mb_strwidth($line, 'UTF-8') >= $width) {
+            $result .= $line . "\n";
+            $line = '';
+        }
+    }
+
+    if ($line !== '') {
+        $result .= $line;
+    }
+
+    return $result;
+}
+
+function thaiWrapForCell($pdf, $text, $maxWidth) {
+    $lines   = [];
+    $current = '';
+
+    $len = mb_strlen($text, 'UTF-8');
+
+    for ($i = 0; $i < $len; $i++) {
+        $ch = mb_substr($text, $i, 1, 'UTF-8');
+
+        // แยกตาม \n ที่มีอยู่เดิมด้วย
+        if ($ch === "\n") {
+            $lines[] = $current;
+            $current = '';
+            continue;
+        }
+
+        $test = $current . $ch;
+
+        // วัดความกว้างข้อความปัจจุบัน
+        $w = $pdf->GetStringWidth(iconv('UTF-8','cp874',$test));
+
+        if ($w > $maxWidth) {
+            // เกินแล้ว → ขึ้นบรรทัดใหม่
+            $lines[] = $current;
+            $current = $ch;
+        } else {
+            $current = $test;
+        }
+    }
+
+    if ($current !== '') {
+        $lines[] = $current;
+    }
+
+    return implode("\n", $lines);
+}
+
+
 ?>

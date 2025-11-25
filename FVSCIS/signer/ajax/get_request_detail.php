@@ -14,7 +14,7 @@ try {
 
     // เตรียมข้อมูลตอบกลับ
     $ship = Elicense::find_by_ship_code($el_db, $request->ship_code);
-    ////error_log("request->confirmed_inspect_date = ".$request->confirmed_inspect_date);
+    //error_log("request->confirmed_inspect_date = ".$request->confirmed_inspect_date);
     $data = [
         'id' => $id,
         'ship_name'           => $ship->vessel_name,
