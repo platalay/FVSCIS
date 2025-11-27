@@ -5,9 +5,9 @@ class InspectionFormWaterAndIce extends DatabaseObject {
     protected static $db_columns = [
         'id', 'request_id',
         'status_4_1', 'fail_4_1_1', 'fail_4_1_2', 'fail_4_1_3', 'fail_4_1_4', 'remark_4_1',
-        'status_4_2', 'remark_4_2',
+        'status_4_2', 'fail_4_2_1', 'fail_4_2_2', 'remark_4_2',
         'status_4_3', 'fail_4_3_1', 'fail_4_3_2', 'remark_4_3',
-        'status_4_4', 'remark_4_4',
+        'status_4_4', 'fail_4_4_1', 'remark_4_4',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
@@ -22,6 +22,8 @@ class InspectionFormWaterAndIce extends DatabaseObject {
     public $remark_4_1;
 
     public $status_4_2;
+    public $fail_4_2_1;
+    public $fail_4_2_2;
     public $remark_4_2;
 
     public $status_4_3;
@@ -30,6 +32,7 @@ class InspectionFormWaterAndIce extends DatabaseObject {
     public $remark_4_3;
 
     public $status_4_4;
+    public $fail_4_4_1;
     public $remark_4_4;
 
     public $created_at;

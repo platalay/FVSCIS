@@ -126,6 +126,7 @@
 
                               <!-- Hidden vessel fields -->
                               <input type="hidden" name="request[vessel_name]" id="hidden_vessel_name">
+                              <input type="hidden" name="request[license_status]" id="hidden_vessel_name">
                             </div>
 
                             <div class="modal-footer">

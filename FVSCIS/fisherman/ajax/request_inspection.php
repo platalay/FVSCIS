@@ -70,6 +70,7 @@ try {
     $request->vessel_name         = $vessel_name;
     $request->vessel_mark         = $VesselData->fishing_mark ?? null;
     $request->license_number      = $VesselData->license_no   ?? null;
+    $request->license_status      = "normal";
     $request->gear_type           = $VesselData->geartype     ?? null;
     $request->owner_name          = $VesselData->display_name ?? null;
 

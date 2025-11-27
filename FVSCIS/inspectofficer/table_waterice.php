@@ -1,28 +1,52 @@
 <?php
+// หมวด 4: น้ำและน้ำแข็ง
 $data = InspectionFormWaterAndIce::find_by_request_id($request->id);
 
-$check = '✔';
-$cross = '✖';
+$check   = '✔';
+$cross   = '✖';
 $pending = '⏳';
 
-// ดึง checklist เฉพาะหมวด 4
-$fail_items = InspectionFailItem::find_by_section(4);
+// ประเภทฟอร์ม: 1 = ทั่วไป, 2 = EU
+$form_type = (int)($request->inspection_form_type ?? 1);
 
-// จัดกลุ่ม checklist ของหมวด 4
-$grouped_fail_items = [];
-foreach ($fail_items as $item) {
-    $parts = explode('_', $item->field_name); // fail_4_1_1 → [fail, 4, 1, 1]
-    $key = $parts[1] . '_' . $parts[2];
-    $grouped_fail_items[$key][] = $item;
+// section 4 = ด้านน้ำและน้ำแข็ง
+$section = 4;
+
+// ===== 1) ดึง main items ของหมวด 4 จาก inspection_main_items =====
+$main_items = InspectionMainItem::find_by_section_and_category($section, $form_type);
+
+$main_item_ids      = [];
+$id_to_section_code = []; // map main_item_id → "4_1", "4_2", ...
+
+if (!empty($main_items)) {
+    foreach ($main_items as $mi) {
+        $code = trim((string)$mi->section_code); // เช่น "4_1"
+        if ($code === '') { continue; }
+
+        $mid = (int)$mi->id;
+        $main_item_ids[]          = $mid;
+        $id_to_section_code[$mid] = $code;
+    }
 }
 
-// หัวข้อหมวด 4
-$inspection_items = [
-    '4_1' => '4.1 น้ำจืด และน้ำแข็งที่ใช้สำหรับเก็บรักษาสัตว์น้ำต้องทำจากน้ำที่สะอาด และเพียงพอกับการใช้งาน',
-    '4_2' => '4.2 สถานที่เก็บ และภาชนะที่บรรจุน้ำจืด และน้ำแข็งต้องอยู่ในสภาพดี สะอาด ถูกสุขลักษณะ ทำด้วยวัสดุปลอดสนิมและทำความสะอาดได้ง่าย',
-    '4_3' => '4.3 มีการถ่ายเท ขนถ่ายน้ำจืดและน้ำแข็งอย่างถูกสุขลักษณะ น้ำแข็งลงเรือ',
-    '4_4' => '4.4 ภาชนะที่บรรจุน้ำจืด และน้ำแข็งต้องมีฝาปิดมิดชิด'
-];
+// ===== 2) ดึง fail items ทั้งหมดของ main_item_ids =====
+$grouped_fail_items = []; // key = section_code ("4_1") => array ของ fail items
+
+if (!empty($main_item_ids)) {
+    $fail_items = InspectionFailItem::find_by_main_item_ids($main_item_ids);
+
+    if (!empty($fail_items)) {
+        foreach ($fail_items as $fi) {
+            $mid = (int)$fi->main_item_id;
+            if (!isset($id_to_section_code[$mid])) {
+                continue;
+            }
+            $code = $id_to_section_code[$mid]; // "4_1", "4_2", ...
+
+            $grouped_fail_items[$code][] = $fi;
+        }
+    }
+}
 ?>
 
 <table class="table table-bordered table-striped mt-4">
@@ -35,51 +59,65 @@ $inspection_items = [
   </thead>
   <tbody>
 
-  <?php foreach ($inspection_items as $code => $desc): ?>
+  <?php if (!empty($main_items)): ?>
+    <?php foreach ($main_items as $mi): ?>
+      <?php
+        $code         = $mi->section_code;        // เช่น "4_1"
+        $desc         = $mi->title_th;            // ข้อความหัวข้อ
+        $status_field = 'status_' . $code;        // status_4_1
+        $remark_field = 'remark_' . $code;        // remark_4_1
+
+        $status_val = $data->$status_field ?? null;
+        $remark_val = $data->$remark_field ?? '';
+      ?>
+      <tr>
+        <!-- รายการตรวจประเมิน -->
+        <td><?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?></td>
+
+        <!-- ผ่าน/ไม่ผ่าน -->
+        <td class="text-center">
+          <?php
+            echo checkStatus($data, $status_field, $check, $cross, $pending);
+          ?>
+        </td>
+
+        <!-- ข้อบกพร่องที่พบ -->
+        <td>
+          <?php
+          $fail_texts = [];
+
+          if ($status_val === 'fail') {
+              // 1) checklist ที่ถูกติ๊ก
+              $fails_for_code = $grouped_fail_items[$code] ?? [];
+
+              if (!empty($fails_for_code)) {
+                  foreach ($fails_for_code as $fi) {
+                      // field name: fail_4_1_1, fail_4_1_2 ...
+                      $fail_field = 'fail_' . $code . '_' . $fi->fail_code;
+                      $checked    = !empty($data->$fail_field);
+
+                      if ($checked) {
+                          $fail_texts[] = htmlspecialchars($fi->label_text, ENT_QUOTES, 'UTF-8');
+                      }
+                  }
+              }
+
+              // 2) หมายเหตุ
+              if (!empty($remark_val)) {
+                  $fail_texts[] = 'หมายเหตุ: ' . htmlspecialchars($remark_val, ENT_QUOTES, 'UTF-8');
+              }
+          }
+
+          echo !empty($fail_texts) ? implode('<br>', $fail_texts) : '-';
+          ?>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  <?php else: ?>
     <tr>
-      <td><?= htmlspecialchars($desc) ?></td>
-
-      <td class="text-center">
-        <?php
-          $status_field = 'status_' . $code;
-          echo checkStatus($data, $status_field, $check, $cross, $pending);
-        ?>
-      </td>
-
-      <td>
-        <?php
-        $fail_texts = [];
-
-        // ป้องกันกรณี $data เป็น null หรือไม่ใช่ object
-        $status = (isset($data) && is_object($data) && isset($data->$status_field)) ? $data->$status_field : null;
-
-        if ($status === 'fail') {
-            // ดึง checklist ที่ถูกติ๊ก
-            if (!empty($grouped_fail_items[$code]) && is_iterable($grouped_fail_items[$code])) {
-                foreach ($grouped_fail_items[$code] as $fail_item) {
-                    $fail_field = $fail_item->field_name;
-
-                    if (isset($data) && is_object($data) && !empty($data->$fail_field)) {
-                        $fail_texts[] = htmlspecialchars($fail_item->label_text, ENT_QUOTES, 'UTF-8');
-                    }
-                }
-            }
-
-            // เพิ่มหมายเหตุถ้ามี
-            $remark_field = 'remark_' . $code;
-            $remark = (isset($data) && is_object($data) && isset($data->$remark_field)) ? $data->$remark_field : '';
-            if ($remark !== '') {
-                $fail_texts[] = 'หมายเหตุ: ' . htmlspecialchars($remark, ENT_QUOTES, 'UTF-8');
-            }
-        }
-
-        // ถ้าไม่มีข้อมูล ให้แสดง “-”
-        echo !empty($fail_texts) ? implode('<br>', $fail_texts) : '-';
-        ?>
-
-      </td>
+      <td colspan="3" class="text-center text-muted">— ยังไม่มีรายการตรวจประเมินในหมวดนี้ —</td>
     </tr>
-  <?php endforeach; ?>
+  <?php endif; ?>
 
   </tbody>
 </table>

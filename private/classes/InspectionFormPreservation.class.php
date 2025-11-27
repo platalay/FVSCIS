@@ -4,33 +4,33 @@ class InspectionFormPreservation extends DatabaseObject {
     protected static $table_name = "inspection_form_preservation";
     protected static $db_columns = [
         'id', 'request_id',
-        'status_5_1', 'remark_5_1',
-        'status_5_2', 'remark_5_2',
+        'status_5_1', 'fail_5_1_1', 'remark_5_1',
+        'status_5_2', 'fail_5_2_1', 'remark_5_2',
         'status_5_3', 'fail_5_3_1', 'fail_5_3_2', 'remark_5_3',
         'status_5_4', 'fail_5_4_1', 'fail_5_4_2', 'remark_5_4',
-        'status_5_5', 'remark_5_5',
-        'status_5_6', 'remark_5_6',
+        'status_5_5', 'fail_5_5_1', 'remark_5_5',
+        'status_5_6', 'fail_5_6_1', 'remark_5_6',
         'status_5_7', 'fail_5_7_1', 'fail_5_7_2', 'remark_5_7',
         'status_5_8', 'fail_5_8_1', 'fail_5_8_2', 'remark_5_8',
-        'status_5_9', 'fail_5_9_1', 'fail_5_9_2', 'remark_5_9',
+        'status_5_9', 'fail_5_9_1', 'remark_5_9',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip'
     ];
 
     public $id;
     public $request_id;
 
-    public $status_5_1; public $remark_5_1;
-    public $status_5_2; public $remark_5_2;
+    public $status_5_1; public $fail_5_1_1;  public $remark_5_1;
+    public $status_5_2; public $fail_5_2_1;  public $remark_5_2;
 
     public $status_5_3; public $fail_5_3_1; public $fail_5_3_2; public $remark_5_3;
     public $status_5_4; public $fail_5_4_1; public $fail_5_4_2; public $remark_5_4;
 
-    public $status_5_5; public $remark_5_5;
-    public $status_5_6; public $remark_5_6;
+    public $status_5_5; public $fail_5_5_1; public $remark_5_5;
+    public $status_5_6; public $fail_5_6_1; public $remark_5_6;
 
     public $status_5_7; public $fail_5_7_1; public $fail_5_7_2; public $remark_5_7;
     public $status_5_8; public $fail_5_8_1; public $fail_5_8_2; public $remark_5_8;
-    public $status_5_9; public $fail_5_9_1; public $fail_5_9_2; public $remark_5_9;
+    public $status_5_9; public $fail_5_9_1; public $remark_5_9;
 
     public $created_at; public $updated_at; public $created_by; public $updated_by; public $created_ip; public $updated_ip;
 

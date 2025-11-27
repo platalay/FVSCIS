@@ -1,33 +1,52 @@
 <?php
+// หมวด 5: การเก็บรักษา (Preservation)
 $data = InspectionFormPreservation::find_by_request_id($request->id);
 
-$check = '✔';
-$cross = '✖';
+$check   = '✔';
+$cross   = '✖';
 $pending = '⏳';
 
-// ดึง checklist เฉพาะหมวด 5
-$fail_items = InspectionFailItem::find_by_section(5);
+// ประเภทฟอร์ม: 1 = ทั่วไป, 2 = EU
+$form_type = (int)($request->inspection_form_type ?? 1);
 
-// จัดกลุ่ม checklist
-$grouped_fail_items = [];
-foreach ($fail_items as $item) {
-    $parts = explode('_', $item->field_name); // fail_5_3_1 → [fail, 5, 3, 1]
-    $key = $parts[1] . '_' . $parts[2];
-    $grouped_fail_items[$key][] = $item;
+// section 5 = ด้านการเก็บรักษา
+$section = 5;
+
+// ===== 1) ดึง main items ของหมวด 5 จาก inspection_main_items =====
+$main_items = InspectionMainItem::find_by_section_and_category($section, $form_type);
+
+$main_item_ids      = [];
+$id_to_section_code = []; // map main_item_id → "5_1", "5_2", ...
+
+if (!empty($main_items)) {
+    foreach ($main_items as $mi) {
+        $code = trim((string)$mi->section_code); // เช่น "5_1"
+        if ($code === '') { continue; }
+
+        $mid = (int)$mi->id;
+        $main_item_ids[]          = $mid;
+        $id_to_section_code[$mid] = $code;
+    }
 }
 
-// รายการข้อสอบถามในหมวด 5
-$inspection_items = [
-    '5_1' => '5.1 น้ำยาทำความสะอาด น้ำยาฆ่าเชื้อ และยาฆ่าแมลง ต้องเก็บแยกในสถานที่ที่เป็นสัดส่วน ถูกสุขลักษณะ และควบคุมไม่ให้มีโอกาสปนเปื้อนในสัตว์น้ำได้',
-    '5_2' => '5.2 เก็บบรรจุสัตว์น้ำในภาชนะบรรจุที่แข็งแรง สะอาด และไม่ซ้อนทับจนทำให้สัตว์น้ำเสียหาย',
-    '5_3' => '5.3 เก็บรักษาสัตว์น้ำหลังจากการจับด้วยวิธีการที่เหมาะสมโดยเร็วที่สุด...',
-    '5_4' => '5.4 เก็บรักษาสัตว์น้ำอย่างถูกสุขลักษณะ และรักษาอุณหภูมิของสัตว์น้ำให้ใกล้เคียง 0 องศาเซลเซียส...',
-    '5_5' => '5.5 วางหรือเก็บรักษาสัตว์น้ำในที่เหมาะสม หากเป็นการแช่เย็นหรือแช่แข็งต้องหลีกเลี่ยงการสัมผัสความร้อนจากแสงแดด หรือความร้อนอื่น ๆ',
-    '5_6' => '5.6 มีบันทึกรายละเอียดของแหล่งจับหรือแหล่งที่มาของสัตว์น้ำ พร้อมเก็บไว้เพื่อการตรวจสอบ',
-    '5_7' => '5.7 ขนถ่ายสัตว์น้ำอย่างถูกสุขลักษณะ โดยหลีกเลี่ยงการใช้วัสดุอุปกรณ์ที่จะก่อให้เกิดความเสียหายแก่สัตว์น้ำ',
-    '5_8' => '5.8 ห้องเย็นเก็บรักษาสัตว์น้ำต้องสามารถควบคุมอุณหภูมิไม่สูงกว่า 18 องศาเซลเซียสและติดตั้งเทอร์โมมิเตอร์หรืออุปกรณ์บันทึกอุณหภูมิ อย่างต่อเนื่องอัตโนมัติ',
-    '5_9' => '5.9 กระบวนการทำความเย็นต้องมีประสิทธิภาพที่จะลดอุณหภูมิของสัตว์น้ำได้อย่างทั่วถึง และอุณหภูมิในสัตว์น้ำไม่สูงกว่า 18 องศาเซลเซียส'
-];
+// ===== 2) ดึง fail items ทั้งหมดของ main_item_ids =====
+$grouped_fail_items = []; // key = section_code ("5_1") => array ของ fail items
+
+if (!empty($main_item_ids)) {
+    $fail_items = InspectionFailItem::find_by_main_item_ids($main_item_ids);
+
+    if (!empty($fail_items)) {
+        foreach ($fail_items as $fi) {
+            $mid = (int)$fi->main_item_id;
+            if (!isset($id_to_section_code[$mid])) {
+                continue;
+            }
+            $code = $id_to_section_code[$mid]; // "5_1", "5_2", ...
+
+            $grouped_fail_items[$code][] = $fi;
+        }
+    }
+}
 ?>
 
 <table class="table table-bordered table-striped mt-4">
@@ -40,50 +59,65 @@ $inspection_items = [
   </thead>
   <tbody>
 
-  <?php foreach ($inspection_items as $code => $desc): ?>
+  <?php if (!empty($main_items)): ?>
+    <?php foreach ($main_items as $mi): ?>
+      <?php
+        $code         = $mi->section_code;        // เช่น "5_1"
+        $desc         = $mi->title_th;            // ข้อความหัวข้อ
+        $status_field = 'status_' . $code;        // status_5_1
+        $remark_field = 'remark_' . $code;        // remark_5_1
+
+        $status_val = $data->$status_field ?? null;
+        $remark_val = $data->$remark_field ?? '';
+      ?>
+      <tr>
+        <!-- รายการตรวจประเมิน -->
+        <td><?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?></td>
+
+        <!-- ผ่าน/ไม่ผ่าน -->
+        <td class="text-center">
+          <?php
+            echo checkStatus($data, $status_field, $check, $cross, $pending);
+          ?>
+        </td>
+
+        <!-- ข้อบกพร่องที่พบ -->
+        <td>
+          <?php
+          $fail_texts = [];
+
+          if ($status_val === 'fail') {
+              // 1) checklist ที่ถูกติ๊ก
+              $fails_for_code = $grouped_fail_items[$code] ?? [];
+
+              if (!empty($fails_for_code)) {
+                  foreach ($fails_for_code as $fi) {
+                      // field name: fail_5_1_1, fail_5_1_2 ...
+                      $fail_field = 'fail_' . $code . '_' . $fi->fail_code;
+                      $checked    = !empty($data->$fail_field);
+
+                      if ($checked) {
+                          $fail_texts[] = htmlspecialchars($fi->label_text, ENT_QUOTES, 'UTF-8');
+                      }
+                  }
+              }
+
+              // 2) หมายเหตุ
+              if (!empty($remark_val)) {
+                  $fail_texts[] = 'หมายเหตุ: ' . htmlspecialchars($remark_val, ENT_QUOTES, 'UTF-8');
+              }
+          }
+
+          echo !empty($fail_texts) ? implode('<br>', $fail_texts) : '-';
+          ?>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  <?php else: ?>
     <tr>
-      <td><?= htmlspecialchars($desc) ?></td>
-
-      <td class="text-center">
-        <?php
-          $status_field = 'status_' . $code;
-          echo checkStatus($data, $status_field, $check, $cross, $pending);
-        ?>
-      </td>
-
-      <td>
-        <?php
-        $fail_texts = [];
-
-        // ใช้ nullsafe operator (PHP 8+) ปลอดภัยถ้า $data เป็น null
-        $status = $data?->$status_field ?? null;
-
-        if ($status === 'fail') {
-            // กันกรณี index ไม่อยู่ หรือไม่ใช่ iterable
-            if (!empty($grouped_fail_items[$code]) && is_iterable($grouped_fail_items[$code])) {
-                foreach ($grouped_fail_items[$code] as $fail_item) {
-                    $fail_field = $fail_item->field_name;
-                    // เช็กค่าใน $data ของช่องที่ถูกติ๊ก
-                    if (!empty($data?->$fail_field)) {
-                        $fail_texts[] = htmlspecialchars($fail_item->label_text, ENT_QUOTES, 'UTF-8');
-                    }
-                }
-            }
-
-            // หมายเหตุ
-            $remark_field = 'remark_' . $code;
-            $remark = $data?->$remark_field ?? '';
-            if ($remark !== '') {
-                $fail_texts[] = 'หมายเหตุ: ' . htmlspecialchars($remark, ENT_QUOTES, 'UTF-8');
-            }
-        }
-
-        echo !empty($fail_texts) ? implode('<br>', $fail_texts) : '-';
-        ?>
-
-      </td>
+      <td colspan="3" class="text-center text-muted">— ยังไม่มีรายการตรวจประเมินในหมวดนี้ —</td>
     </tr>
-  <?php endforeach; ?>
+  <?php endif; ?>
 
   </tbody>
 </table>

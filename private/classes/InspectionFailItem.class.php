@@ -32,7 +32,6 @@ class InspectionFailItem extends DatabaseObject
     /** ดึง fail items ทั้งหมด ของ main_item_id เดียว */
     public static function find_by_main_item_id($main_item_id)
     {
-        $db = static::$database;
         $id = (int)$main_item_id;
 
         $sql  = "SELECT * FROM " . static::$table_name;
@@ -42,7 +41,7 @@ class InspectionFailItem extends DatabaseObject
         return static::find_by_sql($sql);
     }
 
-    /** ดึง fail item รายการเดียวจาก fail_code */
+    /** ดึง fail item รายการเดียวจาก fail_code (ถ้าใช้เดี่ยวๆ) */
     public static function find_by_fail_code($fail_code)
     {
         $db   = static::$database;
@@ -55,6 +54,22 @@ class InspectionFailItem extends DatabaseObject
         $result = static::find_by_sql($sql);
         return !empty($result) ? array_shift($result) : null;
     }
+
+    /**
+     * ใหม่: ดึง fail items สำหรับ main_item_id หลายตัวในครั้งเดียว
+     */
+    public static function find_by_main_item_ids(array $ids = [])
+    {
+        if (empty($ids)) { return []; }
+
+        $ids = array_map('intval', $ids);
+        $id_list = join(',', $ids);
+
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE main_item_id IN ({$id_list}) ";
+        $sql .= "ORDER BY main_item_id ASC, order_no ASC, id ASC";
+
+        return static::find_by_sql($sql);
+    }
 }
 
-?>

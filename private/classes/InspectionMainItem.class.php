@@ -92,4 +92,23 @@ class InspectionMainItem extends DatabaseObject
     {
         return (int)$this->has_fail_items === 1;
     }
+
+    /**
+     * ใหม่: ดึงหัวข้อของ "หมวด" ที่ต้องการ เช่น section=1 (ได้ 1_1, 1_2, ...), 
+     * กรองตาม category (1 = ทั่วไป, 2 = EU)
+     */
+    public static function find_by_section_and_category(int $section, int $category = 1)
+    {
+        $db = static::$database;
+        $prefix = $db->escape_string($section . '_'); // เช่น "1_"
+
+        $cat = (int)$category;
+
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE section_code LIKE '{$prefix}%' ";
+        $sql .= "AND category = {$cat} ";
+        $sql .= "ORDER BY order_no, id";
+
+        return static::find_by_sql($sql);
+    }
 }

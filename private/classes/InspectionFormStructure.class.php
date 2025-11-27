@@ -70,37 +70,56 @@ class InspectionFormStructure extends DatabaseObject {
 
     // 🔍 ดึงหรือสร้างใหม่หากไม่มี
     public static function find_or_create($request_id) {
-        $request_id = self::$database->escape_string($request_id);
-        $sql = "SELECT * FROM " . static::$table_name;
-        $sql .= " WHERE request_id = '{$request_id}'";
-        $sql .= " ORDER BY id DESC LIMIT 1";
-        $existing = static::find_by_sql($sql);
-        if (!empty($existing)) {
-            return array_shift($existing);
-        }
-
-        $new = new self();
-        $new->request_id = $request_id;
-        $new->save();
-        return $new;
-    }
-
-    // ✅ autosave รองรับการบันทึกฟิลด์เดี่ยวแบบอัตโนมัติ
-       public static function autosave($request_id, $field, $value) {
-            $record = self::find_or_create($request_id);
-
-            if (property_exists($record, $field)) {
-                $record->$field = $value;
-                $record->save();
-
-                // ✅ หลังจาก save แล้ว เรียกฟังก์ชัน check_complete
-                self::check_complete($request_id);
-
-                return true;
+            $request_id = self::$database->escape_string($request_id);
+            $sql = "SELECT * FROM " . static::$table_name;
+            $sql .= " WHERE request_id = '{$request_id}'";
+            $sql .= " ORDER BY id DESC LIMIT 1";
+            $existing = static::find_by_sql($sql);
+            if (!empty($existing)) {
+                return array_shift($existing);
             }
 
+            $new = new self();
+            $new->request_id = $request_id;
+            $new->save();
+            return $new;
+        }
+
+        // ✅ autosave รองรับการบันทึกฟิลด์เดี่ยวแบบอัตโนมัติ
+        public static function autosave($request_id, $field, $value) {
+
+        // 1) ดึง record (หรือสร้างใหม่ถ้าไม่มี)
+        $record = self::find_or_create($request_id);
+
+        // 2) กันกรณี field ไม่ใช่คอลัมน์จริง → ป้องกัน save ล้ม
+        if (!in_array($field, static::$db_columns)) {
+            error_log("autosave error: Field '{$field}' not found in table " . static::$table_name);
             return false;
         }
+
+        // 3) sanitize ค่า checkbox ให้เป็น 0/1
+        if (preg_match('/^fail_\d+_\d+_\d+$/', $field)) {
+            $value = ($value == 1 ? 1 : 0);
+        }
+
+        // 4) อัปเดตค่า
+        $record->$field = $value;
+
+        // 5) save แล้วตรวจว่าการ save สำเร็จ
+        $saved = $record->save();
+        if ($saved) {
+
+            // 6) เรียกฟังก์ชันตรวจความสมบูรณ์ฟอร์ม (เช่น set completed/not completed)
+            if (method_exists(get_called_class(), 'check_complete')) {
+                self::check_complete($request_id);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
 
         public static function check_complete($request_id) {
             $record = self::find_or_create($request_id);
