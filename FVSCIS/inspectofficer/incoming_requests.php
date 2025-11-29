@@ -61,7 +61,10 @@ include("../../private/shared/topbarofficer.php");
                                                         onclick="loadRequestDetail(<?= h($req->id) ?>)">
                                                     <i class="fas fa-search"></i>
                                                 </button>
-
+                                                <button class="btn btn-sm btn-outline-primary btn-print-form1"
+                                                        data-id="<?= h($req->id) ?>">
+                                                  <i class="fas fa-print"></i>
+                                                </button>
                                                 <?php
                                                 $attCount = InspectionAttachment::count_by_request_id($req->id);
                                                 if ($attCount > 0): ?>
@@ -196,7 +199,8 @@ include("../../private/shared/topbarofficer.php");
                     <?php include(__DIR__ . '/modal/modal_request_manual_case.php'); ?>  
                     <?php include(__DIR__ . '/modal/modal_attachment.php'); ?>  
                     <?php include(__DIR__ . '/modal/modal_edit_manual_case.php'); ?>  
-                    <?php include("modal/logmodal.php"); ?>                      
+                    <?php include("modal/logmodal.php"); ?>
+                    <?php include("modal/fvs01modal.php"); ?>                    
                                
 </div><!-- <div class="container-fluid"> -->
 
@@ -1641,6 +1645,172 @@ $(document).on('click', '.btn-delete-request', function () {
 });
 </script>
 
+<script>
+$(function () {
+
+  // -------------------------------
+  // toggle block บุคคล / นิติบุคคล
+  // -------------------------------
+  function toggleApplicantBlocks(isJuristic) {
+    isJuristic = String(isJuristic);
+
+    $('#block_person').removeClass('d-none');
+
+    if (isJuristic === '1') {
+      $('#block_juristic').removeClass('d-none');
+      $('#label_applicant_name').text('ข้าพเจ้า (ชื่อ–สกุลผู้แทน/ผู้รับมอบอำนาจ)');
+    } else {
+      $('#block_juristic').addClass('d-none');
+      $('#label_applicant_name').text('ข้าพเจ้า (ชื่อ–สกุล)');
+    }
+  }
+
+  // tooltip
+  $('[data-toggle="tooltip"], [data-bs-toggle="tooltip"]').tooltip();
+
+
+  // ======================================================
+  // กดปุ่มพิมพ์ สร.1
+  // ======================================================
+  $(document).on('click', '.btn-print-form1', function (e) {
+    e.preventDefault();
+
+    const requestId = $(this).data('id');
+    $('#request_id').val(requestId);
+
+    // เช็คก่อนว่ามี lock ไหม
+    $.getJSON('ajax/ajax_get_applicant_info.php', { request_id: requestId })
+      .done(function (res) {
+
+        // ====== ถ้าไม่ success เช่น ไม่มี record → ให้กรอกข้อมูลใหม่ ======
+        if (!res.success) {
+          openApplicantModalForNew();
+          return;
+        }
+
+        const d = res.data;
+
+        // ====== ถ้าเอกสารถูกล็อกแล้ว → พิมพ์เลย ======
+        if (d.form1_locked == 1) {
+
+          if (d.print_url) {
+            window.open(d.print_url, '_blank');
+          } else {
+            // fallback URL
+            window.open('print_form1.php?request_id=' + requestId, '_blank');
+          }
+
+          return; // ไม่ต้องเปิด modal
+        }
+
+        // ====== ถ้ายังไม่ locked → เปิด modal เพื่อกรอกข้อมูล ======
+        openApplicantModalFill(d);
+
+      })
+      .fail(function () {
+        alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+      });
+  });
+
+
+  // ===========================
+  // ฟังก์ชันเปิด modal ใหม่
+  // ===========================
+  function openApplicantModalForNew() {
+    $('#form_applicant')[0].reset();
+    $('#block_juristic').addClass('d-none');
+    $('#label_applicant_name').text('ข้าพเจ้า (ชื่อ–สกุล)');
+    $('#modalApplicant').modal('show');
+  }
+
+  // ===========================
+  // ฟังก์ชันเปิด modal พร้อมข้อมูล
+  // ===========================
+  function openApplicantModalFill(d) {
+
+    // reset
+    $('#form_applicant')[0].reset();
+    $('#block_juristic').addClass('d-none');
+    $('#label_applicant_name').text('ข้าพเจ้า (ชื่อ–สกุล)');
+
+    // filled
+    $('#written_at').val(d.written_at || '');
+    $('#written_date_text').val(d.written_date_text || '');
+    $('#written_date').val(d.written_date || '');
+
+    const isJuristic = d.is_juristic || 0;
+    $('#is_juristic_' + isJuristic).prop('checked', true);
+    toggleApplicantBlocks(isJuristic);
+
+    $('#applicant_name').val(d.applicant_name || '');
+    $('#applicant_age').val(d.applicant_age || '');
+    $('#applicant_nationality').val(d.applicant_nationality || '');
+    $('#applicant_address_no').val(d.applicant_address_no || '');
+    $('#applicant_moo').val(d.applicant_moo || '');
+    $('#applicant_tambon').val(d.applicant_tambon || '');
+    $('#applicant_amphoe').val(d.applicant_amphoe || '');
+    $('#applicant_province').val(d.applicant_province || '');
+
+    // โทรศัพท์ไม่ให้แก้ไข
+    $('#applicant_phone').val(d.applicant_phone || '').prop('readonly', true);
+
+    $('#juristic_name').val(d.juristic_name || '');
+    $('#juristic_office').val(d.juristic_office || '');
+    $('#juristic_address_no').val(d.juristic_address_no || '');
+    $('#juristic_moo').val(d.juristic_moo || '');
+    $('#juristic_tambon').val(d.juristic_tambon || '');
+    $('#juristic_amphoe').val(d.juristic_amphoe || '');
+    $('#juristic_province').val(d.juristic_province || '');
+
+    // เปิด modal
+    $('#modalApplicant').modal('show');
+  }
+
+
+  // ===========================
+  // submit → save → lock → print
+  // ===========================
+  $('#form_applicant').on('submit', function (e) {
+    e.preventDefault();
+
+    const $form = $(this);
+    const $btn  = $form.find('button[type="submit"]');
+    const old   = $btn.html();
+
+    $btn.prop('disabled', true)
+        .html('<i class="fas fa-spinner fa-spin"></i> บันทึก...');
+
+    $.post('ajax/ajax_save_applicant_form1.php', $form.serialize(), function (res) {
+
+      if (!res.success) {
+        alert(res.message || 'บันทึกไม่สำเร็จ');
+        $btn.prop('disabled', false).html(old);
+        return;
+      }
+
+      $('#modalApplicant').modal('hide');
+
+      // เปิด PDF
+      if (res.print_url) {
+        window.open(res.print_url, '_blank');
+      }
+
+      $btn.prop('disabled', false).html(old);
+
+    }, 'json').fail(function () {
+      alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+      $btn.prop('disabled', false).html(old);
+    });
+  });
+
+
+  // radio change
+  $('input[name="is_juristic"]').on('change', function () {
+    toggleApplicantBlocks($(this).val());
+  });
+
+});
+</script>
                
 <?php 
 include("../../private/shared/footerall.php");

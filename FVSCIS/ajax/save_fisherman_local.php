@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fisherman'])) {
                             $log = new InspectionLog();
                             $log->inspection_request_id = 0;
                             $log->action_id             = 1;
-                            $log->note                  = $msg
+                            $log->note                  = $msg;
                             $log->save();
 
                         Notification::create_notification(

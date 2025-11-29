@@ -109,6 +109,83 @@ try {
     }
 
 
+    //save InspectionApplicationInfo
+    
+    // 🔹 ดึงข้อมูลชาวประมงที่ login อยู่
+    $fisherman = Fisherman::find_by_id($session->user_id());
+    if(!$fisherman) {
+        throw new Exception("ไม่พบข้อมูลชาวประมงผู้ใช้ระบบ");
+    }
+
+    // 🔹 เช็คเลข 13 หลัก ว่าเป็นนิติบุคคลหรือไม่
+    // eLicense->number มาจาก fisherman->citizen_id ตามที่เต้ยบอก
+    $citizen_no = trim($VesselData->number ?? $fisherman->citizen_id ?? '');
+    $is_juristic = 0;
+    if ($citizen_no !== '' && strlen($citizen_no) === 13 && $citizen_no[0] === '0') {
+        $is_juristic = 1;
+    }
+
+    // 🔹 เตรียม InspectionApplicantInfo (1 request มี 1 record)
+    $applicant = InspectionApplicantInfo::find_or_initialize_by_request_id($request->id);
+    $applicant->request_id = $request->id;
+    $applicant->is_juristic = $is_juristic;
+
+    $current_user_id = $session->user_id() ?? 0;
+    $current_ip      = $_SERVER['REMOTE_ADDR'] ?? '';
+
+    if(!$applicant->id) {
+        // new record
+        $applicant->created_by = $current_user_id;
+        $applicant->created_ip = $current_ip;
+    }
+    $applicant->updated_by = $current_user_id;
+    $applicant->updated_ip = $current_ip;
+
+    if ($is_juristic === 0) {
+        // 🟢 บุคคลธรรมดา → ใช้ข้อมูลจาก eLicense เป็นผู้ยื่นเลย
+        $applicant->applicant_name        = $VesselData->display_name ?? $fisherman->full_name ?? '';
+        $applicant->applicant_age         = $VesselData->age ?? null;
+        $applicant->applicant_nationality = (string)($VesselData->nationality_id ?? '');
+        $applicant->applicant_phone       = $contact_phone;
+
+        $applicant->applicant_address_no  = $VesselData->street ?? '';
+        $applicant->applicant_moo         = $VesselData->moo ?? '';
+
+        $applicant->applicant_province_id = $VesselData->province_id ?? null;
+        $applicant->applicant_province    = $VesselData->province_name ?? '';
+        $applicant->applicant_amphoe_id   = $VesselData->amphur_id ?? null;
+        $applicant->applicant_amphoe      = $VesselData->amphur_name ?? '';
+        $applicant->applicant_tambon_id   = $VesselData->tambon_id ?? null;
+        $applicant->applicant_tambon      = $VesselData->tambon_name ?? '';
+
+        // ฝั่ง juristic_* ปล่อยว่าง
+        $applicant->juristic_name = $applicant->juristic_name ?? '';
+    } else {
+        $applicant->applicant_phone       = $contact_phone;
+        // 🔵 นิติบุคคล → เก็บข้อมูลบริษัทไว้ก่อน, ผู้ยื่น (คน) ให้กรอกตอนกดพิมพ์ สร.1
+        $applicant->juristic_name        = $VesselData->display_name ?? '';
+        $applicant->juristic_office      = ''; // ถ้ามีฟิลด์อาคาร/สำนักงานเพิ่มทีหลังได้
+        $applicant->juristic_address_no  = $VesselData->street ?? '';
+        $applicant->juristic_moo         = $VesselData->moo ?? '';
+
+        $applicant->juristic_province_id = $VesselData->province_id ?? null;
+        $applicant->juristic_province    = $VesselData->province_name ?? '';
+        $applicant->juristic_amphoe_id   = $VesselData->amphur_id ?? null;
+        $applicant->juristic_amphoe      = $VesselData->amphur_name ?? '';
+        $applicant->juristic_tambon_id   = $VesselData->tambon_id ?? null;
+        $applicant->juristic_tambon      = $VesselData->tambon_name ?? '';
+
+        // ผู้ยื่นตัวบุคคลจะมาเติมทีหลังใน modal
+        if (is_blank($applicant->applicant_name)) {
+            $applicant->applicant_name = ''; 
+        }
+    }
+
+    if(!$applicant->save()) {
+        $err = is_array($applicant->errors ?? null) ? implode(', ', $applicant->errors) : ($applicant->errors ?? '');
+        throw new Exception("ไม่สามารถบันทึกข้อมูลผู้ยื่นคำขอได้" . ($err ? " ({$err})" : ''));
+    }
+
     $log = new InspectionLog();
     $log->inspection_request_id = $request->id;
     $log->action_id             = 2;
