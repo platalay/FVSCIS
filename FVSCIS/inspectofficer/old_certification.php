@@ -646,13 +646,13 @@ function openOldCertificationModalById(id) {
           <div class="text-muted">${addBytesFmt(file.size)}</div>
           <select class="form-select form-select-sm mt-1" name="attachment_type[]">
             <option value="ทะเบียนเรือ">ทะเบียนเรือ</option>
-            <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
-            <option value="บัตรประชาชน">บัตรประชาชน</option>
-            <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
-            <option value="ผลตรวจสุขอนามัยเรือ">ผลตรวจสุขอนามัยเรือ</option>
-            <option value="ใบแจ้งผลตรวจ">ใบแจ้งผลตรวจ</option>
-            <option value="ใบรับรอง สร.3">ใบรับรอง สร.3</option>
-            <option value="อื่น ๆ">อื่น ๆ</option>
+              <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
+              <option value="ใบอนุญาตใช้เรือ">ใบอนุญาตใช้เรือ</option>
+              <option value="บัตรประชาชนผู้ยื่น">บัตรประชาชนผู้ยื่น</option>
+              <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
+              <option value="สำเนาบัตรประชาชนผู้มอบอำนาจ">สำเนาบัตรประชาชนผู้มอบอำนาจ</option>
+              <option value="บัตรประจำตัวตัวแทนนิติบุคคล">บัตรประจำตัวตัวแทนนิติบุคคล</option>
+              <option value="ใบรับรอง สร.3 ฉบับเก่า">ใบรับรอง สร.3 ฉบับเก่า</option>
           </select>
         </div>
       `
@@ -899,12 +899,12 @@ $(document)
             <select class="form-select form-select-sm mt-1" name="attachment_type_new[]">
               <option value="ทะเบียนเรือ">ทะเบียนเรือ</option>
               <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
-              <option value="บัตรประชาชน">บัตรประชาชน</option>
+              <option value="ใบอนุญาตใช้เรือ">ใบอนุญาตใช้เรือ</option>
+              <option value="บัตรประชาชนผู้ยื่น">บัตรประชาชนผู้ยื่น</option>
               <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
-              <option value="ผลตรวจสุขอนามัยเรือ">ผลตรวจสุขอนามัยเรือ</option>
-              <option value="ใบแจ้งผลตรวจ">ใบแจ้งผลตรวจ</option>
-              <option value="ใบรับรอง สร.3">ใบรับรอง สร.3</option>
-              <option value="อื่น ๆ">อื่น ๆ</option>
+              <option value="สำเนาบัตรประชาชนผู้มอบอำนาจ">สำเนาบัตรประชาชนผู้มอบอำนาจ</option>
+              <option value="บัตรประจำตัวตัวแทนนิติบุคคล">บัตรประจำตัวตัวแทนนิติบุคคล</option>
+              <option value="ใบรับรอง สร.3 ฉบับเก่า">ใบรับรอง สร.3 ฉบับเก่า</option>
             </select>
 
           </div>

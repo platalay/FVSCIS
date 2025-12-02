@@ -186,6 +186,47 @@ try {
         throw new Exception("ไม่สามารถบันทึกข้อมูลผู้ยื่นคำขอได้" . ($err ? " ({$err})" : ''));
     }
 
+
+    // อัปโหลดรูปแนบ (เฉพาะรูป)
+    if (!empty($_FILES['attachments'])) {
+        $types = $_POST['attachment_types'] ?? [];
+        $allowed = ['image/jpeg','image/png','image/gif','image/webp'];
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $cnt = count($_FILES['attachments']['name']);
+
+        for ($i=0; $i<$cnt; $i++) {
+        if ($_FILES['attachments']['error'][$i] !== UPLOAD_ERR_OK) continue;
+        
+        $tmp  = $_FILES['attachments']['tmp_name'][$i];
+        $name = $_FILES['attachments']['name'][$i];
+        $mime = $finfo->file($tmp) ?: 'application/octet-stream';
+        $size = (int)$_FILES['attachments']['size'][$i];
+
+        if (!in_array($mime,$allowed,true)) continue;
+        if ($size > 10*1024*1024) continue;
+
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        $new = date('YmdHis').'_'.bin2hex(random_bytes(4)).'.'.$ext;
+
+        $rel = '/uploads/inspection/'.$new;
+        $abs = PUBLIC_PATH . $rel;
+        if (!is_dir(dirname($abs))) { mkdir(dirname($abs), 0775, true); }
+        if (!move_uploaded_file($tmp,$abs)) continue;
+        $type = $types[$i] ?? '';
+        
+        $att = new InspectionAttachment([
+            'request_id' => $request->id,
+            'attachment_type' => $type,
+            'file_path'  => $rel,
+            'file_name'  => $name,
+            'file_type'  => $mime,
+            'file_size'  => $size,
+            'created_by' => $session->user_id() ?? 0
+        ]);
+        $att->save();
+        }
+    }
+
     $log = new InspectionLog();
     $log->inspection_request_id = $request->id;
     $log->action_id             = 2;

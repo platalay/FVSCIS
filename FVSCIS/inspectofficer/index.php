@@ -176,7 +176,7 @@ include("../../private/shared/topbarofficer.php");
                       </td>
                       <td><?php echo h($req->status_label()); ?></td>
                       <td class="text-right">
-                        <a href="request_detail.php?id=<?php echo h($req->id); ?>" class="btn btn-sm btn-outline-primary">
+                        <a href="incoming_requests.php?shipcode=<?= urlencode(h($req->ship_code)); ?>" class="btn btn-sm btn-outline-primary">
                           จัดการ
                         </a>
                       </td>
@@ -207,11 +207,12 @@ include("../../private/shared/topbarofficer.php");
                     <?php echo h($task->ship_code); ?> - <?php echo h($task->vessel_name); ?>
                   </div>
                   <div class="small text-muted">
-                    นัดตรวจ: <?php echo h(display_datetime($task->inspect_date)); ?><br>
+                    นัดตรวจ: <?php echo h(thai_date($task->confirmed_inspect_date)); ?><br>
                     สถานที่: <?php echo h($task->port_name ?? '-'); ?>
                   </div>
                   <div class="mt-1">
-                    <a href="request_detail.php?id=<?php echo h($task->id); ?>" class="btn btn-sm btn-outline-secondary">
+                    <a href="incoming_requests.php?shipcode=<?= urlencode(h($task->ship_code)); ?>" 
+                      class="btn btn-sm btn-outline-secondary">
                       เปิดดูคำขอ
                     </a>
                   </div>

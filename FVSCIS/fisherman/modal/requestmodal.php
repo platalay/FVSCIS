@@ -35,7 +35,7 @@
                               <!-- เลือกจังหวัด อำเภอ ตำบล ท่าเรือ -->
                               <div class="row mb-3">
                                 <div class="col-md-3">
-                                  <label for="port_province_id" class="form-label">จังหวัด</label>
+                                  <label for="port_province_id" class="form-label">ข้อมูลท่าเรือ:จังหวัด</label>
                                   <select name="request[port_province_id]" id="port_province_id" class="form-select" required>
                                     <option value="">-- เลือกจังหวัด --</option>
                                   </select>
@@ -123,6 +123,19 @@
                                   ข้าพเจ้ายืนยันว่าข้อมูลที่กรอกถูกต้องและยินยอมให้ใช้ข้อมูลนี้ในการตรวจเรือ
                                 </label>
                               </div>
+
+                              <!-- แนบไฟล์ใหม่เพิ่ม (ถ้าจะให้แก้ไฟล์เก่าทีหลังค่อยทำ endpoint ลบ) -->
+            <!-- input file old new -->
+                                <!-- แนบไฟล์ -->
+                              <div class="mb-12">
+                                <label class="form-label">แนบเอกสารหลักฐาน (jpeg/jpg/png, ≤10MB/ไฟล์)</label>
+                                <input type="file" class="form-control" id="attachments" name="attachments[]" multiple
+                                      accept=".jpg,.jpeg,.png">
+                                <div id="filePreview" class="mt-2"></div>
+                                <div class="form-text">คุณสามารถลบไฟล์ออกก่อนบันทึกได้</div>
+                              </div>
+
+                                <!-- /input file old new --> 
 
                               <!-- Hidden vessel fields -->
                               <input type="hidden" name="request[vessel_name]" id="hidden_vessel_name">

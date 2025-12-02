@@ -27,6 +27,7 @@ if ($request_id === '') {
 
 // คำขอตรวจ (เอาไว้ใช้ข้อมูลเรือ/อื่น ๆ ถ้าต้องการ)
 $request = InspectionRequest::find_by_id($request_id);
+$type = $request->inspection_form_type;
 if (!$request) {
     die('ไม่พบข้อมูลคำขอตรวจ');
 }
@@ -177,7 +178,12 @@ $pdf = new FPDI();
 $pdf->SetAutoPageBreak(false);
 
 // ระบุไฟล์ template ของแบบ สร.1
-$source = '../../private/pdftemplate/FVS1.pdf';
+$map = [
+    1 => '../../private/pdftemplate/FVS1.pdf',
+    2 => '../../private/pdftemplate/FVS1EU.pdf'
+];
+
+$source = $map[$type] ?? $map[1]; // default = type 1
 $pageCount = $pdf->setSourceFile($source);
 
 // โหลดฟอนต์ TH Sarabun
@@ -199,14 +205,14 @@ $pdf->SetXY( 50, 20);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $docYearBE), 0, 0, 'L');
 
 // 2) เขียนที่ / วันที่
-$pdf->SetXY( 138,41 );
+$pdf->SetXY( 137,37 );
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenAt), 0, 0, 'L');
 
-$pdf->SetXY( 125, 48 );
+$pdf->SetXY( 135, 45 );
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenDay), 0, 0, 'L');
-$pdf->SetXY( 139, 48 );
+$pdf->SetXY( 153, 45 );
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenMonthTh), 0, 0, 'L');
-$pdf->SetXY( 170, 48 );
+$pdf->SetXY( 184, 45 );
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenYearBE), 0, 0, 'L');
 
 
@@ -214,69 +220,75 @@ $pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenYearBE), 0, 0, 'L');
 
 
 // 3) ข้อมูลบุคคลธรรมดา
-$pdf->SetXY(65, 60);
+$pdf->SetXY(65, 54);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantName), 0, 0, 'L');
-
-$pdf->SetXY(130, 60);
+if($type == 1)
+{
+$pdf->SetXY(135, 54);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantAge), 0, 0, 'L');
-
-$pdf->SetXY(160, 60);
+}
+$pdf->SetXY(165, 54);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantNationality), 0, 0, 'L');
 
-$pdf->SetXY(68, 67);
+$pdf->SetXY(57, 62);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantAddressNo), 0, 0, 'L');
 
-$pdf->SetXY(90, 67);
+$pdf->SetXY(76, 62);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantMoo), 0, 0, 'L');
 
-$pdf->SetXY(110, 67);
+$pdf->SetXY(95, 62);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantTambon), 0, 0, 'L');
 
-$pdf->SetXY(150, 67);
+$pdf->SetXY(155, 62);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantAmphoe), 0, 0, 'L');
 
-$pdf->SetXY(40, 73);
+$pdf->SetXY(40, 69);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantProvince), 0, 0, 'L');
 
-$pdf->SetXY(90, 73);
+$pdf->SetXY(120, 69);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantPhone), 0, 0, 'L');
 
 
 // 3) ข้อมูลนิติบุคคล
-$pdf->SetXY(50, 80);
+$pdf->SetXY(50, 76);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicName), 0, 0, 'L');
-$pdf->SetXY(148, 80);
+$pdf->SetXY(153, 76);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicOffice), 0, 0, 'L');
-$pdf->SetXY(36, 86);
+$pdf->SetXY(36, 84);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicAddressNo), 0, 0, 'L');
-$pdf->SetXY(56, 86);
+$pdf->SetXY(56, 84);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicMoo), 0, 0, 'L');
-$pdf->SetXY(76, 86);
+$pdf->SetXY(76, 84);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicTambon), 0, 0, 'L');
-$pdf->SetXY(109, 86);
+$pdf->SetXY(124, 84);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicAmphoe), 0, 0, 'L');
-$pdf->SetXY(157, 86);
+$pdf->SetXY(172, 84);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicProvince), 0, 0, 'L');
 
 // 4) ข้อมูลเรือ
-$pdf->SetXY(98, 92);
+$pdf->SetXY(99, 92);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $vesselName), 0, 0, 'L');
-$pdf->SetXY(159, 92);
+$pdf->SetXY(182, 92);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $shipCode), 0, 0, 'L');
 $pdf->SetXY( 75,99 );
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenAt), 0, 0, 'L');
 // ฯลฯ (คุณจะไปเติมตำแหน่ง XY เองตามแบบฟอร์ม)
 
 // 4) คำรับรอง
-$pdf->SetXY(65, 192);
+if($type == 1){
+$pdf->SetXY(65, 195);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantName), 0, 0, 'L');
-$pdf->SetXY(142, 192);
+$pdf->SetXY(147, 195);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicName), 0, 0, 'L');
-
+}
 // 4) คำรับรอง
-$pdf->SetXY(120, 224);
+if($type == 1){
+$pdf->SetXY(143, 224);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantName), 0, 0, 'L');
-
+}else{
+$pdf->SetXY(143, 232);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantName), 0, 0, 'L');    
+}
 
 // ======================= แปะ QR ด้านล่างซ้าย =======================
 // สมมติ A4 แนวตั้ง: ลองวางประมาณ X=15, Y=260, กว้าง 18mm

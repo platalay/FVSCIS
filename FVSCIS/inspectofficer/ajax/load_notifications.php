@@ -17,11 +17,18 @@ $unread = Notification::unread_count($user_id, $user_role);
 
 $data = [];
 foreach ($notifications as $n) {
+  $req = InspectionRequest::find_by_id($n->inspection_request_id);
+  $shipcode = $req->ship_code;
+  if (!empty($shipcode)) {
+    $link = 'incoming_requests.php?shipcode=' . urlencode($shipcode);
+  } else {
+      $link = '#';
+  }
   $data[] = [
     'message' => htmlspecialchars($n->message),
     'type' => $n->notification_type,
     'time' => date("d/m/Y H:i", strtotime($n->created_at)),
-    'link' => null // คุณจะเพิ่ม link ภายหลังได้
+    'link' => $link
   ];
 }
 

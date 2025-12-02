@@ -78,26 +78,70 @@ try {
         throw new Exception('ไม่สามารถบันทึกการแก้ไขได้');
     }
 
+    // -------------------------------
+    // 7) อัปโหลดไฟล์ใหม่ (ไม่ยุ่งกับไฟล์เดิม)
+    // -------------------------------
+    if (!empty($_FILES['attachments'])) {
+        $types = $_POST['attachment_type_new'] ?? [];
+        $allowed = ['image/jpeg','image/png','image/gif','image/webp'];
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+
+        $cnt = count($_FILES['attachments']['name']);
+
+        for ($i=0; $i<$cnt; $i++) {
+
+            if ($_FILES['attachments']['error'][$i] !== UPLOAD_ERR_OK) continue;
+
+            $tmp  = $_FILES['attachments']['tmp_name'][$i];
+            $name = $_FILES['attachments']['name'][$i];
+            $mime = $finfo->file($tmp) ?: 'application/octet-stream';
+            $size = (int)$_FILES['attachments']['size'][$i];
+
+            if (!in_array($mime,$allowed,true)) continue;
+            if ($size > 10*1024*1024) continue;
+
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            $new = date('YmdHis').'_'.bin2hex(random_bytes(4)).'.'.$ext;
+
+            $rel = '/uploads/inspection/'.$new;
+            $abs = PUBLIC_PATH . $rel;
+
+            if (!is_dir(dirname($abs))) {
+                mkdir(dirname($abs), 0775, true);
+            }
+
+            if (!move_uploaded_file($tmp, $abs)) continue;
+
+            $type = $types[$i] ?? '';
+
+            $att = new InspectionAttachment([
+                'request_id' => $req->id,
+                'attachment_type' => $type,
+                'file_path'  => $rel,
+                'file_name'  => $name,
+                'file_type'  => $mime,
+                'file_size'  => $size,
+                'created_by' => $session->user_id() ?? 0
+            ]);
+            $att->save();
+        }
+    }
+
+
+
     // ✅ 2. หาค่า action_id ที่ถูกต้องจาก code
     $action = LogAction::find_by_code('edit_request');
     if (!$action) throw new Exception("ไม่พบ log action: fisher_confirm_date");
-
-    $log = new InspectionLog();
-    $log->inspection_request_id = $req->id;
-    $log->action_id             = 3;
-    $log->note                  = "{$vessel_name} ถูกลบคำขอโดย user_id={$deleter_user_id}";
-    if (!$log->save()) {
-        if ($in_tx) Database::$database->rollback();
-        echo json_encode(['success' => false, 'message' => 'ลบสำเร็จ แต่บันทึก log ไม่สำเร็จ']);
-        exit;
-    }
-
     $log = new InspectionLog();
     $log->inspection_request_id = $req->id;
     $log->action_id             = 3;
     $log->note                  = "มีการปรับแก้ไขคำขอตรวจเรือ {$req->vessel_name}";
     $log->save();
-
+    if (!$log->save()) {
+        if ($in_tx) Database::$database->rollback();
+        echo json_encode(['success' => false, 'message' => 'แก้ไขคำขอสำเร็จ แต่บันทึก log ไม่สำเร็จ']);
+        exit;
+    }
     // 🔔 Notification → เจ้าหน้าที่หน่วยงานที่เลือก
     $officers = Officer::find_by_department_id($req->department_id);
     $notif_title = "มีการปรับแก้ไขคำขอตรวจเรือ ".$req->vessel_name;

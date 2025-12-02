@@ -221,7 +221,17 @@ class InspectionRequest extends DatabaseObject {
         $sql .= " ORDER BY confirmed_inspect_date ASC";
         return static::find_by_sql($sql);
     }
+    public static function find_today_tasks_by_user($created_by, $date) {
+        $created_by = self::$database->escape_string($created_by);
+        $date       = self::$database->escape_string($date);
 
+        $sql  = "SELECT * FROM " . static::$table_name;
+        $sql .= " WHERE created_by = '{$created_by}'";
+        $sql .= "   AND DATE(confirmed_inspect_date) = '{$date}'";
+        $sql .= " ORDER BY confirmed_inspect_date ASC";
+
+        return static::find_by_sql($sql);
+    }
     public function status_label() {
         $map = [
             'pending'     => 'รอดำเนินการ',

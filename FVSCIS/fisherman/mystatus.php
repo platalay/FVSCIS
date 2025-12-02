@@ -412,6 +412,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                 .removeClass('btn-secondary')
                                 .removeAttr('title');
                         }
+                        
 
                         $('#modalConfirmInspection').modal('show');
                     } else {
@@ -736,6 +737,11 @@ function openEditInspectionModal(id) {
       }, 400);
 
       // เปิด Modal
+        const attachments = Array.isArray(res.attachments) ? res.attachments : []
+        console.log('attachments from server:', attachments);
+        renderExistingManualAttachments(attachments);
+
+
       $('#editInspectionModal').modal('show');
     }
   });
@@ -749,14 +755,16 @@ $(document).ready(function () {
 
   $('#editInspectionForm').on('submit', function (e) {
     e.preventDefault();
-
     const $form = $(this);
-    const formData = $form.serialize();
+    const formEl = document.getElementById('editInspectionForm');
+    const formData = new FormData(formEl);
 
     $.ajax({
       url: $form.attr('action'),     // ajax/update_inspection.php
       method: 'POST',
       data: formData,
+      processData: false,   // สำคัญมาก
+      contentType: false,   // สำคัญมาก
       dataType: 'json',
       success: function (res) {
         if (!res.success) {
@@ -954,8 +962,268 @@ $(function () {
 });
 </script>
 
+ <script>
+// ===================== Edit Manual Modal: ไฟล์เดิม + ไฟล์ใหม่ =====================
+;(function () {
+  function bytesFmt(n) {
+    if (n < 1024) return n + ' B'
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'
+    return (n / 1048576).toFixed(1) + ' MB'
+  }
 
+  function isImgFile(f) {
+    return (
+      /^image\//i.test(f.type || '') ||
+      /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(f.name || '')
+    )
+  }
 
+  // ---------- 1) แสดงไฟล์เดิมของคำขอ (ใช้ attachments จาก PHP) ----------
+  window.renderExistingManualAttachments = function (attachments) {
+    const $modal = $('#editInspectionModal')
+    const $wrap = $modal.find('#manualExistingFiles').empty()
 
+    if (!attachments || !attachments.length) {
+      $wrap.append('<div class="text-muted small">ยังไม่มีไฟล์แนบเดิม</div>')
+      return
+    }
+
+    attachments.forEach((a) => {
+      const url = a.url_enc || a.url
+      if (!url) return
+
+      const isImg = !!a.is_image
+      const thumbInner = isImg
+        ? `<img src="${url}" alt="${a.name || ''}">`
+        : `<div class="icon-pdf">PDF</div>`
+
+      $wrap.append(`
+        <div class="col-6 col-md-3" data-attach-id="${a.id}">
+          <div class="file-card shadow-sm">
+
+            <div class="thumb-wrap">
+              <button type="button"
+                      class="btn btn-sm btn-danger btn-del-existing-manual"
+                      data-id="${a.id}" title="ลบไฟล์เดิม">
+                <i class="bi bi-x-lg"></i>
+              </button>
+
+              <a href="${url}" target="_blank" title="เปิดดูไฟล์เดิม">
+                ${thumbInner}
+              </a>
+            </div>
+
+            <div class="file-name mt-2 text-truncate" title="${a.name || ''}">
+              ${a.name || ''}
+            </div>
+
+            <div class="text-muted small">
+              ${a.attachment_type ? a.attachment_type : ''}
+            </div>
+          </div>
+        </div>
+      `)
+    })
+  }
+
+  // ---------- 2) sync input[type=file] สำหรับไฟล์ใหม่ ----------
+  function syncInputFilesManual() {
+    const $modal = $('#editInspectionModal')
+    const $input = $modal.find('#manualAttachmentsEdit')
+    const selected = $input.data('selected') || []
+    const dt = new DataTransfer()
+    selected.forEach((f) => dt.items.add(f))
+    if ($input[0]) $input[0].files = dt.files
+  }
+
+  // ---------- 3) แสดง preview ไฟล์ใหม่ ----------
+  function renderSelectedPreviewManual() {
+    const $modal = $('#editInspectionModal')
+    const $input = $modal.find('#manualAttachmentsEdit')
+    const $list = $modal.find('#manualSelectedFilesEdit')
+    const selected = $input.data('selected') || []
+
+    if (!selected.length) {
+      $list.empty()
+      return
+    }
+
+    let html = ''
+    selected.forEach((f, idx) => {
+      const isImg = isImgFile(f)
+      const src = isImg ? URL.createObjectURL(f) : ''
+
+      html += `
+        <div class="col-6 col-md-3">
+          <div class="border rounded p-2 shadow-sm file-card">
+
+            <div class="thumb-wrap">
+              <button type="button"
+                      class="btn btn-sm btn-danger btn-remove-new-manual"
+                      data-idx="${idx}"
+                      title="เอาไฟล์นี้ออก">
+                <i class="bi bi-x-lg"></i>
+              </button>
+
+              ${
+                isImg
+                  ? `<img src="${src}" alt="${f.name}">`
+                  : `<div class="icon-pdf">PDF</div>`
+              }
+            </div>
+
+            <div class="file-name mt-2 text-truncate" title="${f.name}">
+              ${f.name}
+            </div>
+            <div class="text-muted small">${bytesFmt(f.size || 0)}</div>
+
+            <select class="form-select form-select-sm mt-1"
+                    name="attachment_type_new[]">
+              <option value="ทะเบียนเรือ">ทะเบียนเรือ</option>
+              <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
+              <option value="ใบอนุญาตใช้เรือ">ใบอนุญาตใช้เรือ</option>
+              <option value="บัตรประชาชนผู้ยื่น">บัตรประชาชนผู้ยื่น</option>
+              <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
+              <option value="สำเนาบัตรประชาชนผู้มอบอำนาจ">สำเนาบัตรประชาชนผู้มอบอำนาจ</option>
+              <option value="บัตรประจำตัวตัวแทนนิติบุคคล">บัตรประจำตัวตัวแทนนิติบุคคล</option>
+              <option value="ใบรับรอง สร.3 ฉบับเก่า">ใบรับรอง สร.3 ฉบับเก่า</option>
+            </select>
+
+          </div>
+        </div>
+      `
+    })
+
+    $list.html(html)
+  }
+
+  // ---------- 4) event: เลือกไฟล์ใหม่ ----------
+  $('#editInspectionModal')
+    .off('change.manualAttachEdit')
+    .on('change.manualAttachEdit', '#manualAttachmentsEdit', function () {
+      const $modal = $('#editInspectionModal')
+      const $input = $modal.find('#manualAttachmentsEdit')
+
+      let selected = $input.data('selected') || []
+      const files = Array.from(this.files || [])
+
+      files.forEach((f) => {
+        if (!selected.some((x) => x.name === f.name && x.size === f.size)) {
+          selected.push(f)
+        }
+      })
+
+      $input.data('selected', selected)
+      syncInputFilesManual()
+      renderSelectedPreviewManual()
+    })
+    // ---------- 5) event: เอาไฟล์ใหม่ออก ----------
+    .off('click.removeNewManual')
+    .on('click.removeNewManual', '.btn-remove-new-manual', function () {
+      const $modal = $('#editInspectionModal')
+      const $input = $modal.find('#manualAttachmentsEdit')
+      let selected = $input.data('selected') || []
+      const idx = +$(this).data('idx')
+
+      if (idx >= 0) {
+        selected.splice(idx, 1)
+      }
+      $input.data('selected', selected)
+      syncInputFilesManual()
+      renderSelectedPreviewManual()
+    })
+
+  // ---------- 6) ลบไฟล์เดิมของ manual request ----------
+  $(document).on('click', '.btn-del-existing-manual', function () {
+    const attachId = $(this).data('id')
+    if (!attachId) return
+
+    const $btn = $(this)
+
+    Swal.fire({
+      title: 'ยืนยันการลบไฟล์?',
+      text: 'ไฟล์นี้จะถูกลบออกจากระบบถาวร',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ลบไฟล์',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+    }).then((result) => {
+      if (!result.isConfirmed) return
+
+      $btn.prop('disabled', true)
+
+      $.post(
+        'ajax/manual_request_attachment_delete.php',
+        { attachment_id: attachId },
+        function (res) {
+          if (res && res.success) {
+            $(`[data-attach-id="${attachId}"]`).remove()
+
+            Swal.fire({
+              icon: 'success',
+              title: 'ลบไฟล์เรียบร้อย',
+              timer: 900,
+              showConfirmButton: false,
+            })
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'ลบไม่สำเร็จ',
+              text: res?.message || 'เกิดข้อผิดพลาด',
+            })
+          }
+        },
+        'json'
+      )
+        .fail(() => {
+          Swal.fire({
+            icon: 'error',
+            title: 'เชื่อมต่อไม่ได้',
+            text: 'โปรดลองใหม่อีกครั้ง',
+          })
+        })
+        .always(() => {
+          $btn.prop('disabled', false)
+        })
+    })
+  })
+
+  // ---------- 7) รีเซ็ตเมื่อปิด modal ----------
+  $('#editInspectionModal').on('hidden.bs.modal', function () {
+    const $modal = $('#editInspectionModal')
+    const $input = $modal.find('#manualAttachmentsEdit')
+    $input.val('').removeData('selected')
+    $modal.find('#manualSelectedFilesEdit').empty()
+    $modal.find('#manualExistingFiles').empty()
+  })
+})()
+</script>
+
+<script>
+$(document).ready(function () {
+
+    let table;
+
+    // ถ้าเคยถูก init เป็น DataTable แล้ว (เช่น จาก dataTables-demo.js)
+    if ($.fn.DataTable.isDataTable('#dataTable')) {
+        table = $('#dataTable').DataTable();   // ดึง instance เดิม
+    } else {
+        table = $('#dataTable').DataTable({
+            // ใส่ options ของคุณถ้ามี เช่น paging, ordering ฯลฯ
+        });
+    }
+
+    // ----- ส่วนค้นหาด้วย shipcode -----
+    const params   = new URLSearchParams(window.location.search);
+    const shipcode = params.get('shipcode');
+
+    if (shipcode) {
+        // column(3) = คอลัมน์ที่คุณอยากให้ search
+        table.column(1).search(shipcode).draw();
+    }
+});
+</script>
 
 <?php include("../../private/shared/footerall.php"); ?>

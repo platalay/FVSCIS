@@ -62,6 +62,7 @@ include("../../private/shared/topbarofficer.php");
                                                     <i class="fas fa-search"></i>
                                                 </button>
                                                 <button class="btn btn-sm btn-outline-primary btn-print-form1"
+                                                        title="พิมพ์ สร.๑"
                                                         data-id="<?= h($req->id) ?>">
                                                   <i class="fas fa-print"></i>
                                                 </button>
@@ -215,14 +216,14 @@ include("../../private/shared/topbarofficer.php");
     <script>
         // ======================= CONSTANTS ร่วม =======================
         const ATTACH_TYPES = [
-        { value: 'ทะเบียนเรือ',             label: 'ทะเบียนเรือ' },
-        { value: 'ใบอนุญาตทำการประมง',     label: 'ใบอนุญาตทำการประมง' },
-        { value: 'บัตรประชาชน',             label: 'บัตรประชาชน' },
-        { value: 'หนังสือมอบอำนาจ',         label: 'หนังสือมอบอำนาจ' },
-        { value: 'ผลตรวจสุขอนามัยเรือ',     label: 'ผลตรวจสุขอนามัยเรือ' },
-        { value: 'ใบแจ้งผลตรวจ',             label: 'ใบแจ้งผลตรวจ' },
-        { value: 'ใบรับรอง สร.3',            label: 'ใบรับรอง สร.3' },
-        { value: 'อื่น ๆ',                    label: 'อื่น ๆ' },
+        { value: 'ทะเบียนเรือ',         label: 'ทะเบียนเรือ' },
+    { value: 'ใบอนุญาตทำการประมง', label: 'ใบอนุญาตทำการประมง' },
+    { value: 'ใบอนุญาตใช้เรือ', label: 'ใบอนุญาตใช้เรือ' },
+    { value: 'บัตรประชาชนผู้ยื่น',         label: 'บัตรประชาชนผู้ยื่น' },
+    { value: 'หนังสือมอบอำนาจ',     label: 'หนังสือมอบอำนาจ' },
+    { value: 'สำเนาบัตรประชาชนผู้มอบอำนาจ',         label: 'สำเนาบัตรประชาชนผู้มอบอำนาจ' },
+    { value: 'บัตรประจำตัวตัวแทนนิติบุคคล', label: 'บัตรประจำตัวตัวแทนนิติบุคคล' },
+    { value: 'ใบรับรอง สร.3 ฉบับเก่า',        label: 'ใบรับรอง สร.3 ฉบับเก่า' },
         ];
 
         // ใช้ DataTransfer แยกกันระหว่าง สร้าง และ แก้ไข
@@ -647,12 +648,12 @@ $(function () {
   const ATTACH_TYPES = [
     { value: 'ทะเบียนเรือ',         label: 'ทะเบียนเรือ' },
     { value: 'ใบอนุญาตทำการประมง', label: 'ใบอนุญาตทำการประมง' },
-    { value: 'บัตรประชาชน',         label: 'บัตรประชาชน' },
+    { value: 'ใบอนุญาตใช้เรือ', label: 'ใบอนุญาตใช้เรือ' },
+    { value: 'บัตรประชาชนผู้ยื่น',         label: 'บัตรประชาชนผู้ยื่น' },
     { value: 'หนังสือมอบอำนาจ',     label: 'หนังสือมอบอำนาจ' },
-    { value: 'ผลตรวจสุขอนามัยเรือ', label: 'ผลตรวจสุขอนามัยเรือ' },
-    { value: 'ใบแจ้งผลตรวจ',         label: 'ใบแจ้งผลตรวจ' },
-    { value: 'ใบรับรอง สร.3',        label: 'ใบรับรอง สร.3' },
-    { value: 'อื่น ๆ',                label: 'อื่น ๆ' },
+    { value: 'สำเนาบัตรประชาชนผู้มอบอำนาจ',         label: 'สำเนาบัตรประชาชนผู้มอบอำนาจ' },
+    { value: 'บัตรประจำตัวตัวแทนนิติบุคคล', label: 'บัตรประจำตัวตัวแทนนิติบุคคล' },
+    { value: 'ใบรับรอง สร.3 ฉบับเก่า',        label: 'ใบรับรอง สร.3 ฉบับเก่า' },
   ]
 
   function renderList (oldTypes = []) {
@@ -1405,12 +1406,12 @@ $(document).ready(function () {
                     name="attachment_type_new[]">
               <option value="ทะเบียนเรือ">ทะเบียนเรือ</option>
               <option value="ใบอนุญาตทำการประมง">ใบอนุญาตทำการประมง</option>
-              <option value="บัตรประชาชน">บัตรประชาชน</option>
+              <option value="ใบอนุญาตใช้เรือ">ใบอนุญาตใช้เรือ</option>
+              <option value="บัตรประชาชนผู้ยื่น">บัตรประชาชนผู้ยื่น</option>
               <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
-              <option value="ผลตรวจสุขอนามัยเรือ">ผลตรวจสุขอนามัยเรือ</option>
-              <option value="ใบแจ้งผลตรวจ">ใบแจ้งผลตรวจ</option>
-              <option value="ใบรับรอง สร.3">ใบรับรอง สร.3</option>
-              <option value="อื่น ๆ">อื่น ๆ</option>
+              <option value="สำเนาบัตรประชาชนผู้มอบอำนาจ">สำเนาบัตรประชาชนผู้มอบอำนาจ</option>
+              <option value="บัตรประจำตัวตัวแทนนิติบุคคล">บัตรประจำตัวตัวแทนนิติบุคคล</option>
+              <option value="ใบรับรอง สร.3 ฉบับเก่า">ใบรับรอง สร.3 ฉบับเก่า</option>
             </select>
 
           </div>
@@ -1811,7 +1812,33 @@ $(function () {
 
 });
 </script>
-               
+           
+<script>
+$(document).ready(function () {
+
+    let table;
+
+    // ถ้าเคยถูก init เป็น DataTable แล้ว (เช่น จาก dataTables-demo.js)
+    if ($.fn.DataTable.isDataTable('#dataTable')) {
+        table = $('#dataTable').DataTable();   // ดึง instance เดิม
+    } else {
+        table = $('#dataTable').DataTable({
+            // ใส่ options ของคุณถ้ามี เช่น paging, ordering ฯลฯ
+        });
+    }
+
+    // ----- ส่วนค้นหาด้วย shipcode -----
+    const params   = new URLSearchParams(window.location.search);
+    const shipcode = params.get('shipcode');
+
+    if (shipcode) {
+        // column(3) = คอลัมน์ที่คุณอยากให้ search
+        table.column(1).search(shipcode).draw();
+    }
+});
+</script>
+
+
 <?php 
 include("../../private/shared/footerall.php");
 ?>

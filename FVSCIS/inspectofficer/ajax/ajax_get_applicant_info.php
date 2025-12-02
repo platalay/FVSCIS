@@ -65,7 +65,7 @@ try {
     ];
 
     if ($applicant) {
-        $data['written_at']   = $applicant->written_at   ?? $default_written_at;
+        //$data['written_at']   = $applicant->written_at   ?? $default_written_at;
         $data['written_date'] = $applicant->written_date ?? $default_written_date;
 
         $data['is_juristic']  = (int)($applicant->is_juristic ?? 0);

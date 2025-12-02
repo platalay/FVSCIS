@@ -20,6 +20,8 @@ $active_certificates = FvSanitationCertificationOld::count_active_by_fisherman($
 
 // 5 คำขอล่าสุด
 $latest_requests = InspectionRequest::find_recent_by_fisherman($fisherman->id ?? 0, 5);
+$today = date('Y-m-d');
+$my_today_tasks = InspectionRequest::find_today_tasks_by_user($fisherman->id, $today);
 
 include("../../private/shared/headeruser.php");
 include("../../private/shared/sidebaruser.php");
@@ -115,7 +117,7 @@ include("../../private/shared/topbaruser.php");
 
   <!-- Row: Latest Requests Table -->
   <div class="row">
-    <div class="col-lg-12">
+    <div class="col-lg-8">
       <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
           <h6 class="m-0 font-weight-bold text-primary">คำขอรับการตรวจล่าสุดของคุณ</h6>
@@ -129,9 +131,10 @@ include("../../private/shared/topbaruser.php");
               <table class="table table-bordered table-sm mb-0">
                 <thead class="thead-light">
                   <tr>
-                    <th style="width: 10%;">เลขที่คำขอ</th>
-                    <th style="width: 25%;">ชื่อเรือ</th>
-                    <th style="width: 20%;">ท่าเรือ</th>
+                    <th style="width: 10%;"></th>
+                    <th style="width: 15%;">ทะเบียนเรือ</th>
+                    <th style="width: 15%;">ชื่อเรือ</th>
+                    <th style="width: 15%;">ท่าเรือ</th>
                     <th style="width: 15%;">สถานะ</th>
                     <th style="width: 15%;">วันที่ยื่นคำขอ</th>
                     <th style="width: 15%;">วันที่นัดตรวจ</th>
@@ -140,7 +143,12 @@ include("../../private/shared/topbaruser.php");
                 <tbody>
                 <?php foreach ($latest_requests as $req) { ?>
                   <tr>
-                    <td><?php echo h($req->request_code ?? $req->id); ?></td>
+                    <td class="text-center">
+                        <a href="mystatus.php?shipcode=<?= urlencode(h($req->ship_code)); ?>" class="btn btn-sm btn-outline-primary">
+                          จัดการ
+                        </a>
+                    </td>
+                     <td><?php echo h($req->ship_code ?? '-'); ?></td>
                     <td><?php echo h($req->vessel_name ?? '-'); ?></td>
                     <td><?php echo h($req->port_name ?? '-'); ?></td>
                     <td>
@@ -159,7 +167,7 @@ include("../../private/shared/topbaruser.php");
                       ?>
                     </td>
                     <td><?php echo h(thai_date($req->created_at ?? '')); ?></td>
-                    <td><?php echo h(thai_date($req->inspect_date ?? '')); ?></td>
+                    <td><?php echo h(thai_date($req->confirmed_inspect_date ?? '')); ?></td>
                   </tr>
                 <?php } ?>
                 </tbody>
@@ -171,7 +179,44 @@ include("../../private/shared/topbaruser.php");
         </div>
       </div>
     </div>
+
+    <!-- ภารกิจของฉันวันนี้ -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-info">ภารกิจของฉันวันนี้</h6>
+        </div>
+        <div class="card-body">
+          <?php if (empty($my_today_tasks)) { ?>
+            <div class="text-muted small">วันนี้ยังไม่มีภารกิจตรวจเรือที่ได้รับมอบหมาย</div>
+          <?php } else { ?>
+            <ul class="list-group list-group-flush">
+              <?php foreach ($my_today_tasks as $task) : ?>
+                <li class="list-group-item px-0">
+                  <div class="font-weight-bold">
+                    <?php echo h($task->ship_code); ?> - <?php echo h($task->vessel_name); ?>
+                  </div>
+                  <div class="small text-muted">
+                    นัดตรวจ: <?php echo h(thai_date($task->confirmed_inspect_date)); ?><br>
+                    สถานที่: <?php echo h($task->port_name ?? '-'); ?>
+                  </div>
+                  <div class="mt-1">
+                    <a href="mystatus.php?shipcode=<?= urlencode(h($task->ship_code)); ?>" 
+                      class="btn btn-sm btn-outline-secondary">
+                      เปิดดูคำขอ
+                    </a>
+                  </div>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          <?php } ?>
+        </div>
+      </div>
+    </div>
+
   </div>
+
+  
 
 </div>
 <!-- /.container-fluid -->

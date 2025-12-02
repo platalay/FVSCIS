@@ -108,6 +108,35 @@
             </div>
           </div>
 
+          <!-- แนบไฟล์ใหม่เพิ่ม (ถ้าจะให้แก้ไฟล์เก่าทีหลังค่อยทำ endpoint ลบ) -->
+            <!-- input file old new -->
+                                <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                        <div class="fw-semibold">ไฟล์แนบใบรับรอง</div>
+                                        <div class="text-muted small">รองรับ .jpg .jpeg .png .gif .webp .pdf (สูงสุด ~10MB/ไฟล์)</div>
+                                </div>
+                                <div style="min-width:260px;">
+                                        <!-- ใช้ name="attachments[]" ให้เข้ากับสคริปต์บันทึกเดิมของคุณ -->
+                                        <input type="file" id="manualAttachmentsEdit" name="attachments[]" multiple
+                                        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+                                        class="form-control form-control-sm">
+                                </div>
+                                </div>
+
+                                <!-- พรีวิวไฟล์ที่ *จะอัปโหลดใหม่* -->
+                                <div class="row g-3 mt-2" id="manualSelectedFilesEdit"></div>
+
+                                <!-- รายการไฟล์ที่มีอยู่เดิมในระบบ -->
+                                <div class="mt-3">
+                                <div class="fw-semibold mb-2">ไฟล์ที่แนบไว้แล้ว</div>
+                                <div class="row g-3" id="manualExistingFiles"></div>
+                                </div>
+                                </div>
+                                </div>
+
+                                <!-- /input file old new --> 
           <!-- Vessel Name -->
           <input type="hidden" name="request[vessel_name]" id="edit_hidden_vessel_name">
 

@@ -511,5 +511,162 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script>
+;(function () {
+  const input   = document.getElementById('attachments')
+  const preview = document.getElementById('filePreview')
+
+  // ใช้ DataTransfer เก็บไฟล์จริงที่ส่งไปกับฟอร์ม
+  const dt = new DataTransfer()
+
+  // dropdown ประเภทเอกสาร
+  const ATTACH_TYPES = [
+    { value: 'ทะเบียนเรือ',         label: 'ทะเบียนเรือ' },
+    { value: 'ใบอนุญาตทำการประมง', label: 'ใบอนุญาตทำการประมง' },
+    { value: 'ใบอนุญาตใช้เรือ', label: 'ใบอนุญาตใช้เรือ' },
+    { value: 'บัตรประชาชนผู้ยื่น',         label: 'บัตรประชาชนผู้ยื่น' },
+    { value: 'หนังสือมอบอำนาจ',     label: 'หนังสือมอบอำนาจ' },
+    { value: 'สำเนาบัตรประชาชนผู้มอบอำนาจ',         label: 'สำเนาบัตรประชาชนผู้มอบอำนาจ' },
+    { value: 'บัตรประจำตัวตัวแทนนิติบุคคล', label: 'บัตรประจำตัวตัวแทนนิติบุคคล' },
+    { value: 'ใบรับรอง สร.3 ฉบับเก่า',        label: 'ใบรับรอง สร.3 ฉบับเก่า' },
+  ]
+
+  function renderList (oldTypes = []) {
+    preview.innerHTML = ''
+
+    const row = document.createElement('div')
+    row.className = 'row g-3'
+    preview.appendChild(row)
+
+    for (let i = 0; i < dt.files.length; i++) {
+      const f = dt.files[i]
+
+      const col  = document.createElement('div')
+      col.className = 'col-md-4 col-sm-6'
+
+      const card = document.createElement('div')
+      card.className = 'border rounded shadow-sm p-2 position-relative h-100 bg-white'
+
+      // 🔴 ปุ่มลบ (มุมขวาบน เห็นชัด ๆ)
+      const btnDel = document.createElement('button')
+      btnDel.type = 'button'
+      btnDel.className = 'btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle'
+      btnDel.style.zIndex = '10'
+      btnDel.innerHTML = '<i class="fas fa-times"></i>'
+
+      btnDel.addEventListener('click', function () {
+        // เก็บประเภทเดิมก่อนลบ
+        const currentTypes = []
+        preview.querySelectorAll('select.attach-type').forEach(sel => {
+          currentTypes.push(sel.value)
+        })
+        const newTypes = currentTypes.filter((t, idx) => idx !== i)
+
+        // ลบไฟล์ index i ออกจาก DataTransfer
+        const ndt = new DataTransfer()
+        for (let j = 0; j < dt.files.length; j++) {
+          if (j !== i) ndt.items.add(dt.files[j])
+        }
+        dt.items.clear()
+        for (let k = 0; k < ndt.files.length; k++) dt.items.add(ndt.files[k])
+        input.files = dt.files
+
+        renderList(newTypes)
+      })
+
+      // ส่วนรูป (ratio 16:9)
+      const ratio = document.createElement('div')
+      ratio.className = 'ratio ratio-16x9 mb-2'
+
+      const thumbBox = document.createElement('div')
+      thumbBox.className =
+        'w-100 h-100 d-flex align-items-center justify-content-center border rounded'
+      thumbBox.style.overflow = 'hidden'
+
+      if (f.type.startsWith('image/')) {
+        const img = document.createElement('img')
+        img.src = URL.createObjectURL(f)
+        img.style.width = '100%'
+        img.style.height = '100%'
+        img.style.objectFit = 'cover'
+        thumbBox.appendChild(img)
+      } else {
+        const ext = f.name.split('.').pop().toUpperCase()
+        thumbBox.textContent = ext
+        thumbBox.style.fontSize = '12px'
+      }
+
+      ratio.appendChild(thumbBox)
+
+      // รายละเอียดไฟล์
+      const info = document.createElement('div')
+      info.className = 'mb-2'
+      const sizeKB = (f.size / 1024).toFixed(1)
+      info.innerHTML =
+        `<div class="fw-semibold text-truncate" title="${f.name}">${f.name}</div>` +
+        `<div class="text-muted" style="font-size:12px">${sizeKB} KB</div>`
+
+      // dropdown ประเภทเอกสาร
+      const sel = document.createElement('select')
+      sel.className = 'form-select form-select-sm attach-type'
+      sel.name = 'attachment_types[]'
+
+      ATTACH_TYPES.forEach(t => {
+        const opt = document.createElement('option')
+        opt.value = t.value
+        opt.textContent = t.label
+        sel.appendChild(opt)
+      })
+
+      const defaultType = oldTypes[i] || ATTACH_TYPES[0].value
+      sel.value = defaultType
+
+      // ประกอบการ์ด
+      card.appendChild(btnDel)
+      card.appendChild(ratio)
+      card.appendChild(info)
+      card.appendChild(sel)
+      col.appendChild(card)
+      row.appendChild(col)
+    }
+  }
+
+  // เมื่อเลือกไฟล์ใหม่
+  input.addEventListener('change', e => {
+    const maxSize  = 10 * 1024 * 1024 // 10MB
+    const allowExt = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+
+    const currentTypes = []
+    preview.querySelectorAll('select.attach-type').forEach(sel => {
+      currentTypes.push(sel.value)
+    })
+
+    for (const f of e.target.files) {
+      const ext = f.name.split('.').pop().toLowerCase()
+      if (!allowExt.includes(ext)) {
+        alert(`${f.name}: ชนิดไฟล์ไม่อนุญาต`)
+        continue
+      }
+      if (f.size > maxSize) {
+        alert(`${f.name}: ไฟล์ใหญ่เกิน 10MB`)
+        continue
+      }
+      dt.items.add(f)
+      currentTypes.push(ATTACH_TYPES[0].value)
+    }
+
+    input.value = ''
+    input.files = dt.files
+    renderList(currentTypes)
+  })
+
+  // 🧹 ฟังก์ชันสำหรับล้างไฟล์แนบเวลาเปิดฟอร์มใหม่
+  window.resetManualAttachments = function () {
+    dt.items.clear()
+    input.value = ''
+    preview.innerHTML = ''
+  }
+})()
+</script>
 
 <?php include("../../private/shared/footerall.php"); ?>
