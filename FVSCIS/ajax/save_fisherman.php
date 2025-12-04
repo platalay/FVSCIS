@@ -71,13 +71,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fisherman']['citizen_
             $admins = Officer::find_admins();  
             if (!empty($admins)) {
                 foreach ($admins as $admin) {
-                    $msg = "มีคำขอสมัครชาวประมงใหม่จาก "
-                        . ($fisherman->full_name ?? $fisherman->username ?? 'ไม่ทราบชื่อ');
+                    $msg = "มีคำขอสมัครชาวประมงใหม่จาก ". ($fisherman->full_name ?? $fisherman->username ?? 'ไม่ทราบชื่อ');
                     
                         $log = new InspectionLog();
                             $log->inspection_request_id = 0;
                             $log->action_id             = 1;
-                            $log->note                  = $msg
+                            $log->note                  = $msg;
                             $log->save();
                     Notification::create_notification(
                             $admin->id,        // user_id ของผู้รับ (admin แต่ละคน)

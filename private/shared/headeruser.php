@@ -32,6 +32,47 @@
     <link href="../css/sb-admin-2.min.css" rel="stylesheet" />
 
     <style>
+
+      table thead th {
+    background-color: #f8f9fa !important;
+    color: #495057 !important;
+    font-weight: 600;
+    }
+      /* 1. ยังไม่ได้นัดตรวจ */
+tr.tr-not-scheduled > td {
+    background-color: #f2f2f2 !important;
+    color: #555 !important;
+}
+
+/* 2. นัดแล้ว แต่ยังไม่ยืนยัน */
+tr.tr-wait-confirm > td {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+}
+
+/* 3. นัดแล้ว + ยืนยันแล้ว (พร้อมตรวจ) */
+tr.tr-pending-confirmed > td {
+    background-color: #e2f0cb !important;
+    color: #33691e !important;
+}
+
+/* 4. Inspecting / ทำผลตรวจ / ส่งอนุมัติ */
+tr.tr-inspecting > td {
+    background-color: #d7e3fc !important;
+    color: #084298 !important;
+}
+
+/* 5. Completed / Passed / Failed / Conditional */
+tr.tr-completed > td {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+}
+
+/* 6. Cancelled */
+tr.tr-cancelled > td {
+    background-color: #f8d7da !important;
+    color: #842029 !important;
+}
       /* จัด layout ภายในโมดัลให้เลื่อนแค่ .modal-body */
       #editInspectionModal .modal-content { display: flex; flex-direction: column; }
       #editInspectionModal .modal-body { overflow-y: auto; }

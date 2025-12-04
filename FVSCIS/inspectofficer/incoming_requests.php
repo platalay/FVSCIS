@@ -38,21 +38,72 @@ include("../../private/shared/topbarofficer.php");
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    // ✅ ดึงเฉพาะคำขอที่ department_id ตรงกับเจ้าหน้าที่
-                                    $requests = InspectionRequest::find_by_department_id($Officer->departments_id); 
+                                <?php
+                                // ✅ ดึงเฉพาะคำขอที่ department_id ตรงกับเจ้าหน้าที่
+                                $requests = InspectionRequest::find_by_department_id($Officer->departments_id); 
 
-                                    if (empty($requests)) :
-                                    ?>
-                                        <tr>
-                                            <td colspan="9" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือที่รับผิดชอบ</td>
-                                        </tr>
-                                    <?php
-                                    else:
-                                        foreach ($requests as $req) :
-                                    ?>
-                                        <tr style="font-size: 14px;">
-                                            <td data-order="0">
+                                if (empty($requests)) :
+                                ?>
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือที่รับผิดชอบ</td>
+                                    </tr>
+                                <?php
+                                else:
+                                    foreach ($requests as $req) :
+
+                                        // ==========================
+                                        // กำหนดสีแถว + ข้อความแสดงผล
+                                        // ==========================
+                                        $trClass     = '';
+                                        $displayText = '';
+
+                                        $status    = $req->status;
+                                        $hasDate   = !empty($req->confirmed_inspect_date) && $req->confirmed_inspect_date !== '0000-00-00';
+                                        $isConfirm = (int)($req->is_confirm ?? 0);
+                                        $dateText  = $hasDate ? thai_date($req->confirmed_inspect_date) : '';
+
+                                        // 1) PENDING: ยังไม่ได้นัดตรวจ
+                                        if ($status === InspectionRequest::STATUS_PENDING && !$hasDate) {
+                                            $trClass     = 'tr-not-scheduled';           // เทา
+                                            $displayText = 'ยังไม่ได้นัดตรวจ';
+                                        }
+                                        // 2) PENDING: นัดแล้ว แต่ผู้ยื่นยังไม่ยืนยัน
+                                        else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 0) {
+                                            $trClass     = 'tr-wait-confirm';            // เหลือง
+                                            $displayText = 'นัดตรวจแล้ว (' . $dateText . ')';
+                                        }
+                                        // 3) PENDING: นัดแล้ว และผู้ยื่นยืนยันแล้ว
+                                        else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 1) {
+                                            $trClass     = 'tr-pending-confirmed';       // เขียวอ่อน
+                                            $displayText = 'ยืนยันวันตรวจแล้ว (' . $dateText . ')';
+                                        }
+                                        // 4) อยู่ระหว่างตรวจ / จัดทำผลตรวจ / ส่งอนุมัติ
+                                        else if ($status === InspectionRequest::STATUS_INSPECTING || $status === InspectionRequest::STATUS_PASSED) {
+                                            $trClass     = 'tr-inspecting';              // ฟ้าอ่อน
+                                            $displayText = 'อยู่ระหว่างตรวจ / จัดทำผลตรวจ';
+                                        }
+                                        // 5) กระบวนการเสร็จสิ้นแล้ว (ผลตรวจสรุปแล้ว)
+                                        else if (
+                                            $status === InspectionRequest::STATUS_FAILED ||
+                                            $status === InspectionRequest::STATUS_CONDITIONAL ||
+                                            $status === InspectionRequest::STATUS_COMPLETED
+                                        ) {
+                                            $trClass     = 'tr-completed';               // เขียว (จบกระบวนการแล้ว)
+                                            $displayText = 'ตรวจเสร็จสิ้นแล้ว';
+                                        }
+                                        // 6) ยกเลิกคำขอ
+                                        else if ($status === InspectionRequest::STATUS_CANCELLED) {
+                                            $trClass     = 'tr-cancelled';               // แดงอ่อน
+                                            $displayText = 'ยกเลิกคำขอ';
+                                        }
+                                        // fallback กันเหนียว
+                                        else {
+                                            $trClass     = '';
+                                            $displayText = $displayText ?: '-';
+                                        }
+                                ?>
+                                    <tr style="font-size: 14px;" class="<?= $trClass ?>">
+                                        <td data-order="0">
                                             <div class="d-flex align-items-center gap-1">
                                                 <!-- ปุ่มดูรายละเอียด -->
                                                 <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
@@ -61,11 +112,15 @@ include("../../private/shared/topbarofficer.php");
                                                         onclick="loadRequestDetail(<?= h($req->id) ?>)">
                                                     <i class="fas fa-search"></i>
                                                 </button>
+
+                                                <!-- ปุ่มพิมพ์ สร.1 -->
                                                 <button class="btn btn-sm btn-outline-primary btn-print-form1"
                                                         title="พิมพ์ สร.๑"
                                                         data-id="<?= h($req->id) ?>">
                                                   <i class="fas fa-print"></i>
                                                 </button>
+
+                                                <!-- ปุ่มไฟล์แนบ -->
                                                 <?php
                                                 $attCount = InspectionAttachment::count_by_request_id($req->id);
                                                 if ($attCount > 0): ?>
@@ -76,29 +131,27 @@ include("../../private/shared/topbarofficer.php");
                                                 </button>
                                                 <?php endif; ?> 
 
-                                                <?php if((int)$session->user_id() === (int)$req->created_by) { ?>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-warning btn-edit-manual"
-                                                        title="แก้ไขคำขอ"
-                                                        data-id="<?= h($req->id); ?>">
-                                                <i class="fas fa-edit"></i>
-                                                </button>
-                                                <?php } ?>
-                                                
-                                                <?php if((int)$session->user_id() === (int)$req->created_by) { ?>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-danger btn-delete-request"
-                                                        title = "ลบคำขอ"
-                                                        data-id="<?= h($req->id); ?>">
-                                                    <i class="bi bi-trash"></i> 
-                                                </button>
-                                                <?php } ?>
+                                                <!-- แก้ไขคำขอ / ลบคำขอ (เฉพาะคนที่สร้าง) -->
+                                                <?php if ((int)$session->user_id() === (int)$req->created_by) { ?>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-warning btn-edit-manual"
+                                                            title="แก้ไขคำขอ"
+                                                            data-id="<?= h($req->id); ?>">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
 
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-danger btn-delete-request"
+                                                            title="ลบคำขอ"
+                                                            data-id="<?= h($req->id); ?>">
+                                                        <i class="bi bi-trash"></i> 
+                                                    </button>
+                                                <?php } ?>
 
                                                 <!-- ปุ่มฟอร์มตรวจ -->
                                                 <?php if ($req->is_confirm == 1): ?>
                                                     <a href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>"
-                                                    class="btn btn-success btn-sm" title="ฟอร์มตรวจ">
+                                                      class="btn btn-success btn-sm" title="ฟอร์มตรวจ">
                                                         <i class="fas fa-file-signature"></i>
                                                     </a>
                                                 <?php else : ?>
@@ -106,90 +159,88 @@ include("../../private/shared/topbarofficer.php");
                                                         <i class="fas fa-file-signature"></i>
                                                     </button>
                                                 <?php endif; ?>
-                                                   
-                                                
                                             </div>
-                                            </td>
+                                        </td>
 
+                                        <td><?= h($req->ship_code) ?></td>
+                                        <td><?= h($req->vessel_name) ?></td>
+                                        <td><?= h($req->port_name) ?></td>
+                                        <td><?= thai_date($req->inspect_date_start) . " ถึงวันที่ " . thai_date($req->inspect_date_end) ?></td>
+                                        <td><?= $displayText ?></td>
 
-                                            <td><?= h($req->ship_code) ?></td>
-                                            <td><?= h($req->vessel_name) ?></td>
-                                            <td><?= h($req->port_name) ?></td>
-                                            <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
-                                            <td><?= thai_date($req->confirmed_inspect_date) ?></td>
-                                            <td class="text-center">
+                                        <td class="text-center">
                                             <?php
                                                 $icons = [];
 
                                                 // ① ตรวจแบบ EU หรือทั่วไป
                                                 if ($req->inspection_form_type == 2) {
-                                                $icons[] = '<i class="fas fa-globe-europe eu" title="ตรวจเพื่อ EU Export"></i>';
+                                                    $icons[] = '<i class="fas fa-globe-europe eu" title="ตรวจเพื่อ EU Export"></i>';
                                                 } else {
-                                                $icons[] = '<i class="fas fa-ship normal" title="ตรวจทั่วไป (แบบที่ 1)"></i>';
+                                                    $icons[] = '<i class="fas fa-ship normal" title="ตรวจทั่วไป (แบบที่ 1)"></i>';
                                                 }
 
                                                 // ② ใครเป็นคนยื่น
                                                 if ($req->is_manual_case == 1) {
-                                                $icons[] = '<i class="fas fa-user-tie officer" title="เจ้าหน้าที่สร้างคำขอ"></i>';
+                                                    $icons[] = '<i class="fas fa-user-tie officer" title="เจ้าหน้าที่สร้างคำขอ"></i>';
                                                 } else {
-                                                $icons[] = '<i class="fas fa-user user" title="ผู้ประกอบการยื่นเอง"></i>';
+                                                    $icons[] = '<i class="fas fa-user user" title="ผู้ประกอบการยื่นเอง"></i>';
                                                 }
 
                                                 // ③ ห้องเย็นหรือไม่
                                                 if ($req->cold_room_flag == 1) {
-                                                $icons[] = '<i class="fas fa-snowflake cold" title="เรือห้องเย็น"></i>';
+                                                    $icons[] = '<i class="fas fa-snowflake cold" title="เรือห้องเย็น"></i>';
                                                 } else {
-                                                $icons[] = '<i class="fas fa-thermometer-half warm" title="เรือทั่วไป (ไม่มีห้องเย็น)"></i>';
+                                                    $icons[] = '<i class="fas fa-thermometer-half warm" title="เรือทั่วไป (ไม่มีห้องเย็น)"></i>';
                                                 }
 
                                                 echo '<span class="req-type-pill">' . implode(' ', $icons) . '</span>';
                                             ?>
-                                            </td>
+                                        </td>
 
+                                        <td><?= thai_date($req->created_at) ?></td>
+                                        <td>
+                                            <?php
+                                            switch ($req->status) {
+                                                case InspectionRequest::STATUS_PENDING:
+                                                    echo '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_INSPECTING:
+                                                    echo '<span class="badge bg-primary">อยู่ระหว่างตรวจ</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_PASSED:
+                                                    echo '<span class="badge bg-success">ผ่านการตรวจ</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_FAILED:
+                                                    echo '<span class="badge bg-danger">ไม่ผ่านการตรวจ</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_CONDITIONAL:
+                                                    echo '<span class="badge bg-info text-dark">ผ่านแบบมีเงื่อนไข</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_COMPLETED:
+                                                    echo '<a href="certificate_preview.php?id=' . h($req->id) . '" target="_blank" class="badge bg-success text-decoration-none">
+                                                                <i class="fas fa-file-image"></i> อนุมัติ
+                                                          </a>';
+                                                    break;
+                                                case InspectionRequest::STATUS_CANCELLED:
+                                                    echo '<span class="badge bg-secondary">ยกเลิก</span>';
+                                                    break;
+                                                default:
+                                                    echo '<span class="badge bg-dark">ไม่ทราบ</span>';
+                                            }
+                                            ?>
+                                            <button class="btn btn-link p-0 text-muted btn-log"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="top"
+                                                    title="ดูประวัติ"
+                                                    data-request-id="<?= h($req->id) ?>"
+                                                    data-vessel="<?= h($req->vessel_name); ?>">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; endif; ?>
+                            </tbody>
 
-                                            <td><?= thai_date($req->created_at) ?></td>
-                                            <td>
-                                                <?php
-                                                switch ($req->status) {
-                                                    case InspectionRequest::STATUS_PENDING:
-                                                        echo '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_INSPECTING:
-                                                        echo '<span class="badge bg-primary">อยู่ระหว่างตรวจ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_PASSED:
-                                                        echo '<span class="badge bg-success">ผ่านการตรวจ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_FAILED:
-                                                        echo '<span class="badge bg-danger">ไม่ผ่านการตรวจ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_CONDITIONAL:
-                                                        echo '<span class="badge bg-info text-dark">ผ่านแบบมีเงื่อนไข</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_COMPLETED:
-                                                        echo '<a href="certificate_preview.php?id=' . h($req->id) . '" target="_blank" class="badge bg-success text-decoration-none">
-                                                                    <i class="fas fa-file-image"></i> อนุมัติ
-                                                                </a>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_CANCELLED:
-                                                        echo '<span class="badge bg-secondary">ยกเลิก</span>';
-                                                        break;
-                                                    default:
-                                                        echo '<span class="badge bg-dark">ไม่ทราบ</span>';
-                                                }
-                                                ?>
-                                                <button class="btn btn-link p-0 text-muted btn-log"
-                                                        data-bs-toggle="tooltip" 
-                                                        data-bs-placement="top"
-                                                        title="ดูประวัติ"
-                                                        data-request-id="<?= h($req->id) ?>"
-                                                        data-vessel="<?php echo h($req->vessel_name); ?>">
-                                                    <i class="fas fa-history"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; endif; ?>
-                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -288,8 +339,10 @@ function loadRequestDetail(id) {
           year: 'numeric',
         })
         html += `<br><span class="text-success"><i class="fas fa-calendar-check"></i> มีการนัดหมายวันที่ ${displayDate} แล้ว</span>`
+        $('#btnConfirmDate').prop('disabled', false);
       } else {
         html += `<br><span class="text-danger"><i class="fas fa-exclamation-circle"></i> ยังไม่มีการนัดหมายวันตรวจ</span>`
+        $('#btnConfirmDate').prop('disabled', false);
       }
 
       html += `</p>`
@@ -299,6 +352,7 @@ function loadRequestDetail(id) {
         $('#btnConfirmDate').prop('disabled', true)
       } else {
         html += `<p><span class="text-danger"><i class="fas fa-calendar-check"></i> ยังไม่มีการยืนยันวันนัดตรวจ</span></p>`
+        $('#btnConfirmDate').prop('disabled', false);
       }
 
       $('#modalRequestBody').html(html)
@@ -336,7 +390,7 @@ $(document).on('click', '.btn-edit-manual', function () {
   if ($form.length && $form[0]) {
     $form[0].reset()
   }
-  $('#editFilePreview').empty()
+  $('#manualSelectedFilesEdit').empty()
 
   // เคลียร์ select + flag + checkbox
   $('#edit-port_tambon_id').val('')
@@ -636,163 +690,7 @@ $(function () {
 })
 </script>
 
-<script>
-;(function () {
-  const input   = document.getElementById('attachments')
-  const preview = document.getElementById('filePreview')
 
-  // ใช้ DataTransfer เก็บไฟล์จริงที่ส่งไปกับฟอร์ม
-  const dt = new DataTransfer()
-
-  // dropdown ประเภทเอกสาร
-  const ATTACH_TYPES = [
-    { value: 'ทะเบียนเรือ',         label: 'ทะเบียนเรือ' },
-    { value: 'ใบอนุญาตทำการประมง', label: 'ใบอนุญาตทำการประมง' },
-    { value: 'ใบอนุญาตใช้เรือ', label: 'ใบอนุญาตใช้เรือ' },
-    { value: 'บัตรประชาชนผู้ยื่น',         label: 'บัตรประชาชนผู้ยื่น' },
-    { value: 'หนังสือมอบอำนาจ',     label: 'หนังสือมอบอำนาจ' },
-    { value: 'สำเนาบัตรประชาชนผู้มอบอำนาจ',         label: 'สำเนาบัตรประชาชนผู้มอบอำนาจ' },
-    { value: 'บัตรประจำตัวตัวแทนนิติบุคคล', label: 'บัตรประจำตัวตัวแทนนิติบุคคล' },
-    { value: 'ใบรับรอง สร.3 ฉบับเก่า',        label: 'ใบรับรอง สร.3 ฉบับเก่า' },
-  ]
-
-  function renderList (oldTypes = []) {
-    preview.innerHTML = ''
-
-    const row = document.createElement('div')
-    row.className = 'row g-3'
-    preview.appendChild(row)
-
-    for (let i = 0; i < dt.files.length; i++) {
-      const f = dt.files[i]
-
-      const col  = document.createElement('div')
-      col.className = 'col-md-4 col-sm-6'
-
-      const card = document.createElement('div')
-      card.className = 'border rounded shadow-sm p-2 position-relative h-100 bg-white'
-
-      // 🔴 ปุ่มลบ (มุมขวาบน เห็นชัด ๆ)
-      const btnDel = document.createElement('button')
-      btnDel.type = 'button'
-      btnDel.className = 'btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle'
-      btnDel.style.zIndex = '10'
-      btnDel.innerHTML = '<i class="fas fa-times"></i>'
-
-      btnDel.addEventListener('click', function () {
-        // เก็บประเภทเดิมก่อนลบ
-        const currentTypes = []
-        preview.querySelectorAll('select.attach-type').forEach(sel => {
-          currentTypes.push(sel.value)
-        })
-        const newTypes = currentTypes.filter((t, idx) => idx !== i)
-
-        // ลบไฟล์ index i ออกจาก DataTransfer
-        const ndt = new DataTransfer()
-        for (let j = 0; j < dt.files.length; j++) {
-          if (j !== i) ndt.items.add(dt.files[j])
-        }
-        dt.items.clear()
-        for (let k = 0; k < ndt.files.length; k++) dt.items.add(ndt.files[k])
-        input.files = dt.files
-
-        renderList(newTypes)
-      })
-
-      // ส่วนรูป (ratio 16:9)
-      const ratio = document.createElement('div')
-      ratio.className = 'ratio ratio-16x9 mb-2'
-
-      const thumbBox = document.createElement('div')
-      thumbBox.className =
-        'w-100 h-100 d-flex align-items-center justify-content-center border rounded'
-      thumbBox.style.overflow = 'hidden'
-
-      if (f.type.startsWith('image/')) {
-        const img = document.createElement('img')
-        img.src = URL.createObjectURL(f)
-        img.style.width = '100%'
-        img.style.height = '100%'
-        img.style.objectFit = 'cover'
-        thumbBox.appendChild(img)
-      } else {
-        const ext = f.name.split('.').pop().toUpperCase()
-        thumbBox.textContent = ext
-        thumbBox.style.fontSize = '12px'
-      }
-
-      ratio.appendChild(thumbBox)
-
-      // รายละเอียดไฟล์
-      const info = document.createElement('div')
-      info.className = 'mb-2'
-      const sizeKB = (f.size / 1024).toFixed(1)
-      info.innerHTML =
-        `<div class="fw-semibold text-truncate" title="${f.name}">${f.name}</div>` +
-        `<div class="text-muted" style="font-size:12px">${sizeKB} KB</div>`
-
-      // dropdown ประเภทเอกสาร
-      const sel = document.createElement('select')
-      sel.className = 'form-select form-select-sm attach-type'
-      sel.name = 'attachment_types[]'
-
-      ATTACH_TYPES.forEach(t => {
-        const opt = document.createElement('option')
-        opt.value = t.value
-        opt.textContent = t.label
-        sel.appendChild(opt)
-      })
-
-      const defaultType = oldTypes[i] || ATTACH_TYPES[0].value
-      sel.value = defaultType
-
-      // ประกอบการ์ด
-      card.appendChild(btnDel)
-      card.appendChild(ratio)
-      card.appendChild(info)
-      card.appendChild(sel)
-      col.appendChild(card)
-      row.appendChild(col)
-    }
-  }
-
-  // เมื่อเลือกไฟล์ใหม่
-  input.addEventListener('change', e => {
-    const maxSize  = 10 * 1024 * 1024 // 10MB
-    const allowExt = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-
-    const currentTypes = []
-    preview.querySelectorAll('select.attach-type').forEach(sel => {
-      currentTypes.push(sel.value)
-    })
-
-    for (const f of e.target.files) {
-      const ext = f.name.split('.').pop().toLowerCase()
-      if (!allowExt.includes(ext)) {
-        alert(`${f.name}: ชนิดไฟล์ไม่อนุญาต`)
-        continue
-      }
-      if (f.size > maxSize) {
-        alert(`${f.name}: ไฟล์ใหญ่เกิน 10MB`)
-        continue
-      }
-      dt.items.add(f)
-      currentTypes.push(ATTACH_TYPES[0].value)
-    }
-
-    input.value = ''
-    input.files = dt.files
-    renderList(currentTypes)
-  })
-
-  // 🧹 ฟังก์ชันสำหรับล้างไฟล์แนบเวลาเปิดฟอร์มใหม่
-  window.resetManualAttachments = function () {
-    dt.items.clear()
-    input.value = ''
-    preview.innerHTML = ''
-  }
-})()
-</script>
 
 
 <script>
@@ -1174,118 +1072,7 @@ $(document).ready(function () {
 });
 </script>
 
-<script>
-// ======================= 3) PREVIEW ไฟล์ (สร้างคำขอ) =======================
-;(function () {
-  const input   = document.getElementById('attachments');
-  const preview = document.getElementById('filePreview');
-  if (!input || !preview) return;
 
-  function renderCreateList(oldTypes = []) {
-    preview.innerHTML = '';
-    const row = document.createElement('div');
-    row.className = 'row g-3';
-    preview.appendChild(row);
-
-    for (let i = 0; i < dtCreate.files.length; i++) {
-      const f   = dtCreate.files[i];
-      const col = document.createElement('div');
-      col.className = 'col-md-4 col-sm-6';
-
-      const card = document.createElement('div');
-      card.className = 'border rounded shadow-sm p-2 position-relative h-100 bg-white';
-
-      // ปุ่มลบ
-      const btnDel = document.createElement('button');
-      btnDel.type = 'button';
-      btnDel.className = 'btn btn-sm btn-link text-danger position-absolute top-0 end-0';
-      btnDel.innerHTML = '<i class="fas fa-times"></i>';
-      btnDel.onclick = () => {
-        const currentTypes = [];
-        preview.querySelectorAll('select.attach-type').forEach(sel => currentTypes.push(sel.value));
-
-        const ndt = new DataTransfer();
-        for (let j = 0; j < dtCreate.files.length; j++) {
-          if (j !== i) ndt.items.add(dtCreate.files[j]);
-        }
-        dtCreate = ndt;
-        input.files = dtCreate.files;
-
-        const newTypes = currentTypes.filter((t, idx) => idx !== i);
-        renderCreateList(newTypes);
-      };
-
-      const ratio = document.createElement('div');
-      ratio.className = 'ratio ratio-16x9 mb-2';
-
-      const box = document.createElement('div');
-      box.className = 'w-100 h-100 d-flex align-items-center justify-content-center border rounded';
-      box.style.overflow = 'hidden';
-
-      if (f.type.startsWith('image/')) {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(f);
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        box.appendChild(img);
-      } else {
-        const ext = f.name.split('.').pop().toUpperCase();
-        box.textContent = ext;
-        box.style.fontSize = '12px';
-      }
-
-      ratio.appendChild(box);
-
-      const info = document.createElement('div');
-      info.className = 'mb-2';
-      const sizeKB = (f.size / 1024).toFixed(1);
-      info.innerHTML =
-        `<div class="fw-semibold text-truncate" title="${f.name}">${f.name}</div>` +
-        `<div class="text-muted" style="font-size:12px">${sizeKB} KB</div>`;
-
-      const sel = document.createElement('select');
-      sel.className = 'form-select form-select-sm attach-type';
-      sel.name = 'attachment_types[]';
-      ATTACH_TYPES.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t.value;
-        opt.textContent = t.label;
-        sel.appendChild(opt);
-      });
-      const defaultType = oldTypes[i] || ATTACH_TYPES[0].value;
-      sel.value = defaultType;
-
-      card.appendChild(btnDel);
-      card.appendChild(ratio);
-      card.appendChild(info);
-      card.appendChild(sel);
-      col.appendChild(card);
-      row.appendChild(col);
-    }
-  }
-
-  input.addEventListener('change', e => {
-    const maxSize  = 10 * 1024 * 1024;
-    const allowExt = ['jpg','jpeg','png','gif','webp','pdf'];
-
-    const currentTypes = [];
-    preview.querySelectorAll('select.attach-type').forEach(sel => currentTypes.push(sel.value));
-
-    for (const f of e.target.files) {
-      const ext = f.name.split('.').pop().toLowerCase();
-      if (!allowExt.includes(ext)) { alert(`${f.name}: ชนิดไฟล์ไม่อนุญาต`); continue; }
-      if (f.size > maxSize) { alert(`${f.name}: ไฟล์ใหญ่เกิน 10MB`); continue; }
-      dtCreate.items.add(f);
-      currentTypes.push(ATTACH_TYPES[0].value);
-    }
-
-    input.value = '';
-    input.files = dtCreate.files;
-    renderCreateList(currentTypes);
-  });
-})();
-</script>
 
  <script>
 // ===================== Edit Manual Modal: ไฟล์เดิม + ไฟล์ใหม่ =====================
@@ -1836,6 +1623,157 @@ $(document).ready(function () {
         table.column(1).search(shipcode).draw();
     }
 });
+</script>
+
+<script>
+// ======================= PREVIEW ไฟล์ (สร้างคำขอ) =======================
+;(function () {
+  const input   = document.getElementById('attachments');
+  const preview = document.getElementById('filePreview');
+  if (!input || !preview) return;
+
+  function renderCreateList(oldTypes = []) {
+  console.log('renderCreateList: files =', dtCreate.files.length);
+
+  preview.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'row g-3';
+  preview.appendChild(row);
+
+  for (let i = 0; i < dtCreate.files.length; i++) {
+    const f   = dtCreate.files[i];
+
+    // ✅ ให้ใช้ col เหมือน modal edit
+    const col = document.createElement('div');
+    col.className = 'col-6 col-md-3';
+
+    // ✅ ใช้ .file-card เหมือน modal edit
+    const card = document.createElement('div');
+    card.className = 'border rounded p-2 shadow-sm file-card';
+
+    // ---------- ส่วนรูป + ปุ่มลบ (แบบเดียวกับ renderSelectedPreviewManual) ----------
+    const thumbWrap = document.createElement('div');
+    thumbWrap.className = 'thumb-wrap';
+
+    // ปุ่มกากบาท
+    const btnDel = document.createElement('button');
+    btnDel.type = 'button';
+    // ใช้ class เดียวกับ modal edit เพื่อให้ CSS เดิมใช้ได้เลย
+    btnDel.className = 'btn btn-sm btn-danger btn-remove-new-manual';
+    btnDel.dataset.idx = i;
+    btnDel.title = 'เอาไฟล์นี้ออก';
+    btnDel.innerHTML = '<i class="bi bi-x-lg"></i>';
+
+    btnDel.addEventListener('click', () => {
+      const currentTypes = [];
+      preview.querySelectorAll('select.attach-type')
+             .forEach(sel => currentTypes.push(sel.value));
+
+      const ndt = new DataTransfer();
+      for (let j = 0; j < dtCreate.files.length; j++) {
+        if (j !== i) ndt.items.add(dtCreate.files[j]);
+      }
+      dtCreate = ndt;
+      input.files = dtCreate.files;
+
+      const newTypes = currentTypes.filter((t, idx) => idx !== i);
+      renderCreateList(newTypes);
+    });
+
+    thumbWrap.appendChild(btnDel);
+
+    // รูป / PDF icon
+    const isImg = f.type.startsWith('image/');
+    if (isImg) {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(f);
+      img.alt = f.name;
+      img.style.width = '100%';
+      img.style.height = '120px';
+      img.style.objectFit = 'cover';
+      thumbWrap.appendChild(img);
+    } else {
+      const pdfDiv = document.createElement('div');
+      pdfDiv.className = 'icon-pdf';
+      pdfDiv.textContent = 'PDF';
+      thumbWrap.appendChild(pdfDiv);
+    }
+
+    card.appendChild(thumbWrap);
+
+    // ---------- รายละเอียดไฟล์ ----------
+    const infoName = document.createElement('div');
+    infoName.className = 'file-name mt-2 text-truncate';
+    infoName.title = f.name;
+    infoName.textContent = f.name;
+
+    const infoSize = document.createElement('div');
+    infoSize.className = 'text-muted small';
+    const sizeKB = (f.size / 1024).toFixed(1);
+    infoSize.textContent = `${sizeKB} KB`;
+
+    // ---------- dropdown ประเภทเอกสาร ----------
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm mt-1 attach-type';
+    sel.name = 'attachment_types[]';
+
+    ATTACH_TYPES.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t.label;
+      sel.appendChild(opt);
+    });
+
+    const defaultType = oldTypes[i] || ATTACH_TYPES[0].value;
+    sel.value = defaultType;
+
+    // ประกอบการ์ด
+    card.appendChild(infoName);
+    card.appendChild(infoSize);
+    card.appendChild(sel);
+
+    col.appendChild(card);
+    row.appendChild(col);
+  }
+}
+
+
+
+
+  input.addEventListener('change', e => {
+    const maxSize  = 10 * 1024 * 1024;
+    const allowExt = ['jpg','jpeg','png','gif','webp','pdf'];
+
+    const currentTypes = [];
+    preview.querySelectorAll('select.attach-type')
+           .forEach(sel => currentTypes.push(sel.value));
+
+    for (const f of e.target.files) {
+      const ext = f.name.split('.').pop().toLowerCase();
+      if (!allowExt.includes(ext)) {
+        alert(`${f.name}: ชนิดไฟล์ไม่อนุญาต`);
+        continue;
+      }
+      if (f.size > maxSize) {
+        alert(`${f.name}: ไฟล์ใหญ่เกิน 10MB`);
+        continue;
+      }
+      dtCreate.items.add(f);
+      currentTypes.push(ATTACH_TYPES[0].value);
+    }
+
+    input.value = '';
+    input.files = dtCreate.files;
+    renderCreateList(currentTypes);
+  });
+
+  // ถ้าอยากมีฟังก์ชัน reset ตอนเปิด modal สร้างคำขอ
+  window.resetManualAttachments = function () {
+    dtCreate = new DataTransfer();
+    input.value = '';
+    preview.innerHTML = '';
+  };
+})();
 </script>
 
 

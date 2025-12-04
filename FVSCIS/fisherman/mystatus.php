@@ -37,166 +37,203 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    $requests = InspectionRequest::find_by_created_by($session->user_id()); // ✅ ต้องเป็น array
-                                    if (empty($requests)) :
-                                    ?>
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือ</td>
-                                        </tr>
-                                    <?php
-                                    else:
-                                        foreach ($requests as $req) :
-                                            $row_class = '';
-                                            switch ($req->status) {
-                                                case InspectionRequest::STATUS_COMPLETED:
-                                                    $row_class = 'table-success';  // เขียว
-                                                    break;
-                                                case InspectionRequest::STATUS_CANCELLED:
-                                                    $row_class = 'table-danger';  // แดง
-                                                    break;
-                                            }
+                                  <?php
+                                  $requests = InspectionRequest::find_by_created_by($session->user_id()); // ✅ ต้องเป็น array
+                                  if (empty($requests)) :
+                                  ?>
+                                      <tr>
+                                          <td colspan="7" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือ</td>
+                                      </tr>
+                                  <?php
+                                  else:
+                                      foreach ($requests as $req) :
 
-                                    ?>
-                                        <tr class="<?= $row_class ?>" style="font-size: 14px;">
-                                            <td class="text-center">
-                                                <?php
-                                                $status = $req->status ?? '';
-                                                $has_confirmed_date = !empty($req->confirmed_inspect_date);
-                                                ?>
+                                          // ==========================
+                                          // กำหนดสีแถว + ข้อความแสดงผล
+                                          // ==========================
+                                          $trClass     = '';
+                                          $displayText = '';
 
-                                                <!-- ปุ่มดูรายละเอียด (ใช้ได้ทุกสถานะ) -->
-                                                <button type="button"
-                                                        class="btn btn-sm btn-info mb-1"
-                                                        data-bs-toggle="tooltip" 
-                                                        data-bs-placement="top"
-                                                        title="ดูรายละเอียดคำขอ"
-                                                        onclick="openRequestDetail('<?= h($req->id) ?>');">
-                                                    <i class="fas fa-search"></i>
-                                                </button>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-primary mb-1 btn-print-form1"
-                                                        data-id="<?= h($req->id) ?>"
-                                                        data-toggle="tooltip"
-                                                        data-placement="top"
-                                                        title="พิมพ์แบบ สร.1">
-                                                    <i class="fas fa-print"></i>
-                                                </button>
+                                          $status    = $req->status ?? '';
+                                          $hasDate   = !empty($req->confirmed_inspect_date) && $req->confirmed_inspect_date !== '0000-00-00';
+                                          $isConfirm = (int)($req->is_confirm ?? 0);
+                                          $dateText  = $hasDate ? thai_date($req->confirmed_inspect_date) : '';
 
-                                                <?php if ($status === 'pending' && !$has_confirmed_date): ?>
-                                                    <!-- กรณียื่นแล้ว ยังไม่มีวันนัดตรวจ: แก้ไข + ยกเลิกได้ -->
+                                          // 1) PENDING: ยังไม่ได้นัดตรวจ
+                                          if ($status === InspectionRequest::STATUS_PENDING && !$hasDate) {
+                                              $trClass     = 'tr-not-scheduled';              // เทา
+                                              $displayText = 'ยังไม่ได้นัดตรวจ';
+                                          }
+                                          // 2) PENDING: นัดตรวจแล้ว แต่ผู้ยื่นยังไม่ยืนยัน
+                                          else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 0) {
+                                              $trClass     = 'tr-wait-confirm';               // เหลือง
+                                              $displayText = 'นัดตรวจแล้ว (' . $dateText . ')';
+                                          }
+                                          // 3) PENDING: นัดตรวจแล้ว และผู้ยื่นยืนยันแล้ว
+                                          else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 1) {
+                                              $trClass     = 'tr-pending-confirmed';          // เขียวอ่อน
+                                              $displayText = 'ยืนยันวันตรวจแล้ว (' . $dateText . ')';
+                                          }
+                                          // 4) อยู่ระหว่างตรวจ / รอผลตรวจ
+                                          else if ($status === InspectionRequest::STATUS_INSPECTING) {
+                                              $trClass     = 'tr-inspecting';                 // ฟ้าอ่อน
+                                              $displayText = 'อยู่ระหว่างตรวจ / รอผลตรวจ';
+                                          }
+                                          // 5) กระบวนการตรวจเสร็จสิ้น (รวม passed/failed/conditional/completed ไว้กลุ่มเดียว)
+                                          else if (
+                                              $status === InspectionRequest::STATUS_PASSED      ||
+                                              $status === InspectionRequest::STATUS_FAILED      ||
+                                              $status === InspectionRequest::STATUS_CONDITIONAL ||
+                                              $status === InspectionRequest::STATUS_COMPLETED
+                                          ) {
+                                              $trClass     = 'tr-completed';                  // เขียว (จบกระบวนการแล้ว)
+                                              $displayText = 'ขั้นตอนการตรวจเสร็จสิ้นแล้ว';
+                                          }
+                                          // 6) ยกเลิกคำขอ
+                                          else if ($status === InspectionRequest::STATUS_CANCELLED) {
+                                              $trClass     = 'tr-cancelled';                  // แดงอ่อน
+                                              $displayText = 'ยกเลิกคำขอแล้ว';
+                                          } else {
+                                              // กันกรณีพิเศษ
+                                              $trClass     = '';
+                                              $displayText = $displayText ?: '-';
+                                          }
 
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-warning mb-1"
-                                                            data-bs-toggle="tooltip" 
-                                                            data-bs-placement="top"
-                                                            title="แก้ไขคำขอตรวจเรือ"
-                                                            
-                                                            onclick="openEditInspectionModal('<?= h($req->id) ?>');">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
+                                          // ใช้ตัวแปรเดิมในส่วนปุ่ม
+                                          $has_confirmed_date = $hasDate;
+                                  ?>
+                                      <tr class="<?= $trClass ?>" style="font-size: 14px;">
+                                          <td class="text-center">
+                                              <!-- ปุ่มดูรายละเอียด (ใช้ได้ทุกสถานะ) -->
+                                              <button type="button"
+                                                      class="btn btn-sm btn-info mb-1"
+                                                      data-bs-toggle="tooltip" 
+                                                      data-bs-placement="top"
+                                                      title="ดูรายละเอียดคำขอ"
+                                                      onclick="openRequestDetail('<?= h($req->id) ?>');">
+                                                  <i class="fas fa-search"></i>
+                                              </button>
 
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-outline-danger btn-delete-request mb-1"
-                                                            data-bs-toggle="tooltip" 
-                                                            data-bs-placement="top"
-                                                            title="ยกเลิกคำขอ"
-                                                            
-                                                            data-request-id="<?= h($req->id) ?>">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
+                                              <!-- พิมพ์ สร.1 -->
+                                              <button type="button"
+                                                      class="btn btn-sm btn-primary mb-1 btn-print-form1"
+                                                      data-id="<?= h($req->id) ?>"
+                                                      data-toggle="tooltip"
+                                                      data-placement="top"
+                                                      title="พิมพ์แบบ สร.1">
+                                                  <i class="fas fa-print"></i>
+                                              </button>
 
-                                                <?php elseif ($status === 'pending' && $has_confirmed_date): ?>
-                                                    <!-- เจ้าหน้าที่กำหนดวันตรวจแล้ว แต่ชาวประมงยังไม่ยืนยัน -->
-                                                    
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-success mb-1 btn-confirm-date"
-                                                            data-bs-toggle="tooltip" 
-                                                            data-bs-placement="top"
-                                                            title="ยืนยันวันตรวจเรือ"
-                                                            
-                                                            data-request-id="<?= h($req->id) ?>">
-                                                        <i class="fas fa-calendar-check"></i>
-                                                    </button>
+                                              <?php if ($status === InspectionRequest::STATUS_PENDING && !$has_confirmed_date): ?>
+                                                  <!-- กรณียื่นแล้ว ยังไม่มีวันนัดตรวจ: แก้ไข + ยกเลิกได้ -->
+                                                  <button type="button"
+                                                          class="btn btn-sm btn-warning mb-1"
+                                                          data-bs-toggle="tooltip" 
+                                                          data-bs-placement="top"
+                                                          title="แก้ไขคำขอตรวจเรือ"
+                                                          onclick="openEditInspectionModal('<?= h($req->id) ?>');">
+                                                      <i class="fas fa-edit"></i>
+                                                  </button>
 
-                                                    <!-- ปุ่มแก้ไข (ปิดการใช้งาน) -->
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-secondary mb-1"
-                                                            data-bs-toggle="tooltip" 
-                                                            data-bs-placement="top"
-                                                            title="ไม่สามารถแก้ไขข้อมูลหลักได้ เนื่องจากเจ้าหน้าที่กำหนดวันตรวจแล้ว"
-                                                            
-                                                            disabled>
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
+                                                  <button type="button"
+                                                          class="btn btn-sm btn-outline-danger btn-delete-request mb-1"
+                                                          data-bs-toggle="tooltip" 
+                                                          data-bs-placement="top"
+                                                          title="ยกเลิกคำขอ"
+                                                          data-request-id="<?= h($req->id) ?>">
+                                                      <i class="fas fa-times"></i>
+                                                  </button>
 
-                                                    <!-- ยังยกเลิกได้ -->
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-outline-danger btn-delete-request mb-1"
-                                                            data-bs-toggle="tooltip" 
-                                                            data-bs-placement="top"
-                                                            title="ยกเลิกคำขอ"
-                                                            
-                                                            data-request-id="<?= h($req->id) ?>">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
+                                              <?php elseif ($status === InspectionRequest::STATUS_PENDING && $has_confirmed_date): ?>
+                                                  <!-- เจ้าหน้าที่กำหนดวันตรวจแล้ว แต่ชาวประมงยังไม่ยืนยัน -->
+                                                  <button type="button"
+                                                          class="btn btn-sm btn-success mb-1 btn-confirm-date"
+                                                          data-bs-toggle="tooltip" 
+                                                          data-bs-placement="top"
+                                                          title="ยืนยันวันตรวจเรือ"
+                                                          data-request-id="<?= h($req->id) ?>">
+                                                      <i class="fas fa-calendar-check"></i>
+                                                  </button>
 
-                                                <?php elseif ($status === 'inspecting'): ?>
-                                                    <!-- อยู่ระหว่างตรวจ / ยืนยันวันตรวจแล้ว: ดูอย่างเดียว -->
+                                                  <!-- ปุ่มแก้ไข (ปิดการใช้งาน) -->
+                                                  <button type="button"
+                                                          class="btn btn-sm btn-secondary mb-1"
+                                                          data-bs-toggle="tooltip" 
+                                                          data-bs-placement="top"
+                                                          title="ไม่สามารถแก้ไขข้อมูลหลักได้ เนื่องจากเจ้าหน้าที่กำหนดวันตรวจแล้ว"
+                                                          disabled>
+                                                      <i class="fas fa-edit"></i>
+                                                  </button>
 
-                                                    <!-- (ดูรายละเอียดด้านบนมีแล้ว ไม่ต้องปุ่มเพิ่ม) -->
+                                                  <!-- ยังยกเลิกได้ -->
+                                                  <button type="button"
+                                                          class="btn btn-sm btn-outline-danger btn-delete-request mb-1"
+                                                          data-bs-toggle="tooltip" 
+                                                          data-bs-placement="top"
+                                                          title="ยกเลิกคำขอ"
+                                                          data-request-id="<?= h($req->id) ?>">
+                                                      <i class="fas fa-times"></i>
+                                                  </button>
 
-                                                <?php else: ?>
-                                                    <!-- สถานะอื่น ๆ เช่น completed / cancelled / failed / conditional -->
-                                                    <!-- แสดงแค่ปุ่มดูรายละเอียดด้านบน ก็เพียงพอ -->
-                                                <?php endif; ?>
-                                            </td>
+                                              <?php elseif ($status === InspectionRequest::STATUS_INSPECTING): ?>
+                                                  <!-- อยู่ระหว่างตรวจ: ดูอย่างเดียว -->
+                                                  <!-- ปุ่มด้านบนก็เพียงพอแล้ว -->
 
+                                              <?php else: ?>
+                                                  <!-- completed / cancelled / passed / failed / conditional -->
+                                                  <!-- ให้ดูรายละเอียด + ประวัติพอ -->
+                                              <?php endif; ?>
+                                          </td>
 
-                                            <td><?= h($req->ship_code) ?></td>
-                                            <td><?= h($req->vessel_name) ?></td>
-                                            <?php $department = Department::find_by_id($req->department_id); ?>
-                                            <td><?= h($department->name) ?></td>
-                                            <td><?= h($req->port_name) ?></td>
-                                            <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
-                                            <td>
-                                            <?php  
-                                            if($req->is_confirm){
-                                                echo thai_date($req->confirmed_inspect_date);
-                                            }    
-                                            ?></td>
-                                            <td><?= thai_date($req->created_at) ?></td>
-                                            <td>
-                                                <?php
-                                                switch ($req->status) {
-                                                    case InspectionRequest::STATUS_PENDING:
-                                                        echo '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_INSPECTING:
-                                                        echo '<span class="badge bg-primary">กำลังตรวจ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_COMPLETED:
-                                                        echo '<span class="badge bg-success">ตรวจเสร็จแล้ว</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_CANCELLED:
-                                                        echo '<span class="badge bg-danger">ยกเลิก</span>';
-                                                        break;
-                                                    default:
-                                                        echo '<span class="badge bg-secondary">ไม่ทราบ</span>';
-                                                }
-                                                ?>
-                                                <button class="btn btn-link p-0 text-muted btn-log"
-                                                        data-bs-toggle="tooltip" 
-                                                        data-bs-placement="top"
-                                                        title="ดูประวัติ"
-                                                        data-request-id="<?= h($req->id) ?>"
-                                                        data-vessel="<?php echo h($req->vessel_name); ?>">
-                                                    <i class="fas fa-history"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; endif; ?>
-                                </tbody>
+                                          <td><?= h($req->ship_code) ?></td>
+                                          <td><?= h($req->vessel_name) ?></td>
+                                          <?php $department = Department::find_by_id($req->department_id); ?>
+                                          <td><?= h($department->name) ?></td>
+                                          <td><?= h($req->port_name) ?></td>
+                                          <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
+                                          <td><?= $displayText ?></td>
+                                          <td><?= thai_date($req->created_at) ?></td>
+                                          <td>
+                                              <?php
+                                              switch ($req->status) {
+                                                  case InspectionRequest::STATUS_PENDING:
+                                                      echo '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
+                                                      break;
+                                                  case InspectionRequest::STATUS_INSPECTING:
+                                                      echo '<span class="badge bg-primary">กำลังตรวจ</span>';
+                                                      break;
+                                                  case InspectionRequest::STATUS_COMPLETED:
+                                                      echo '<span class="badge bg-success">ตรวจเสร็จแล้ว</span>';
+                                                      break;
+                                                  case InspectionRequest::STATUS_CANCELLED:
+                                                      echo '<span class="badge bg-danger">ยกเลิก</span>';
+                                                      break;
+                                                  case InspectionRequest::STATUS_PASSED:
+                                                      echo '<span class="badge bg-success">ผ่านการตรวจ</span>';
+                                                      break;
+                                                  case InspectionRequest::STATUS_FAILED:
+                                                      echo '<span class="badge bg-danger">ไม่ผ่านการตรวจ</span>';
+                                                      break;
+                                                  case InspectionRequest::STATUS_CONDITIONAL:
+                                                      echo '<span class="badge bg-info text-dark">ผ่านแบบมีเงื่อนไข</span>';
+                                                      break;
+                                                  default:
+                                                      echo '<span class="badge bg-secondary">ไม่ทราบ</span>';
+                                              }
+                                              ?>
+                                              <button class="btn btn-link p-0 text-muted btn-log"
+                                                      data-bs-toggle="tooltip" 
+                                                      data-bs-placement="top"
+                                                      title="ดูประวัติ"
+                                                      data-request-id="<?= h($req->id) ?>"
+                                                      data-vessel="<?= h($req->vessel_name); ?>">
+                                                  <i class="fas fa-history"></i>
+                                              </button>
+                                          </td>
+                                      </tr>
+                                  <?php endforeach; endif; ?>
+                              </tbody>
+
                                 </table>
                             </div>
                         </div>

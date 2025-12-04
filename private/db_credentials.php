@@ -31,11 +31,11 @@ define('LINE_LOGIN_CHANNEL_SECRET','c528c7071c8f8991f68102cb1e8687ae');
 define('LINE_LOGIN_CALLBACK_URL','https://fishlanding.fisheries.go.th/FVSCIS/linecallback.php');
 
 define('GOOGLE_CLIENT_ID',"334855618936-6rj6q830g4avknampvkhv8phjfonijqm.apps.googleusercontent.com");
-define('GOOGLE_CLIENT_SECRET',"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");
-define('GOOGLE_LOGIN_CALLBACK_URL','http://localhost/FVSCIS/googlecallback.php');
+define('GOOGLE_CLIENT_SECRET',"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");
+define('GOOGLE_LOGIN_CALLBACK_URL','https://fishlanding.fisheries.go.th/fvscis/googlecallback.php');
 
 define('FB_APP_ID','1376186423509609');
 define('FB_APP_SECRET','2fd7a0a9d29ad00f10a1ce26a428eb3b');
-define('FB_REDIRECT_URI','http://localhost/FVSCIS/fbcallback.php');
+define('FB_REDIRECT_URI','https://fishlanding.fisheries.go.th/fvscis/fbcallback.php');
 define('APP_PASSWORD','nhgo bepk ulsr hsfv');
 ?>

@@ -36,63 +36,81 @@ $fisherman=Fisherman::find_by_username($session->username);
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    $my_vessels = Elicense::find_full_by_citizen_id($el_db, $fisherman->citizen_id);
-                                    $index = 1;
-                                    foreach ($my_vessels as $vessel) :
-                                        $inspection = InspectionRequest::find_active_by_ship($vessel->ship_code);
-                                        $is_pending = false;
-                                        $status_text = 'ยื่นคำขอตรวจ';
-                                        if ($inspection) {
-                                            if ($inspection->status !== 'completed' && $inspection->status !== 'cancelled') {
-                                                $is_pending = true;
-                                                $status_text = 'อยู่ระหว่างดำเนินการ ต้องรอให้ครบขั้นตอนก่อนหรือยกเลิก';
-                                            }
-                                        }
-                                    ?>
-                                    <tr style="font-size: 14px;">
-                                        <td class="text-center">
-                                            <form onsubmit="event.preventDefault(); <?php if (!$is_pending): ?>openRequestModal('<?= h($vessel->ship_code) ?>');<?php endif; ?>">
-                                                <button 
-                                                    type="submit" 
-                                                    class="btn btn-sm <?= $is_pending ? 'btn-secondary' : 'btn-primary' ?>" 
-                                                    id="<?= h($vessel->ship_code) ?>" 
-                                                    <?= $is_pending ? 'disabled' : '' ?> 
-                                                    data-bs-toggle="tooltip" 
-                                                    data-bs-placement="top"
-                                                    title="<?= h($status_text) ?>"
-                                                >
-                                                    <i class="fas fa-clipboard-check"></i>
-                                                    <?php if ($is_pending): ?>
-                                                        <span class="ms-1">รอดำเนินการ</span>
-                                                    <?php endif; ?>
-                                                </button>
-                                            </form>
-                                        </td>
-                                        <td><?= h($vessel->ship_code) ?></td>
-                                        <td><?= h($vessel->vessel_name) ?></td>
-                                        <td><?= h($vessel->license_no) ?></td>
-                                        
-                                        
-                                        <?php $fvscisold = FvSanitationCertificationOld::find_by_ship_code($vessel->ship_code);?>
-                                        <td><?= isset($fvscisold) && isset($fvscisold->certificate_status) ? $fvscisold->certificate_status : '-' ?></td>
-                                        <td><?= isset($fvscisold) && isset($fvscisold->expiration_date) ? thai_date($fvscisold->expiration_date) : '-' ?></td>
-                                        <td>
-                                          <?php 
-                                          $status = isset($fvscisold) && isset($fvscisold->status) ? $fvscisold->status : null;
+                                <?php
+                                $my_vessels = Elicense::find_full_by_citizen_id($el_db, $fisherman->citizen_id);
+                                $index = 1;
 
-                                          if ($status === 'active') {
-                                              echo '<span class="badge bg-success">เปิดใช้งาน</span>';
-                                          } elseif ($status === 'inactive') {
-                                              echo '<span class="badge bg-secondary">หมดอายุ</span>';
-                                          } else {
-                                              echo '<span class="badge bg-light text-dark">-</span>';
-                                          }
-                                          ?>
-                                      </td>
-                                      </tr>
-                                    <?php endforeach; ?>
+                                foreach ($my_vessels as $vessel):
+
+                                    // 1) ตรวจสอบคำขอที่ยังไม่เสร็จ
+                                    $inspection = InspectionRequest::find_active_by_ship($vessel->ship_code);
+                                    $is_pending = false;
+                                    $status_text = 'ยื่นคำขอตรวจ';
+
+                                    if ($inspection) {
+                                        if ($inspection->status !== 'completed' && $inspection->status !== 'cancelled') {
+                                            $is_pending = true;
+                                            $status_text = 'อยู่ระหว่างดำเนินการ ต้องรอให้ครบขั้นตอนก่อนหรือยกเลิก';
+                                        }
+                                    }
+
+                                    // 2) ตรวจสอบใบรับรองเก่า
+                                    $fvscisold = FvSanitationCertificationOld::find_by_ship_code($vessel->ship_code);
+                                    $cert_status = $fvscisold->status ?? null;
+
+                                    // 3) จัดสีให้ทั้งแถว
+                                    if ($is_pending) {
+                                        $trClass = "tr-wait-confirm"; // เหลือง
+                                    } elseif ($cert_status === 'active') {
+                                        $trClass = "tr-confirmed"; // เขียว
+                                    } elseif ($cert_status === 'inactive') {
+                                        $trClass = "tr-not-scheduled"; // เทา
+                                    } else {
+                                        $trClass = "tr-not-scheduled"; // เทา ไม่มีข้อมูล
+                                    }
+                                ?>
+                                <tr class="<?= $trClass ?>" style="font-size:14px;">
+
+                                    <td class="text-center">
+                                        <form onsubmit="event.preventDefault(); <?= !$is_pending ? "openRequestModal('".h($vessel->ship_code)."');" : "" ?>">
+                                            <button 
+                                                type="submit"
+                                                class="btn btn-sm <?= $is_pending ? 'btn-secondary' : 'btn-primary' ?>" 
+                                                id="<?= h($vessel->ship_code) ?>"
+                                                <?= $is_pending ? 'disabled' : '' ?>
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                title="<?= h($status_text) ?>"
+                                            >
+                                                <i class="fas fa-clipboard-check"></i>
+                                                <?php if ($is_pending): ?>
+                                                    <span class="ms-1">รอดำเนินการ</span>
+                                                <?php endif; ?>
+                                            </button>
+                                        </form>
+                                    </td>
+
+                                    <td><?= h($vessel->ship_code) ?></td>
+                                    <td><?= h($vessel->vessel_name) ?></td>
+                                    <td><?= h($vessel->license_no) ?></td>
+
+                                    <td><?= $fvscisold->certificate_status ?? '-' ?></td>
+                                    <td><?= isset($fvscisold->expiration_date) ? thai_date($fvscisold->expiration_date) : '-' ?></td>
+
+                                    <td>
+                                        <?php if ($cert_status === 'active'): ?>
+                                            <span class="badge bg-success">เปิดใช้งาน</span>
+                                        <?php elseif ($cert_status === 'inactive'): ?>
+                                            <span class="badge bg-secondary">หมดอายุ</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-light text-dark">-</span>
+                                        <?php endif; ?>
+                                    </td>
+
+                                </tr>
+                                <?php endforeach; ?>
                                 </tbody>
+
                                 </table>
 
                             </div>

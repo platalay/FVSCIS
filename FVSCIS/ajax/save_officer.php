@@ -20,12 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!empty($admins)) {
             foreach ($admins as $admin) {
-                $msg = "มีคำขอสมัครเจ้าหน้าที่ใหม่จาก "
-                     . ($officer->full_name ?? $officer->username ?? 'ไม่ทราบชื่อ');
+                $msg = "มีคำขอสมัครเจ้าหน้าที่ใหม่จาก ". ($officer->full_name ?? $officer->username ?? 'ไม่ทราบชื่อ');
                         $log = new InspectionLog();
                             $log->inspection_request_id = 0;
                             $log->action_id             = 1;
-                            $log->note                  = $msg
+                            $log->note                  = $msg;
                             $log->save();
                 Notification::create_notification(
                             $admin->id,        // user_id ของผู้รับ (admin แต่ละคน)

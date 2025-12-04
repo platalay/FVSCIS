@@ -97,16 +97,6 @@ $canSeeRespMenu = $isInspectOfficer && $officerId !== null && in_array($officerI
   </li>
 <?php endif; ?>
 
-<?php if ($canSeeRespMenu): ?>
-  <!-- Nav Item - ข้อมูลที่รับผิดชอบ (เฉพาะ officer/dept id ใน whitelist) -->
-  <li class="nav-item <?= is_active(['myaccount.php'], $base, $pathLower) ? 'active' : '' ?>">
-    <a class="nav-link" href="myaccount.php">
-      <i class="fas fa-fw fa-clipboard-check"></i>
-      <span>ข้อมูลที่รับผิดชอบ</span>
-    </a>
-  </li>
-<?php endif; ?>
-
 <li class="nav-item <?= is_active(['myaccount.php'], $base, $pathLower) ? 'active' : '' ?>">
   <a class="nav-link" href="myaccount.php">
     <i class="fas fa-fw fa-file-alt"></i>

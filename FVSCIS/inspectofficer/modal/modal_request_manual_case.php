@@ -5,7 +5,7 @@
       <form id="formManualCase" enctype="multipart/form-data">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title" id="modalManualCaseLabel">
-            <i class="fas fa-plus-circle me-2"></i> สร้างคำขอสุขอนามัย (กรณีพิเศษโดยเจ้าหน้าที่)
+            <i class="fas fa-plus-circle me-2"></i> สร้างคำขอตรวจประเมินสุขอนามัยเรือประมง (กรณีพิเศษโดยเจ้าหน้าที่)
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>

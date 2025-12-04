@@ -6,7 +6,7 @@
       <form id="formEditManualCase" enctype="multipart/form-data">
         <div class="modal-header text-dark">
           <h5 class="modal-title" id="modalEditManualCaseLabel">
-            <i class="fas fa-edit me-2"></i> แก้ไขคำขอสุขอนามัย (สร้างโดยเจ้าหน้าที่)
+            <i class="fas fa-edit me-2"></i> แก้ไขคำขอตรวจประเมินสุขอนามัยเรือประมง (สร้างโดยเจ้าหน้าที่)
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
                   aria-label="Close"></button>
