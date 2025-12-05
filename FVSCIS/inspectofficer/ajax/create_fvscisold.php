@@ -32,6 +32,7 @@ try {
         global $database;
         throw new Exception('บันทึกข้อมูลใบรับรองไม่สำเร็จ: ' . ($database->error ?? 'ไม่ทราบสาเหตุ'));
     }
+    FvSanitationCertificationOld::mark_pending($obj->ship_code);
 
     $cert_id = $cert->id;
 

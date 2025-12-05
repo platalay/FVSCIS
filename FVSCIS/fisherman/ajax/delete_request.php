@@ -44,7 +44,7 @@ try {
         echo json_encode(['success' => false, 'message' => 'ลบคำขอไม่สำเร็จ']);
         exit;
     }
-
+    FvSanitationCertificationOld::mark_pending($ship_code);
 
     // 📝 Log การลบ
     $log = new InspectionLog();

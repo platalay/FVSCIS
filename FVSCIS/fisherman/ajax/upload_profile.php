@@ -35,6 +35,7 @@ try {
   $fisherman->save();
 
   $new_image_path = '../uploads/profile/' . $newname;
+  $session->set('user_picture', $new_image_path);
   echo json_encode(['success'=>true,'message'=>'อัปโหลดรูปโปรไฟล์เรียบร้อย','new_image'=>$new_image_path]);
 
 } catch(Throwable $e){

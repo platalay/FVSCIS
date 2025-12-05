@@ -95,7 +95,7 @@ try {
     $err = is_array($req->errors ?? null) ? implode(', ', $req->errors) : ($req->errors ?? '');
     throw new Exception('บันทึกคำขอไม่สำเร็จ' . ($err ? " ({$err})" : ''));
   }
-
+  FvSanitationCertificationOld::mark_pending($ship_code);
   // อัปโหลดรูปแนบ (เฉพาะรูป)
   if (!empty($_FILES['attachments'])) {
     $types = $_POST['attachment_types'] ?? [];

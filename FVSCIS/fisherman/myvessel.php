@@ -60,13 +60,13 @@ $fisherman=Fisherman::find_by_username($session->username);
 
                                     // 3) จัดสีให้ทั้งแถว
                                     if ($is_pending) {
-                                        $trClass = "tr-wait-confirm"; // เหลือง
+                                        $trClass = "tr-inspecting"; // น้ำเงิน
                                     } elseif ($cert_status === 'active') {
-                                        $trClass = "tr-confirmed"; // เขียว
+                                        $trClass = "tr-completed"; // เขียว
                                     } elseif ($cert_status === 'inactive') {
-                                        $trClass = "tr-not-scheduled"; // เทา
+                                        $trClass = "tr-cancelled"; // เทา
                                     } else {
-                                        $trClass = "tr-not-scheduled"; // เทา ไม่มีข้อมูล
+                                        $trClass = "tr-cancelled"; // เทา ไม่มีข้อมูล
                                     }
                                 ?>
                                 <tr class="<?= $trClass ?>" style="font-size:14px;">

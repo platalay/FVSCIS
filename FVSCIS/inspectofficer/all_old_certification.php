@@ -32,41 +32,95 @@ include("../../private/shared/topbarofficer.php");
                                         <th>วันที่ขอตรวจ</th>
                                         <th>วันที่บังคับใช้</th>
                                         <th>วันที่หมดอายุ</th>
+                                        <th>หน่วยประเมิน</th>
                                         <th>ประเภท สร.3</th>
+                                        <th>สถานะ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    // ✅ ดึงเฉพาะคำขอที่ department_id ตรงกับเจ้าหน้าที่
-                                    // $DepartmentgroupObj = DepartmentGroup::find_one_by_officer_id($Officer->departments_id);
-                                    $new_departments_id = Officer::map_departments_id($Officer->departments_id);
-                                    $FvSanitationCertificationOlds = FvSanitationCertificationOld::find_all_by_responsible_unit($new_departments_id); 
+                                <?php
+                                $new_departments_id = Officer::map_departments_id($Officer->departments_id);
+                                $FvSanitationCertificationOlds = FvSanitationCertificationOld::find_all_by_responsible_unit($new_departments_id);
 
-                                    if (empty($FvSanitationCertificationOlds)) :
-                                    ?>
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted">ไม่พบข้อมูล สร.3 ที่รับผิดชอบ</td>
-                                        </tr>
-                                    <?php
-                                    else:
-                                        foreach ($FvSanitationCertificationOlds as $req) :
-                                    ?>
-                                        <tr style="font-size: 14px;">
-                                            <td>
-                                                <button type="button" title="ดูข้อมูลเก่า" class="btn btn-info btn-sm"
-                                                        onclick="openOldCertificationModalById(<?= h($req->id) ?>)">
+                                if (empty($FvSanitationCertificationOlds)) :
+                                ?>
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">ไม่พบข้อมูล สร.3 ที่รับผิดชอบ</td>
+                                    </tr>
+                                <?php
+                                else:
+                                    foreach ($FvSanitationCertificationOlds as $req) :
+
+                                        // 🎨 กำหนด class ของแถวตามสถานะ
+                                        $rowClass = '';
+                                        switch ($req->status) {
+                                            case 'inactive':
+                                                $rowClass = 'tr-not-scheduled';
+                                                break;
+                                            case 'pending':
+                                                $rowClass = 'tr-inspecting';
+                                                break;
+                                            case 'fail':
+                                                $rowClass = 'tr-cancelled';
+                                                break;
+                                            case 'pass':
+                                                $rowClass = 'tr-completed';
+                                                break;
+                                            case 'active':
+                                                $rowClass = 'tr-pending-confirmed';
+                                                break;
+                                        }
+                                ?>
+                                    <tr class="<?= $rowClass ?>" style="font-size: 14px;">
+
+                                        <td>
+                                            <button type="button" title="ดูข้อมูลเก่า" class="btn btn-info btn-sm"
+                                                    onclick="openOldCertificationModalById(<?= h($req->id) ?>)">
                                                 <i class="fas fa-search"></i>
-                                                </button>
-                                            </td>
-                                            <td><?= h($req->vessel_name) ?></td>
-                                            <td><?= h($req->ship_code) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->request_date)) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->effective_date)) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($req->expiration_date)) ?></td>
-                                            <td><?= h($req->certificate_status) ?></td>
-                                        </tr>
-                                    <?php endforeach; endif; ?>
+                                            </button>
+                                        </td>
+
+                                        <td><?= h($req->vessel_name) ?></td>
+                                        <td><?= h($req->ship_code) ?></td>
+                                        <td><?= date('d/m/Y', strtotime($req->request_date)) ?></td>
+                                        <td><?= date('d/m/Y', strtotime($req->effective_date)) ?></td>
+                                        <td><?= date('d/m/Y', strtotime($req->expiration_date)) ?></td>
+                                        <td>
+                                            <?php 
+                                            $department = Department::find_by_id($req->evaluation_agency);
+                                            echo h($department->name);
+                                            ?>
+                                        </td>
+                                        <td><?= h($req->certificate_status) ?></td>
+                                        <!-- 🎯 Badge ตามสถานะ -->
+                                        <td>
+                                            <?php if ($req->status === 'active'): ?>
+                                                <span class="badge bg-success">ใช้งานจริง</span>
+
+                                            <?php elseif ($req->status === 'pending'): ?>
+                                                <span class="badge bg-primary">กำลังตรวจ</span>
+
+                                            <?php elseif ($req->status === 'fail'): ?>
+                                                <span class="badge bg-danger">ไม่ผ่าน</span>
+
+                                            <?php elseif ($req->status === 'pass'): ?>
+                                                <span class="badge bg-info text-dark">ผ่านแล้ว</span>
+
+                                            <?php elseif ($req->status === 'inactive'): ?>
+                                                <span class="badge bg-secondary">ไม่ยื่น / หมดอายุ</span>
+
+                                            <?php else: ?>
+                                                <span class="badge bg-light text-dark">-</span>
+                                            <?php endif; ?>
+                                        </td>
+
+                                    </tr>
+                                <?php
+                                    endforeach;
+                                endif;
+                                ?>
                                 </tbody>
+
                             </table>
                         </div>
                     </div>
@@ -203,40 +257,40 @@ include("../../private/shared/topbarofficer.php");
                                                 
     <script src="../js/fvscis.js"></script> 
     <script>
-    $(function () {
-    // ใช้อินสแตนซ์เดิมถ้ามีอยู่แล้ว ไม่รีอินิท
-    var table = $.fn.dataTable.isDataTable('#dataTable')
-        ? $('#dataTable').DataTable()
-        : $('#dataTable').DataTable({
-            language: {
-            search: "ค้นหา:",
-            lengthMenu: "แสดง _MENU_ รายการ",
-            info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
-            infoFiltered: "(กรองจากทั้งหมด _MAX_ รายการ)"
-            }
-        });
+    // $(function () {
+    // // ใช้อินสแตนซ์เดิมถ้ามีอยู่แล้ว ไม่รีอินิท
+    // var table = $.fn.dataTable.isDataTable('#dataTable')
+    //     ? $('#dataTable').DataTable()
+    //     : $('#dataTable').DataTable({
+    //         language: {
+    //         search: "ค้นหา:",
+    //         lengthMenu: "แสดง _MENU_ รายการ",
+    //         info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+    //         infoFiltered: "(กรองจากทั้งหมด _MAX_ รายการ)"
+    //         }
+    //     });
 
-    // สร้าง badge แสดงจำนวนไว้ข้างช่องค้นหา
-    var $filter = $('#dataTable_wrapper .dataTables_filter');
-    if ($('#totalCount').length === 0) {
-        $filter.prepend('<span id="totalCount" class="badge bg-info me-2 mb-2 mb-md-0"></span>');
-    }
+    // // สร้าง badge แสดงจำนวนไว้ข้างช่องค้นหา
+    // var $filter = $('#dataTable_wrapper .dataTables_filter');
+    // if ($('#totalCount').length === 0) {
+    //     $filter.prepend('<span id="totalCount" class="badge bg-info me-2 mb-2 mb-md-0"></span>');
+    // }
 
-    function updateCount() {
-        var info = table.page.info(); // {recordsTotal, recordsDisplay, ...}
-        var total = info.recordsTotal;
-        var display = info.recordsDisplay;
+    // function updateCount() {
+    //     var info = table.page.info(); // {recordsTotal, recordsDisplay, ...}
+    //     var total = info.recordsTotal;
+    //     var display = info.recordsDisplay;
 
-        var text = 'ทั้งหมด ' + total.toLocaleString('th-TH') + ' รายการ';
-        if (display !== total) {
-        text += ' (กำลังแสดง ' + display.toLocaleString('th-TH') + ')';
-        }
-        $('#totalCount').text(text);
-    }
+    //     var text = 'ทั้งหมด ' + total.toLocaleString('th-TH') + ' รายการ';
+    //     if (display !== total) {
+    //     text += ' (กำลังแสดง ' + display.toLocaleString('th-TH') + ')';
+    //     }
+    //     $('#totalCount').text(text);
+    // }
 
-    updateCount();
-    table.on('draw.dt', updateCount);
-    });
+    // updateCount();
+    // table.on('draw.dt', updateCount);
+    // });
     </script>
 
     <script>

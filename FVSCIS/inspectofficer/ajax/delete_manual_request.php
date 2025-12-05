@@ -62,6 +62,8 @@ try {
     if (!$req->delete()) {
         throw new Exception('ลบคำขอไม่สำเร็จ');
     }
+    //ปรับ pending กลับเป็น action
+    FvSanitationCertificationOld::mark_inactive($req->ship_code);
 
     // ------------------------------
     // 5) LOG - การลบ

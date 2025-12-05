@@ -84,6 +84,11 @@ class Session {
     return true;
   }
 
+  public function set($key, $value) {
+      $this->$key = $value;
+      $_SESSION[$key] = $value;
+  }
+
   public function logout() {
     // ลบ token จากฐานข้อมูล
     if ($this->is_logged_in()) {

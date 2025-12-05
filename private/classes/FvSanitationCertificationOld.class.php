@@ -175,5 +175,79 @@ class FvSanitationCertificationOld extends DatabaseObject
         return (int)$row['cnt'];
     }
 
+        public static function mark_pending($ship_code) {
+        $ship_code = self::$database->escape_string($ship_code);
+
+        $sql = "UPDATE " . static::$table_name . "
+                SET status = 'pending'
+                WHERE ship_code = '{$ship_code}'";
+
+        return self::$database->query($sql);
+    }
+
+    public static function mark_fail($ship_code) {
+        $ship_code = self::$database->escape_string($ship_code);
+
+        $sql = "UPDATE " . static::$table_name . "
+                SET status = 'fail'
+                WHERE ship_code = '{$ship_code}'";
+
+        return self::$database->query($sql);
+    }
+
+    public static function mark_pass($ship_code, $new_active_id) {
+        $ship_code     = self::$database->escape_string($ship_code);
+        $new_active_id = self::$database->escape_string($new_active_id);
+
+        // อัปเดตเฉพาะแถวเก่า ไม่แตะ active ใหม่
+        $sql = "UPDATE " . static::$table_name . "
+                SET status = 'pass'
+                WHERE ship_code = '{$ship_code}'
+                AND id <> '{$new_active_id}'";
+
+        return self::$database->query($sql);
+    }
+
+    public static function mark_inactive($ship_code) {
+        $ship_code = self::$database->escape_string($ship_code);
+
+        $sql = "UPDATE " . static::$table_name . "
+                SET status = 'inactive'
+                WHERE ship_code = '{$ship_code}'";
+
+        return self::$database->query($sql);
+    }
+
+
+    public static function count_distinct_shipcode_by_status() {
+        $sql = "SELECT status, COUNT(DISTINCT ship_code) AS total
+                FROM " . static::$table_name . "
+                WHERE status IN ('active', 'inactive', 'pending')
+                GROUP BY status";
+
+        $result = self::$database->query($sql);
+
+        // เตรียมค่า default เผื่อบาง status ไม่มีข้อมูล
+        $counts = [
+            'active'   => 0,
+            'inactive' => 0,
+            'pending'  => 0,
+        ];
+
+        while ($row = $result->fetch_assoc()) {
+            $status = $row['status'];
+            $counts[$status] = (int)$row['total'];
+        }
+
+        return $counts;
+    }
+    /* 
+    การใช้งาน
+    $counts = FvSanitationCertificationOld::count_distinct_shipcode_by_status();
+
+    $active_count   = $counts['active'];
+    $inactive_count = $counts['inactive'];
+    $pending_count  = $counts['pending'];
+    */
 
 }

@@ -21,7 +21,7 @@ try {
     if (!$obj->save()) {
         throw new Exception('บันทึกไม่สำเร็จ');
     }
-
+    FvSanitationCertificationOld::mark_pending($obj->ship_code);
     // ===== แนบไฟล์หลายไฟล์ (ใหม่) =====
     $certificate_id = $obj->id ?? null;
     $files_saved = 0; 

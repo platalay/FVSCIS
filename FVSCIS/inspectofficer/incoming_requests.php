@@ -1554,6 +1554,64 @@ $(function () {
     $('#modalApplicant').modal('show');
   }
 
+  // function openApplicantModalFill(d) {
+
+  //   // reset
+  //   $('#form_applicant')[0].reset();
+  //   $('#block_juristic').addClass('d-none');
+  //   $('#label_applicant_name').text('ข้าพเจ้า (ชื่อ–สกุล)');
+
+  //   // filled
+  //   $('#written_at').val(d.written_at || '');
+  //   $('#written_date_text').val(d.written_date_text || '');
+  //   $('#written_date').val(d.written_date || '');
+
+  //   const isJuristic     = d.is_juristic || 0;
+  //   const licenseStatus  = d.license_status || '';     // เช่น 'normal', 'none', 0
+  //   const isManualCase   = Number(d.is_manual_case || 0) === 1;
+
+  //   // reset disable radio ทุกครั้งก่อน
+  //   $('#is_juristic_0, #is_juristic_1').prop('disabled', false);
+
+  //   // ติ๊กค่าเดิมก่อน
+  //   $('#is_juristic_' + isJuristic).prop('checked', true);
+  //   toggleApplicantBlocks(isJuristic);
+
+  //   // 🧠 กำหนดว่าจะล็อกไหม
+  //   // ล็อกเฉพาะกรณีไม่ใช่ manual case และ license_status = normal
+  //   const shouldLockApplicantType =
+  //       !isManualCase && String(licenseStatus) === 'normal';
+
+  //   if (shouldLockApplicantType) {
+  //     // 🔒 ล็อกไม่ให้เลือกเปลี่ยน บุคคลธรรมดา / นิติบุคคล
+  //     $('#is_juristic_0, #is_juristic_1').prop('disabled', true);
+  //   }
+  //   // ถ้า license_status เป็น 'none' หรือ '0' หรือเป็น manual_case
+  //   // เราไม่เข้า if ข้างบน → ปล่อยให้เลือกได้ตามปกติ
+
+  //   $('#applicant_name').val(d.applicant_name || '');
+  //   $('#applicant_age').val(d.applicant_age || '');
+  //   $('#applicant_nationality').val(d.applicant_nationality || '');
+  //   $('#applicant_address_no').val(d.applicant_address_no || '');
+  //   $('#applicant_moo').val(d.applicant_moo || '');
+  //   $('#applicant_tambon').val(d.applicant_tambon || '');
+  //   $('#applicant_amphoe').val(d.applicant_amphoe || '');
+  //   $('#applicant_province').val(d.applicant_province || '');
+
+  //   // โทรศัพท์ไม่ให้แก้ไข
+  //   $('#applicant_phone').val(d.applicant_phone || '').prop('readonly', true);
+
+  //   $('#juristic_name').val(d.juristic_name || '');
+  //   $('#juristic_office').val(d.juristic_office || '');
+  //   $('#juristic_address_no').val(d.juristic_address_no || '');
+  //   $('#juristic_moo').val(d.juristic_moo || '');
+  //   $('#juristic_tambon').val(d.juristic_tambon || '');
+  //   $('#juristic_amphoe').val(d.juristic_amphoe || '');
+  //   $('#juristic_province').val(d.juristic_province || '');
+
+  //   // เปิด modal
+  //   $('#modalApplicant').modal('show');
+  // }
 
   // ===========================
   // submit → save → lock → print

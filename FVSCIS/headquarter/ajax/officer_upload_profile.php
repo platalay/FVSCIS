@@ -54,7 +54,7 @@ try {
 
   // path สำหรับแสดงผลบนหน้าเว็บ
   $public_url = '../uploads/profile/' . $newname;
-
+  $session->set('user_picture', $public_url);
   echo json_encode([
     'success'=>true,
     'message'=>'อัปโหลดรูปโปรไฟล์เรียบร้อยแล้ว',

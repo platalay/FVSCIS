@@ -107,7 +107,7 @@ try {
         $err = is_array($request->errors ?? null) ? implode(', ', $request->errors) : ($request->errors ?? '');
         throw new Exception("ไม่สามารถบันทึกคำขอได้" . ($err ? " ({$err})" : ''));
     }
-
+    FvSanitationCertificationOld::mark_pending($ship_code);
 
     //save InspectionApplicationInfo
     

@@ -35,6 +35,8 @@ try {
     if (!$ok) {
         throw new Exception('ไม่สามารถลบข้อมูลได้');
     }
+    //ปรับ pending กลับเป็น action
+    FvSanitationCertificationOld::mark_inactive($obj->ship_code);
 
     $action = LogAction::find_by_code('fvscis_deleted_by_officer');
     if ($action) {

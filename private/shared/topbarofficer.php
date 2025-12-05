@@ -193,7 +193,6 @@ $showTopSearch = in_array($base, $pagesWithSearch, true);
             <?php
             $default_image = '../img/default-user.svg';
             $picture = $session->user_picture;
-
             // ถ้าเป็น URL (เริ่มด้วย http หรือ https)
             if (!empty($picture) && preg_match('/^https?:\/\//', $picture)) {
                 $profile_image = $picture;
