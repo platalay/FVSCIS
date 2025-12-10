@@ -85,7 +85,8 @@ $(document).ready(function () {
                         next: "ถัดไป",
                         previous: "ก่อนหน้า"
                     }
-                }
+                },
+                order: [[0, 'desc']]
             });
 
             // ให้มั่นใจว่าเจอ element topSearch

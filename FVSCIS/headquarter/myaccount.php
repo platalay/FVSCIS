@@ -79,9 +79,10 @@ include("../../private/shared/topbarheadquarter.php");
       </div>
     </div>
 
-    <!-- เปลี่ยนรหัสผ่าน -->
+    <!-- #region <div class="col-lg-8"> -->
     <div class="col-lg-8">
-      <div class="card shadow mb-4">
+      <!-- #region เปลี่ยนรหัสผ่าน -->
+      <div class="card shadow mb-4">  
         <div class="card-header py-3">
           <h6 class="m-0 font-weight-bold text-primary">เปลี่ยนรหัสผ่าน</h6>
         </div>
@@ -111,7 +112,57 @@ include("../../private/shared/topbarheadquarter.php");
 
         </div>
       </div>
+      <!-- #endregion เปลี่ยนรหัสผ่าน -->
+
+      <!-- #region กล่องเปลี่ยนอีเมล -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-primary">เปลี่ยนอีเมล</h6>
+        </div>
+        <div class="card-body">
+
+          <!-- แสดงอีเมลปัจจุบัน -->
+          <div class="mb-3">
+            <label class="font-weight-bold">อีเมลปัจจุบัน</label>
+            <div>
+              <span id="current-email-text">
+                <?= h($Officer->email ?? '-'); ?>
+              </span>
+            </div>
+            <small class="form-text text-muted">
+              อีเมลนี้ใช้สำหรับกู้รหัสผ่านและรับการแจ้งเตือนจากระบบ
+            </small>
+          </div>
+
+          <form id="form-change-email" autocomplete="off">
+            <div class="form-group">
+              <label>อีเมลใหม่</label>
+              <input type="email" name="new_email" class="form-control" required>
+              <small class="form-text text-muted">
+                กรุณาระบุอีเมลที่คุณใช้งานจริง และตรวจสอบให้ถูกต้องก่อนบันทึก
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label>รหัสผ่านปัจจุบัน</label>
+              <input type="password" name="current_password" class="form-control" required>
+              <small class="form-text text-muted">
+                ใช้ยืนยันตัวตนก่อนการเปลี่ยนอีเมล
+              </small>
+            </div>
+
+            <div id="change-email-alert" class="mt-2" style="display:none;"></div>
+
+            <button type="submit" id="btn-change-email" class="btn btn-primary">
+              บันทึกอีเมลใหม่
+            </button>
+          </form>
+
+        </div>
+      </div>
+      <!-- #endregion กล่องเปลี่ยนอีเมล -->
     </div>
+    <!-- #endregion <div class="col-lg-8"> -->
   </div>
 
 </div>
@@ -202,6 +253,74 @@ $(function(){
   });
 
 });
+
+// #region เปลี่ยน email
+$(function () {
+
+  $('#form-change-email').on('submit', function (e) {
+    e.preventDefault();
+
+    const $form  = $(this);
+    const $btn   = $('#btn-change-email');
+
+    // กันกดซ้ำ
+    $btn.prop('disabled', true).text('กำลังบันทึก...');
+
+    $.ajax({
+      url: 'ajax/ajax_change_email.php', // path ตามโครงของคุณ
+      type: 'POST',
+      data: $form.serialize(),
+      dataType: 'json'
+    })
+    .done(function (res) {
+
+      if (res.success) {
+
+        // อัปเดตอีเมลที่แสดงด้านบน (ทั้งสองจุด)
+        if (res.new_email) {
+          $('#current-email-text').text(res.new_email); // ใน card
+          $('#email').text(res.new_email);              // ที่ไหนก็ตามที่ใช้ #email
+        }
+
+        // ล้างฟิลด์อินพุต
+        $form.find('input[name="new_email"]').val('');
+        $form.find('input[name="current_password"]').val('');
+
+        Swal.fire({
+          icon: 'success',
+          title: 'สำเร็จ',
+          text: res.message || 'เปลี่ยนอีเมลเรียบร้อยแล้ว',
+          confirmButtonText: 'ตกลง'
+        });
+
+      } else {
+
+        Swal.fire({
+          icon: 'error',
+          title: 'ไม่สามารถเปลี่ยนอีเมลได้',
+          text: res.message || 'กรุณาลองใหม่อีกครั้ง',
+          confirmButtonText: 'ตกลง'
+        });
+
+      }
+    })
+    .fail(function () {
+
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์',
+        confirmButtonText: 'ตกลง'
+      });
+
+    })
+    .always(function () {
+      $btn.prop('disabled', false).text('บันทึกอีเมลใหม่');
+    });
+  });
+
+});
+//#endregion
 </script>
 
 <?php

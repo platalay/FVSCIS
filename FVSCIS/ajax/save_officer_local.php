@@ -51,6 +51,17 @@ try {
         throw new Exception("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");  // This username is already taken
     }
 
+    // 6. validate ว่างไหม
+    if (empty($email)) {
+        throw new Exception("กรุณากรอกอีเมล");
+    }
+
+    // 7. validate ซ้ำ
+    if (Officer::exists_email($email)) {
+        throw new Exception("email นี้ถูกใช้งานแล้ว");
+    }
+
+
     // 6. สร้างออบเจ็กต์ Officer ใหม่และกำหนดค่าต่าง ๆ
     $officer = new Officer();
     $officer->username      = $username;

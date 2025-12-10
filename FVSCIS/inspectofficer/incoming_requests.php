@@ -746,7 +746,7 @@ $(function () {
   // (ไฟล์จริงที่ส่งไปจะมาจาก input.files = dtCreate.files อยู่แล้ว)
 
   $.ajax({
-    url: 'ajax/create_manual_request_by_officer.php',
+    url: 'ajax/request_inspection.php',
     type: 'POST',
     data: fd,
     processData: false,

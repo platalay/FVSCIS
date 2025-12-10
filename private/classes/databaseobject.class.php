@@ -165,12 +165,19 @@ class DatabaseObject {
 protected static function sql_literal(string $key, $val): string {
     // วันที่/เวลา: ว่าง => NULL
     static $nullable_dates = [
-        'confirmed_inspect_date','expire_at','approved_at','actual_inspect_date','submitted_at','effective_date', 'token_expiry'
+        'confirmed_inspect_date','expire_at','approved_at','actual_inspect_date','submitted_at','effective_date', 'token_expiry', 'form1_locked_at',
+        'written_date'
     ];
     // FK/เลขที่อาจว่างได้: ว่าง => NULL
-    static $nullable_int = ['approved_by','department_group_id','data_owner_id','target_officer_id','action_taken','type'];
+    static $nullable_int = [
+        'approved_by','department_group_id','data_owner_id',
+        'target_officer_id','action_taken','type','applicant_age',
+        'applicant_province_id','applicant_amphoe_id','applicant_tambon_id',
+        'juristic_province_id','juristic_amphoe_id','juristic_tambon_id','form1_locked_by'
+        // ถ้ามี id อื่นที่ว่างได้ ก็เติมชื่อคอลัมน์มาในลิสต์นี้ได้เลย
+    ];
     // boolean 0/1: ว่าง => 0
-    static $zero_default_int = ['is_confirm','is_submitted','is_read'];
+    static $zero_default_int = ['is_confirm','is_submitted','is_read','form1_locked'];
 
     // 👇 รายชื่อฟิลด์ที่ต้อง "เก็บเป็นสตริงเสมอ" (ถึงจะเป็นตัวเลขก็ต้องใส่ quote)
     static $force_string_fields = [

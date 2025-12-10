@@ -44,6 +44,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fisherman'])) {
             exit;
         }
 
+        // ตรวจสอบว่า email ซ้ำหรือไม่ แต่ถ้า email ว่าง ให้ข้าม
+        if (!empty($email) && Fisherman::exists_email($email)) {
+            $response['message'] = 'email นี้ถูกลงทะเบียนแล้ว';
+            echo json_encode($response);
+            exit;
+        }
+
         // ตรวจสอบหมายเลขบัตรในระบบ Elicense
         $Elicenses = Elicense::find_by_id_number($el_db, $citizen_id);
 

@@ -276,23 +276,23 @@ class InspectionRequest extends DatabaseObject {
         }
 
         public static function count_by_department_groups($group_ids = [], $status = null) {
-    if (empty($group_ids)) { return 0; }
+            if (empty($group_ids)) { return 0; }
 
-    $ids = array_map('intval', $group_ids);
-    $id_list = implode(',', $ids);
+            $ids = array_map('intval', $group_ids);
+            $id_list = implode(',', $ids);
 
-    $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name .
-           " WHERE department_group_id IN ({$id_list})";
+            $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name .
+                " WHERE department_group_id IN ({$id_list})";
 
-    if ($status !== null) {
-        $status = self::$database->escape_string($status);
-        $sql .= " AND status = '{$status}'";
-    }
+            if ($status !== null) {
+                $status = self::$database->escape_string($status);
+                $sql .= " AND status = '{$status}'";
+            }
 
-    $result = self::$database->query($sql);
-    $row = $result->fetch_assoc();
-    return (int)$row['cnt'];
-}
+            $result = self::$database->query($sql);
+            $row = $result->fetch_assoc();
+            return (int)$row['cnt'];
+        }
 
     public static function find_recent_by_department_groups_and_status($group_ids = [], $statuses = [], $limit = 10) {
         if (empty($group_ids) || empty($statuses)) { return []; }
@@ -314,6 +314,23 @@ class InspectionRequest extends DatabaseObject {
             " LIMIT {$limit}";
 
         return static::find_by_sql($sql);
+    }
+
+    public static function find_latest_by_ship_code($ship_code)
+    {
+        $ship_code = self::$database->escape_string($ship_code);
+
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE ship_code = '{$ship_code}' ";
+        $sql .= "ORDER BY id DESC ";
+        $sql .= "LIMIT 1";
+
+        $obj_array = static::find_by_sql($sql);
+
+        if (!empty($obj_array)) {
+            return array_shift($obj_array); // คืน object แถวล่าสุด
+        }
+        return null; // ไม่พบเลย
     }
 
 

@@ -1,0 +1,294 @@
+<?php
+// ไฟล์นี้อยู่ที่: FVSCIS/verify_fvs01.php
+require_once('../private/initialize.php');
+
+require_once('../private/fpdf/fpdf.php');
+require_once('../private/fpdi/src/autoload.php');
+require_once('../private/phpqrcode/qrlib.php');
+
+use setasign\Fpdi\Fpdi;
+
+// ===================== ตรวจ FPDI =====================
+if (!class_exists('setasign\Fpdi\Fpdi')) {
+    die("FPDI not loaded");
+}
+
+// ===================== รับ docnumber =====================
+$docnumber = $_GET['docnumber'] ?? '';
+$docnumber = trim($docnumber);
+
+if ($docnumber === '') {
+    die('ไม่พบเลขเอกสาร (docnumber)');
+}
+
+// ===================== ค้นผู้ยื่นจากเลขเอกสาร =====================
+// *** ต้องมีเมธอด InspectionApplicantInfo::find_by_form1_doc_number($docnumber)
+// ถ้ายังไม่มี ดูตัวอย่างเมธอดในท้ายไฟล์นี้
+
+$applicant = InspectionApplicantInfo::find_by_form1_doc_number($docnumber);
+
+if (!$applicant) {
+    die('ไม่พบข้อมูลผู้ยื่นคำขอสำหรับเลขเอกสารนี้ในระบบ');
+}
+
+// สมมติในตาราง InspectionApplicantInfo มีคอลัมน์ request_id
+$request_id = $applicant->request_id ?? null;
+if (empty($request_id)) {
+    die('ไม่พบ request_id ที่ผูกกับเอกสารนี้');
+}
+
+// ===================== ดึงข้อมูลคำขอตรวจ =====================
+$request = InspectionRequest::find_by_id($request_id);
+if (!$request) {
+    die('ไม่พบข้อมูลคำขอตรวจ');
+}
+$type = $request->inspection_form_type;
+
+// ===================== เตรียมตัวแปรที่ต้องใช้บนฟอร์ม =====================
+
+// เขียนที่ / วันที่
+$writtenAt   = $applicant->written_at   ?? '';
+$writtenDate = $applicant->written_date ?? null; // Y-m-d
+
+// ========================== แตกวันที่แบบละเอียด ==========================
+$writtenDay      = '';
+$writtenMonthNum = '';
+$writtenMonthTh  = '';
+$writtenYearAD   = '';
+$writtenYearBE   = '';
+
+if (!empty($writtenDate)) {
+
+    // แปลง string -> DateTime
+    $dt = DateTime::createFromFormat('Y-m-d', $writtenDate);
+
+    if ($dt) {
+        // วันที่
+        $writtenDay = (int)$dt->format('j'); // 1–31
+
+        // เดือนตัวเลข
+        $writtenMonthNum = $dt->format('m'); // 01–12
+
+        // เดือนชื่อไทย
+        $monthsTh = [
+            1 => 'มกราคม', 2 => 'กุมภาพันธ์', 3 => 'มีนาคม',
+            4 => 'เมษายน', 5 => 'พฤษภาคม', 6 => 'มิถุนายน',
+            7 => 'กรกฎาคม', 8 => 'สิงหาคม', 9 => 'กันยายน',
+            10 => 'ตุลาคม', 11 => 'พฤศจิกายน', 12 => 'ธันวาคม'
+        ];
+        $writtenMonthTh = $monthsTh[(int)$dt->format('n')];
+
+        // ปี ค.ศ. + ปี พ.ศ.
+        $writtenYearAD = (int)$dt->format('Y');
+        $writtenYearBE = $writtenYearAD + 543;
+    }
+}
+
+if (!empty($writtenDate)) {
+    // ใช้ฟังก์ชัน thai_date ที่คุณมีอยู่แล้ว
+    $writtenDateText = thai_date($writtenDate, ['format' => 'j F พ.ศ. Y']);
+} else {
+    $writtenDateText = '';
+}
+
+// ประเภทผู้ยื่น: 0 = บุคคลธรรมดา, 1 = นิติบุคคล
+$isJuristic = (int)($applicant->is_juristic ?? 0);
+
+// บุคคลธรรมดา / ผู้แทน
+$applicantName        = $applicant->applicant_name        ?? '';
+$applicantAge         = $applicant->applicant_age         ?? '';
+$applicantNationality = $applicant->applicant_nationality ?? '';
+$applicantAddressNo   = $applicant->applicant_address_no  ?? '';
+$applicantMoo         = $applicant->applicant_moo         ?? '';
+$applicantTambon      = $applicant->applicant_tambon      ?? '';
+$applicantAmphoe      = $applicant->applicant_amphoe      ?? '';
+$applicantProvince    = $applicant->applicant_province    ?? '';
+$applicantPhone       = $applicant->applicant_phone       ?? '';
+
+// นิติบุคคล (ถ้ามี)
+$juristicName        = $applicant->juristic_name        ?? '';
+$juristicOffice      = $applicant->juristic_office      ?? '';
+$juristicAddressNo   = $applicant->juristic_address_no  ?? '';
+$juristicMoo         = $applicant->juristic_moo         ?? '';
+$juristicTambon      = $applicant->juristic_tambon      ?? '';
+$juristicAmphoe      = $applicant->juristic_amphoe      ?? '';
+$juristicProvince    = $applicant->juristic_province    ?? '';
+
+// เลขเอกสาร สร.1 ที่ gen ไว้แล้ว (เช่น efvscis-2025-SR1-00001)
+// ใช้จาก $docnumber ที่รับมาเลยก็ได้
+$form1DocNumber = $docnumber;
+
+// ===================== แตกเลขเอกสาร → ปี / ลำดับ =====================
+// รูปแบบที่เราออก: efvscis-YYYY-TYPE-RUNNN
+$docYearAD    = '';
+$docYearBE    = '';
+$docRunning   = '';
+
+if (!empty($form1DocNumber)) {
+    if (preg_match('/^efvscis-(\d{4})-[^-]+-(\d{5})$/', $form1DocNumber, $m)) {
+        $docYearAD  = $m[1];              // 2025
+        $docRunning = ltrim($m[2], '0');  // "00001" -> "1"
+
+        $y = (int)$docYearAD;
+        if ($y > 0) {
+            $docYearBE = (string)($y + 543); // 2025 -> 2568
+        }
+    }
+}
+
+// ===================== ข้อมูลเรือ (ถ้าต้องการใช้) =====================
+$shipCode     = $request->ship_code    ?? '';
+$vesselName   = $request->vessel_name  ?? '';
+$vesselRegNo  = $request->vessel_regno ?? '';
+$portName     = $request->port_name    ?? '';
+$inspectedAt  = $request->inspect_date ?? ''; // Y-m-d ถ้ามี
+
+// ===================== ข้อความสำหรับทำ QR =====================
+// ยิงกลับมาที่หน้า verify เดิมนี่แหละ (self-verifiable)
+$qrText = '';
+if (!empty($form1DocNumber)) {
+    $qrText = 'https://fishlanding.fisheries.go.th/fvscis/verify_fvs01.php?docnumber='
+            . urlencode($form1DocNumber);
+} else {
+    $qrText = 'https://fishlanding.fisheries.go.th/fvscis/verify_fvs01.php';
+}
+
+// ===================== สร้าง QR Code เป็นไฟล์ชั่วคราว (temp file) =====================
+
+$tempQrFile = null;
+if (!empty($qrText)) {
+    // สร้างชื่อไฟล์ชั่วคราวใน temp dir ของระบบ
+    $tempQrFile = tempnam(sys_get_temp_dir(), 'qr_');
+    // phpqrcode ต้องการนามสกุล .png
+    $realQrFile = $tempQrFile . '.png';
+    rename($tempQrFile, $realQrFile);
+    $tempQrFile = $realQrFile;
+
+    // สร้างไฟล์ QR PNG
+    QRcode::png($qrText, $tempQrFile, QR_ECLEVEL_L, 3, 1);
+}
+
+// ===================== เริ่มสร้าง PDF ด้วย FPDI =====================
+
+$pdf = new FPDI();
+$pdf->SetAutoPageBreak(false);
+
+// ระบุไฟล์ template ของแบบ สร.1
+$map = [
+    1 => __DIR__ . '/../private/pdftemplate/FVS1.pdf',
+    2 => __DIR__ . '/../private/pdftemplate/FVS1EU.pdf'
+];
+
+$source = $map[$type] ?? $map[1]; // default = type 1
+$pageCount = $pdf->setSourceFile($source);
+
+// โหลดฟอนต์ TH Sarabun
+$pdf->AddFont('THSarabunPSK','','THSarabunPSK.php');
+$pdf->SetFont('THSarabunPSK','',16);
+
+// ======================= หน้า 1 =======================
+$pdf->AddPage();
+$tpl = $pdf->importPage(1);
+$pdf->useTemplate($tpl, 0, 0);
+
+// 1) เลขที่ / ลำดับ / ปี
+$pdf->SetXY(35, 20);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $docRunning), 0, 0, 'L');
+$pdf->SetXY(50, 20);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $docYearBE), 0, 0, 'L');
+
+// 2) เขียนที่ / วันที่
+$pdf->SetXY(137, 37);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenAt), 0, 0, 'L');
+
+$pdf->SetXY(135, 45);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenDay), 0, 0, 'L');
+$pdf->SetXY(153, 45);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenMonthTh), 0, 0, 'L');
+$pdf->SetXY(184, 45);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenYearBE), 0, 0, 'L');
+
+// 3) ข้อมูลบุคคลธรรมดา
+$pdf->SetXY(65, 54);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantName), 0, 0, 'L');
+if ($type == 1) {
+    $pdf->SetXY(135, 54);
+    $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantAge), 0, 0, 'L');
+}
+$pdf->SetXY(165, 54);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantNationality), 0, 0, 'L');
+
+$pdf->SetXY(57, 62);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantAddressNo), 0, 0, 'L');
+
+$pdf->SetXY(76, 62);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantMoo), 0, 0, 'L');
+
+$pdf->SetXY(95, 62);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantTambon), 0, 0, 'L');
+
+$pdf->SetXY(155, 62);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantAmphoe), 0, 0, 'L');
+
+$pdf->SetXY(40, 69);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantProvince), 0, 0, 'L');
+
+$pdf->SetXY(120, 69);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantPhone), 0, 0, 'L');
+
+// 3) ข้อมูลนิติบุคคล
+$pdf->SetXY(50, 76);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicName), 0, 0, 'L');
+$pdf->SetXY(153, 76);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicOffice), 0, 0, 'L');
+$pdf->SetXY(36, 84);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicAddressNo), 0, 0, 'L');
+$pdf->SetXY(56, 84);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicMoo), 0, 0, 'L');
+$pdf->SetXY(76, 84);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicTambon), 0, 0, 'L');
+$pdf->SetXY(124, 84);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicAmphoe), 0, 0, 'L');
+$pdf->SetXY(172, 84);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicProvince), 0, 0, 'L');
+
+// 4) ข้อมูลเรือ
+$pdf->SetXY(99, 92);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $vesselName), 0, 0, 'L');
+$pdf->SetXY(182, 92);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $shipCode), 0, 0, 'L');
+$pdf->SetXY(75, 99);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $writtenAt), 0, 0, 'L');
+
+// 4) คำรับรอง (ปรับตามที่คุณใช้ใน print_form1)
+if ($type == 1) {
+    $pdf->SetXY(65, 195);
+    $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantName), 0, 0, 'L');
+    $pdf->SetXY(147, 195);
+    $pdf->Cell(0, 8, iconv('UTF-8','cp874', $juristicName), 0, 0, 'L');
+}
+
+// ลายเซ็นผู้ยื่น
+if ($type == 1) {
+    $pdf->SetXY(143, 224);
+    $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantName), 0, 0, 'L');
+} else {
+    $pdf->SetXY(143, 232);
+    $pdf->Cell(0, 8, iconv('UTF-8','cp874', $applicantName), 0, 0, 'L');
+}
+
+// ======================= แปะ QR ด้านล่างซ้าย =======================
+if (!empty($tempQrFile) && file_exists($tempQrFile)) {
+    $pdf->Image($tempQrFile, 15, 260, 18, 18, 'PNG'); // X, Y, W, H
+}
+
+// ======================= ส่งออก PDF =======================
+$fileName = 'Verify_Sor1_' . $form1DocNumber . '.pdf';
+$pdf->Output('I', $fileName);
+
+// ลบไฟล์ QR ชั่วคราวทิ้ง
+if (!empty($tempQrFile) && file_exists($tempQrFile)) {
+    unlink($tempQrFile);
+}
+
+exit;

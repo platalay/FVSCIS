@@ -192,4 +192,28 @@ class InspectionApplicantInfo extends DatabaseObject
 
         return new static(['request_id' => $request_id]);
     }
+
+    //ลบ record โดย request_id
+    public static function delete_by_request_id($request_id)
+    {
+        $request_id = self::$database->escape_string($request_id);
+
+        $sql = "DELETE FROM " . static::$table_name . " ";
+        $sql .= "WHERE request_id = '{$request_id}' ";
+        $sql .= "LIMIT 1";
+
+        return self::$database->query($sql);
+    }
+
+    public static function find_by_form1_doc_number(string $docnumber)
+        {
+            global $database;
+            $docnumber = trim($docnumber);
+            $sql = "SELECT * FROM " . static::$table_name . " ";
+            $sql .= "WHERE form1_doc_number = '" . $database->escape_string($docnumber) . "' ";
+            $sql .= "LIMIT 1";
+            $obj_array = static::find_by_sql($sql);
+            return !empty($obj_array) ? array_shift($obj_array) : null;
+        }
+
 }

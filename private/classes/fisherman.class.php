@@ -85,6 +85,18 @@ class Fisherman extends DatabaseObject {
         return !empty($result) ? array_shift($result) : false;
     }
     
+    static public function exists_email($email) {
+        $email = self::$database->escape_string($email);
+        $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name . " 
+                WHERE email = '{$email}'";
+
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+
+        return $row['cnt'] > 0;
+    }
+    
+    
     public function save_token($token, $expiry) {
         $this->login_token = $token;
         $this->token_expiry = $expiry;

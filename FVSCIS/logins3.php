@@ -122,7 +122,7 @@ require_once('../private/initialize.php');
                   <label for="edit_usertype_id" class="form-label">สิทธิ์การใช้งาน</label>
                   <?php $UserTypes = UserType::find_all();?>
                   <select class="form-select" name="officer[usertype_id]" id="edit_usertype_id">
-                      <option value="">-- กรุณาเลือกกลุ่มหน่วยงาน --</option>
+                      <option value="">-- กรุณาเลือกสิทธิ์การใช้งาน --</option>
                       <?php foreach($UserTypes as $UserType): 
                         if($UserType->id != 5 && $UserType->id != 1){
                       ?>

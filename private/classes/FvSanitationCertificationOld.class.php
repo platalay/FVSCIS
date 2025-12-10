@@ -218,6 +218,92 @@ class FvSanitationCertificationOld extends DatabaseObject
         return self::$database->query($sql);
     }
 
+    public static function reset_after_request_deleted($ship_code)
+    {
+        $ship_code = self::$database->escape_string($ship_code);
+
+        // 1) เช็กสถานะล่าสุดจาก InspectionRequest ของเรือลำนี้
+        $latestReq = InspectionRequest::find_latest_by_ship_code($ship_code);
+
+        // ใช้ฟิลด์ status (ไม่ใช่ cert_status)
+        $latestStatus = $latestReq->status ?? null;
+
+        // 1.1) ถ้ามี request ล่าสุด และสถานะล่าสุด = 'fail'
+        //      → ให้เรือลำนี้เป็น fail ทั้งหมด
+        if ($latestReq && $latestStatus === 'fail') {
+            return static::mark_fail($ship_code);
+        }
+
+        // 2) ถ้าไม่มี request เลย หรือมีแต่สถานะล่าสุดไม่ใช่ fail
+        //    → ใช้ logic expiration_date
+        $today = date('Y-m-d');
+
+        // หาใบที่ยังไม่หมดอายุของเรือลำนี้
+        $sql  = "SELECT id FROM " . static::$table_name . " ";
+        $sql .= "WHERE ship_code = '{$ship_code}' ";
+        $sql .= "  AND expiration_date IS NOT NULL ";
+        $sql .= "  AND expiration_date >= '{$today}' ";
+        $sql .= "ORDER BY expiration_date DESC ";
+        $sql .= "LIMIT 1";
+
+        $obj_array = static::find_by_sql($sql);
+
+        if (!empty($obj_array)) {
+            // มีใบที่ยังไม่หมดอายุ → อันนี้ active ที่เหลือ pass
+            $active_record = array_shift($obj_array);
+            $active_id     = self::$database->escape_string($active_record->id);
+
+            $sql_update  = "UPDATE " . static::$table_name . " ";
+            $sql_update .= "SET status = CASE ";
+            $sql_update .= "    WHEN id = '{$active_id}' THEN 'active' ";
+            $sql_update .= "    ELSE 'pass' ";
+            $sql_update .= "END ";
+            $sql_update .= "WHERE ship_code = '{$ship_code}'";
+
+            return self::$database->query($sql_update);
+        }
+
+        // 3) ถ้าไม่มีใบที่ยังไม่หมดอายุเลย → inactive ทั้งลำ
+        return static::mark_inactive($ship_code);
+    }
+
+    public static function mark_active($ship_code)
+    {
+        $ship_code = self::$database->escape_string($ship_code);
+        $today     = date('Y-m-d');
+
+        // 1) เลือก "ใบที่ยังไม่หมดอายุ" ที่หมดอายุช้าที่สุดของเรือลำนี้
+        $sql  = "SELECT id FROM " . static::$table_name . " ";
+        $sql .= "WHERE ship_code = '{$ship_code}' ";
+        $sql .= "  AND expiration_date IS NOT NULL ";
+        $sql .= "  AND expiration_date >= '{$today}' ";
+        $sql .= "ORDER BY expiration_date DESC, id DESC ";
+        $sql .= "LIMIT 1";
+
+        $obj_array = static::find_by_sql($sql);
+
+        // 2) ถ้าไม่มีใบที่ยังไม่หมดอายุเลย → inactive ทั้งลำ
+        if (empty($obj_array)) {
+            return static::mark_inactive($ship_code);
+            // หรือถ้าอยากให้แค่คืน false ไม่เปลี่ยน status ก็ใช้
+            // return false;
+        }
+
+        // 3) มีใบที่ยังไม่หมดอายุ → ใบนั้น active, ที่เหลือ pass
+        $active_record = array_shift($obj_array);
+        $active_id     = self::$database->escape_string($active_record->id);
+
+        $sql_update  = "UPDATE " . static::$table_name . " ";
+        $sql_update .= "SET status = CASE ";
+        $sql_update .= "    WHEN id = '{$active_id}' THEN 'active' ";
+        $sql_update .= "    ELSE 'pass' ";
+        $sql_update .= "END ";
+        $sql_update .= "WHERE ship_code = '{$ship_code}'";
+
+        return self::$database->query($sql_update);
+    }
+
+
 
     public static function count_distinct_shipcode_by_status() {
         $sql = "SELECT status, COUNT(DISTINCT ship_code) AS total
@@ -241,6 +327,59 @@ class FvSanitationCertificationOld extends DatabaseObject
 
         return $counts;
     }
+
+    public static function count_by_status_responsible_unit($status, $responsible_unit)
+    {
+        $status = self::$database->escape_string($status);
+        $unit   = self::$database->escape_string($responsible_unit);
+
+        $sql = "
+            SELECT COUNT(*) AS total
+            FROM (
+                SELECT ship_code, MAX(id) AS last_id
+                FROM " . static::$table_name . "
+                WHERE responsible_unit = '{$unit}'
+                GROUP BY ship_code
+            ) AS t
+            JOIN " . static::$table_name . " o ON o.id = t.last_id
+            WHERE o.status = '{$status}'
+        ";
+
+        $result = self::$database->query($sql);
+
+        if ($result) {
+            $row = $result->fetch_assoc();
+            return $row['total'] ?? 0;
+        }
+        return 0;
+    }
+
+    public static function count_by_status_evaluation_agency($status, $evaluation_agency)
+    {
+        $status = self::$database->escape_string($status);
+        $unit   = self::$database->escape_string($evaluation_agency);
+
+        $sql = "
+            SELECT COUNT(*) AS total
+            FROM (
+                SELECT ship_code, MAX(id) AS last_id
+                FROM " . static::$table_name . "
+                WHERE evaluation_agency = '{$unit}'
+                GROUP BY ship_code
+            ) AS t
+            JOIN " . static::$table_name . " o ON o.id = t.last_id
+            WHERE o.status = '{$status}'
+        ";
+
+        $result = self::$database->query($sql);
+
+        if ($result) {
+            $row = $result->fetch_assoc();
+            return $row['total'] ?? 0;
+        }
+        return 0;
+    }
+
     /* 
     การใช้งาน
     $counts = FvSanitationCertificationOld::count_distinct_shipcode_by_status();

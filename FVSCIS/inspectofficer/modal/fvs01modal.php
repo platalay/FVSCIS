@@ -24,7 +24,7 @@
             <div class="form-group col-md-6">
               <label>วันที่</label>
               <input type="text" class="form-control" name="written_date_text" id="written_date_text" readonly>
-              <input type="hidden" class="form-control" name="written_date" id="written_date" readonly>
+              <input type="hidden" class="form-control" name="written_date" id="written_date">
             </div>
           </div>
 
@@ -71,7 +71,7 @@
               </div>
               <div class="form-group col-md-2">
                 <label>หมู่ที่</label>
-                <input type="text" class="form-control" name="applicant_moo" id="applicant_moo" required>
+                <input type="text" class="form-control" name="applicant_moo" id="applicant_moo">
               </div>
               <div class="form-group col-md-4">
                 <label>ตำบล</label>

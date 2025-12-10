@@ -6,7 +6,9 @@ $Officer = Officer::find_by_id($session->user_id());
 if(!$Officer) { redirect_to('../login.php'); }
 
 $department_id = $Officer->departments_id ?? null;
-error_log("department_id = ". $department_id);
+$department = Department::find_by_id($department_id);
+$departmentgroup = DepartmentGroup::find_by_id($department->parent_department);
+
 // ====== ดึงสถิติหลักของหน่วย ======
 $total_requests     = InspectionRequest::count_by_department($department_id);
 $pending_requests   = InspectionRequest::count_by_department_and_status($department_id, 'pending');
@@ -43,7 +45,7 @@ include("../../private/shared/topbarofficer.php");
     </div>
   </div>
 
-  <!-- Row: Summary Cards -->
+  <!-- Row: Summary Cards1 -->
   <div class="row">
 
     <!-- คำขอทั้งหมดในหน่วย -->
@@ -129,8 +131,132 @@ include("../../private/shared/topbarofficer.php");
         </div>
       </div>
     </div>
+  </div><!-- Row: Summary Cards1 -->
 
-  </div>
+
+  <?php
+// ---------- กลุ่มซ้าย: นับตามหน่วยประเมิน ----------
+$eva_inactive = FvSanitationCertificationOld::count_by_status_evaluation_agency('inactive', $department_id);
+$eva_pending  = FvSanitationCertificationOld::count_by_status_evaluation_agency('pending',  $department_id);
+$eva_fail     = FvSanitationCertificationOld::count_by_status_evaluation_agency('fail',     $department_id);
+$eva_active   = FvSanitationCertificationOld::count_by_status_evaluation_agency('active',   $department_id);
+
+// ---------- กลุ่มขวา: นับตามความรับผิดชอบ ----------
+$res_inactive = FvSanitationCertificationOld::count_by_status_responsible_unit('inactive', $department_id);
+$res_pending  = FvSanitationCertificationOld::count_by_status_responsible_unit('pending',  $department_id);
+$res_fail     = FvSanitationCertificationOld::count_by_status_responsible_unit('fail',     $department_id);
+$res_active   = FvSanitationCertificationOld::count_by_status_responsible_unit('active',   $department_id);
+?>
+
+<div class="row mb-4">
+
+    <!-- ================= กลุ่มซ้าย ================= -->
+    <div class="col-xl-6 col-lg-12">
+        <h6 class="text-muted mb-2 border-bottom pb-1">
+            จำนวนเรือที่อนุมัติตามสถานะ (หน่วยประเมิน)
+        </h6>
+
+        <div class="row">
+
+            <!-- inactive -->
+            <div class="col-6 col-md-3 mb-3">
+                <div class="dashboard-card" 
+                     style="border-left:4px solid rgba(108,117,125,0.4);background:rgba(108,117,125,0.10);">
+                    <div class="text-xs font-weight-bold text-secondary mb-1">เรือไม่ ACTIVE</div>
+                    <div class="h5 font-weight-bold"><?= number_format($eva_inactive); ?> ลำ</div>
+                    <i class="fas fa-ship icon text-secondary"></i>
+                </div>
+            </div>
+
+            <!-- pending -->
+            <div class="col-6 col-md-3 mb-3">
+                <div class="dashboard-card"
+                     style="border-left:4px solid #f7c948;background:rgba(247,201,72,0.18);">
+                    <div class="text-xs font-weight-bold" style="color:#B68B00;">อยู่ระหว่างยื่นตรวจ</div>
+                    <div class="h5 font-weight-bold"><?= number_format($eva_pending); ?> ลำ</div>
+                    <i class="fas fa-clock icon" style="color:#B68B00;"></i>
+                </div>
+            </div>
+
+            <!-- fail -->
+            <div class="col-6 col-md-3 mb-3">
+                <div class="dashboard-card"
+                     style="border-left:4px solid #e35d6a;background:rgba(227,93,106,0.20);">
+                    <div class="text-xs font-weight-bold text-danger">ตรวจไม่ผ่าน</div>
+                    <div class="h5 font-weight-bold"><?= number_format($eva_fail); ?> ลำ</div>
+                    <i class="fas fa-times-circle icon text-danger"></i>
+                </div>
+            </div>
+
+            <!-- active -->
+            <div class="col-6 col-md-3 mb-3">
+                <div class="dashboard-card"
+                     style="border-left:4px solid #4caf91;background:rgba(76,175,145,0.18);">
+                    <div class="text-xs font-weight-bold" style="color:#2d7a65;">ได้รับ สร.3</div>
+                    <div class="h5 font-weight-bold"><?= number_format($eva_active); ?> ลำ</div>
+                    <i class="fas fa-check-circle icon" style="color:#2d7a65;"></i>
+                </div>
+            </div>
+
+        </div><!-- row -->
+    </div><!-- col -->
+
+    <!-- ================= กลุ่มขวา ================= -->
+    <div class="col-xl-6 col-lg-12">
+        <?php if (($department->id >= 1 && $department->id <= 9)) { ?>
+
+        <h6 class="text-muted mb-2 border-bottom pb-1 text-right">
+            จำนวนข้อมูลเรือในความรับผิดชอบ (ตามสถานะ)
+        </h6>
+
+        <div class="row">
+
+            <!-- inactive -->
+            <div class="col-6 col-md-3 mb-3">
+                <div class="dashboard-card"
+                     style="border-left:4px solid rgba(108,117,125,0.4);background:rgba(108,117,125,0.10);">
+                    <div class="text-xs font-weight-bold text-secondary">เรือไม่ ACTIVE</div>
+                    <div class="h5 font-weight-bold"><?= number_format($res_inactive); ?> ลำ</div>
+                    <i class="fas fa-ship icon text-secondary"></i>
+                </div>
+            </div>
+
+            <!-- pending -->
+            <div class="col-6 col-md-3 mb-3">
+                <div class="dashboard-card"
+                     style="border-left:4px solid #f7c948;background:rgba(247,201,72,0.18);">
+                    <div class="text-xs font-weight-bold" style="color:#B68B00;">อยู่ระหว่างยื่นตรวจ</div>
+                    <div class="h5 font-weight-bold"><?= number_format($res_pending); ?> ลำ</div>
+                    <i class="fas fa-clock icon" style="color:#B68B00;"></i>
+                </div>
+            </div>
+
+            <!-- fail -->
+            <div class="col-6 col-md-3 mb-3">
+                <div class="dashboard-card"
+                     style="border-left:4px solid #e35d6a;background:rgba(227,93,106,0.20);">
+                    <div class="text-xs font-weight-bold text-danger">ตรวจไม่ผ่าน</div>
+                    <div class="h5 font-weight-bold"><?= number_format($res_fail); ?> ลำ</div>
+                    <i class="fas fa-times-circle icon text-danger"></i>
+                </div>
+            </div>
+
+            <!-- active -->
+            <div class="col-6 col-md-3 mb-3">
+                <div class="dashboard-card"
+                     style="border-left:4px solid #4caf91;background:rgba(76,175,145,0.18);">
+                    <div class="text-xs font-weight-bold" style="color:#2d7a65;">ได้รับ สร.3</div>
+                    <div class="h5 font-weight-bold"><?= number_format($res_active); ?> ลำ</div>
+                    <i class="fas fa-check-circle icon" style="color:#2d7a65;"></i>
+                </div>
+            </div>
+
+        </div><!-- row -->
+        <?php } ?>
+    </div><!-- col -->
+
+</div><!-- row -->
+
 
   <!-- Row: Pending in Department + My Tasks Today -->
   <div class="row">

@@ -98,14 +98,25 @@ $fisherman=Fisherman::find_by_username($session->username);
                                     <td><?= isset($fvscisold->expiration_date) ? thai_date($fvscisold->expiration_date) : '-' ?></td>
 
                                     <td>
-                                        <?php if ($cert_status === 'active'): ?>
-                                            <span class="badge bg-success">เปิดใช้งาน</span>
-                                        <?php elseif ($cert_status === 'inactive'): ?>
-                                            <span class="badge bg-secondary">หมดอายุ</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-light text-dark">-</span>
-                                        <?php endif; ?>
-                                    </td>
+                                    <?php
+                                    // mapping สถานะ → bootstrap badge
+                                    $badgeMap = [
+                                        'active'   => ['bg-success',    'เปิดใช้งาน'],
+                                        'inactive' => ['bg-secondary',  'หมดอายุ'],
+                                        'pending'  => ['bg-warning text-dark', 'รอดำเนินการ'],
+                                        'fail'     => ['bg-danger',     'ไม่ผ่าน'],
+                                        'pass'     => ['bg-info text-dark', 'ผ่าน'],
+                                    ];
+
+                                    if (!empty($cert_status) && isset($badgeMap[$cert_status])) {
+                                        [$class, $label] = $badgeMap[$cert_status];
+                                        echo "<span class='badge {$class}'>{$label}</span>";
+                                    } else {
+                                        echo "<span class='badge bg-light text-dark'>ไม่มีข้อมูล สร.3</span>";
+                                    }
+                                    ?>
+                                </td>
+
 
                                 </tr>
                                 <?php endforeach; ?>

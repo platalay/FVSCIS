@@ -66,10 +66,10 @@ try {
 
     if ($applicant) {
         //$data['written_at']   = $applicant->written_at   ?? $default_written_at;
-        $data['written_date'] = $applicant->written_date ?? $default_written_date;
+        //$data['written_date'] = $applicant->written_date ?? $default_written_date;
 
         $data['is_juristic']  = (int)($applicant->is_juristic ?? 0);
-
+       
         $data['applicant_name']         = $applicant->applicant_name ?? '';
         $data['applicant_age']          = $applicant->applicant_age ?? '';
         $data['applicant_nationality']  = $applicant->applicant_nationality ?? '';

@@ -1,96 +1,154 @@
 <?php
+declare(strict_types=1);
+
 require_once('../../../private/initialize.php');
+global $database;          // ดึงตัวแปร $database ที่ initialize.php สร้างไว้
+$db = $database;           // แค่ alias เฉย ๆ จะได้อ่านง่าย
+$session->require_role(['fisherman']);
 header('Content-Type: application/json; charset=utf-8');
 
 try {
-    // ตรวจ id
+
+    // ------------------------------
+    // 1) ตรวจสอบ id
+    // ------------------------------
     if (!isset($_POST['id']) || !ctype_digit((string)$_POST['id'])) {
-        echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูล ID']);
-        exit;
+        throw new Exception('ไม่พบข้อมูล ID ที่ถูกต้อง');
     }
     $id = (int)$_POST['id'];
 
-    // หา request
     $request = InspectionRequest::find_by_id($id);
     if (!$request) {
-        echo json_encode(['success' => false, 'message' => 'ไม่พบคำขอ']);
-        exit;
+        throw new Exception('ไม่พบคำขอในระบบ');
     }
 
-    // ✅ เก็บข้อมูลที่ต้องใช้ทำ log/notify ไว้ก่อนลบ
-    $request_id        = $request->id;
-    $department_id     = $request->department_id ?? null;
-    $port_license_no   = $request->port_license_no ?? null;
-    $request_owner_id  = $request->created_by ?? 0;   // ผู้ยื่นคำขอ (ชาวประมง)
-    $deleter_user_id   = $session->user_id() ?? 0;    // ผู้ที่ลบ
+    // ------------------------------
+    // 2) ตรวจสอบสิทธิ์
+    // ------------------------------
+    $currentUserId = (int)$session->user_id();
+    if ($currentUserId !== (int)$request->created_by) {
+        throw new Exception('คุณไม่มีสิทธิ์ลบคำขอนี้');
+    }
 
-    // ข้อมูลเรือสำหรับ log/notify
-    $vessel_name   = trim($request->vessel_name ?? '');
-    $ship_code     = trim($request->ship_code ?? '');
-    $license_no    = trim($request->license_number ?? $port_license_no ?? '');
+    // ------------------------------
+    // 3) เตรียมข้อมูลไฟล์แนบ (เก็บ path ก่อน)
+    // ------------------------------
+    $attachments = InspectionAttachment::find_by_request_id($id);
+    $fileList = [];
 
+    $docRoot = rtrim(str_replace('\\','/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
+    $pubPath = rtrim(str_replace('\\','/', defined('PUBLIC_PATH') ? PUBLIC_PATH : $docRoot), '/');
+
+    foreach ($attachments as $att) {
+        $filePath = $att->file_path ?? '';
+
+        if (!empty($filePath) && !preg_match('~^https?://~i', $filePath)) {
+
+            $abs = realpath($pubPath . '/' . ltrim($filePath, '/'));
+            $uploadsBase = realpath($pubPath . '/uploads');
+
+            if ($abs && $uploadsBase && str_starts_with($abs, $uploadsBase) && is_file($abs)) {
+                $fileList[] = $abs;
+            }
+        }
+    }
+
+    // ------------------------------
+    // 4) เริ่ม Transaction แบบ SQL
+    // ------------------------------
     
-    // ใช้ transaction ถ้ามี
-    if (class_exists('Database') && method_exists(Database::$database, 'begin_transaction')) {
-        Database::$database->begin_transaction();
-        $in_tx = true;
-    } else {
-        $in_tx = false;
-    }
+    $db->query("START TRANSACTION");
 
-    // 🔥 ลบหลัก
+    // ------------------------------
+    // 5) ลบข้อมูลใน DB
+    // ------------------------------
+
+    // ลบคำขอ
     if (!$request->delete()) {
-        if ($in_tx) Database::$database->rollback();
-        echo json_encode(['success' => false, 'message' => 'ลบคำขอไม่สำเร็จ']);
-        exit;
+        $db->query("ROLLBACK");
+        throw new Exception('ลบคำขอไม่สำเร็จ');
     }
-    FvSanitationCertificationOld::mark_pending($ship_code);
 
-    // 📝 Log การลบ
+    // ลบผู้ยื่นแบบ สร.1
+    InspectionApplicantInfo::delete_by_request_id($id);
+
+    // ลบ attachments (เฉพาะใน DB)
+    foreach ($attachments as $att) {
+        if (!$att->delete()) {
+            $db->query("ROLLBACK");
+            throw new Exception('ลบข้อมูลไฟล์แนบในฐานข้อมูลไม่สำเร็จ');
+        }
+    }
+
+    // รีเซ็ตสถานะเรือ
+    $ship_code = trim($request->ship_code ?? '');
+    if ($ship_code !== '') {
+        FvSanitationCertificationOld::reset_after_request_deleted($ship_code);
+    }
+
+    // ------------------------------
+    // 6) Log การลบ
+    // ------------------------------
     $log = new InspectionLog();
-    $log->inspection_request_id = $request_id;
-    $log->action_id             = 3;
-    $log->note                  = "{$vessel_name} ถูกลบคำขอโดย user_id={$deleter_user_id}";
+    $log->inspection_request_id = $id;
+    $log->action_id             = 4;
+    $log->note                  = "เรือ {$request->vessel_name} ถูกลบคำขอโดย user_id={$currentUserId}";
+
     if (!$log->save()) {
-        if ($in_tx) Database::$database->rollback();
-        echo json_encode(['success' => false, 'message' => 'ลบสำเร็จ แต่บันทึก log ไม่สำเร็จ']);
-        exit;
+        $db->query("ROLLBACK");
+        throw new Exception('ลบสำเร็จ แต่บันทึกประวัติไม่สำเร็จ');
     }
 
-    // 🔔 Notify เจ้าตัว (ผู้ยื่นคำขอ/หรือคนลบ)
-    //create_notification($user_id, $user_role, $inspection_request_id, $action_id, $message, $notification_type = 'info') 
-    //info/success/warning/error
-    
+    // ------------------------------
+    // 7) Notifications
+    // ------------------------------
     Notification::create_notification(
-        $session->user_id(),
-        $session->role,
-        $request_id,
-        4,//delete_request
-        "เรือ {$vessel_name} : ลบคำขอตรวจสุขอนามัยเรียบร้อย",
+        $currentUserId,
+        'fisherman',
+        $id,
+        4,
+        "เรือ {$request->vessel_name} : ลบคำขอตรวจสุขอนามัยเรียบร้อย",
         'warning'
     );
 
-    // 🔔 Notify เจ้าหน้าที่ (เฉพาะกรณีผู้ลบคือผู้ยื่นคำขอเอง)
-    
-        $officers = Officer::find_by_department_id($department_id) ?: [];
+    if (!empty($request->department_id)) {
+        $officers = Officer::find_by_department_id($request->department_id) ?: [];
         foreach ($officers as $officer) {
             Notification::create_notification(
                 $officer->id,
-                $session->map_usertype_id_to_role($sission->role),
-                $request_id,
-                4,//delete_request
-                "เรือ {$vessel_name} : ผู้ยื่นคำขอลบคำขอตรวจสุขอนามัย",
+                'inspectofficer',
+                $id,
+                4,
+                "เรือ {$request->vessel_name} : ผู้ยื่นคำขอลบคำขอตรวจสุขอนามัย",
                 'warning'
             );
         }
+    }
 
+    // ------------------------------
+    // 8) COMMIT → DB ปลอดภัยแล้ว
+    // ------------------------------
+    $db->query("COMMIT");
 
-    if ($in_tx) Database::$database->commit();
+    // ------------------------------
+    // 9) ลบไฟล์จริงใน disk
+    // ------------------------------
+    foreach ($fileList as $abs) {
+        if (is_file($abs)) {
+            @unlink($abs);
+        }
+    }
+
     echo json_encode(['success' => true]);
 
-} catch (Exception $e) {
-    if (!empty($in_tx) && $in_tx === true) {
-        Database::$database->rollback();
+} catch (Throwable $e) {
+
+    if (isset($db)) {
+        @$db->query("ROLLBACK");
     }
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }

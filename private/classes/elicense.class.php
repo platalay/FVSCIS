@@ -212,6 +212,8 @@ class Elicense extends DatabaseObjectEl{
       $sql = "SELECT
                 am.name AS amphur_request,
                 pr.name AS province_request,
+                rpn.age,
+                rpn.nationality_id,
                 rpn.display_name,
                 rpn.number,
                 rpn.phone,

@@ -102,7 +102,17 @@ class Officer extends DatabaseObject {
         return $object_array;
     }
 
+    static public function exists_email($email) {
+        $email = self::$database->escape_string($email);
+        $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name . " 
+                WHERE email = '{$email}'";
 
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+
+        return $row['cnt'] > 0;
+    }
+    
     static public function find_by_email($email) {
         $sql = "SELECT * FROM " . static::$table_name . " ";
         $sql .= "WHERE email = '" . self::$database->escape_string($email) . "' ";

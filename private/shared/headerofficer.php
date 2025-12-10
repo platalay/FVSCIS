@@ -49,6 +49,44 @@
     </style>
     <!-- CSS เฉพาะโมดัลนี้ -->
     <style>
+      #pageLoader {
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 3px;
+          width: 0%;
+          background-color: #0d6efd; /* ฟ้า Bootstrap */
+          z-index: 9999;
+          transition: width 0.4s ease;
+      }
+    .action-buttons .btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .dashboard-card {
+    border-radius: 12px;
+    padding: 18px;
+    min-height: 130px;
+    border: 1px solid rgba(0,0,0,0.05);
+    position: relative;
+    transition: 0.2s;
+}
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+.dashboard-card .icon {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    opacity: .45;
+}
+
 
     table thead th {
     background-color: #f8f9fa !important;
@@ -207,7 +245,7 @@ tr.tr-cancelled > td {
   </head>
 
   <body id="page-top">
-    
+  <div id="pageLoader"></div>  
 
       
   

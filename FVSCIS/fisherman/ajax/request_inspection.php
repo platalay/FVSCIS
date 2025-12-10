@@ -1,7 +1,13 @@
 <?php
 require_once('../../../private/initialize.php');
 $session->require_role(['fisherman']);
-header('Content-Type: application/json');
+
+header('Content-Type: application/json; charset=utf-8');
+
+// ใช้ connection เดียวกับ model
+global $database;
+/** @var mysqli $database */
+$db = $database;
 
 try {
     if (!isset($_POST['request'])) {
@@ -26,8 +32,10 @@ try {
     // ✅ รองรับรูปแบบฟอร์ม: 1=ทั่วไป, 2=EU (checkbox)
     $inspection_form_type = (int)($_POST['request']['inspection_form_type'] ?? 1);
     $inspection_form_type = ($inspection_form_type === 2) ? 2 : 1; // บังคับ 1/2
+
     $cold_room_flag_raw = $_POST['request']['cold_room_flag'] ?? '0';
     $cold_room_flag = ($cold_room_flag_raw === '1') ? 1 : 0; // บังคับ 0/1
+
     // ✅ ตรวจข้อมูลขั้นต่ำ
     if ($ship_code === '' || $contact_phone === '' || $department_id === '') {
         throw new Exception("กรุณากรอกข้อมูลให้ครบถ้วน");
@@ -50,7 +58,7 @@ try {
         }
     }
 
-    // ⚙️ ดึงข้อมูลอ้างอิงเรือ/ท่าเรือ
+    // ⚙️ ดึงข้อมูลอ้างอิงเรือ/ท่าเรือ (จาก eLicense)
     $VesselData = Elicense::find_one_by_ship_code($el_db, $ship_code);
     $Portdata   = ElicensePort::find_one_by_license_no($el_db, $port_license);
 
@@ -60,9 +68,12 @@ try {
         echo json_encode([
             'success' => false,
             'message' => 'คุณมีคำขอตรวจเรือที่ยังไม่เสร็จ กรุณายกเลิกหรือรอผลก่อน',
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     }
+
+    // 🔹 เริ่ม Transaction
+    $db->query("START TRANSACTION");
 
     // ✅ บันทึกคำขอ
     $request = new InspectionRequest();
@@ -97,20 +108,19 @@ try {
     $request->created_at              = date('Y-m-d H:i:s');
     $request->status                  = InspectionRequest::STATUS_PENDING;
     $request->confirmed_inspect_date  = null;
-    $request->contact_phone = $contact_phone;
-    // 🌟 สำคัญ: เก็บรูปแบบฟอร์ม (1/2)
-    $request->inspection_form_type = $inspection_form_type;
-    $request->cold_room_flag = $cold_room_flag;
-    $request->is_manual_case = 0;
+    $request->contact_phone           = $contact_phone;
+    $request->inspection_form_type    = $inspection_form_type;
+    $request->cold_room_flag          = $cold_room_flag;
+    $request->is_manual_case          = 0;
 
     if (!$request->save()) {
         $err = is_array($request->errors ?? null) ? implode(', ', $request->errors) : ($request->errors ?? '');
         throw new Exception("ไม่สามารถบันทึกคำขอได้" . ($err ? " ({$err})" : ''));
     }
+
+    // ปรับใบรับรองเก่าเป็น pending
     FvSanitationCertificationOld::mark_pending($ship_code);
 
-    //save InspectionApplicationInfo
-    
     // 🔹 ดึงข้อมูลชาวประมงที่ login อยู่
     $fisherman = Fisherman::find_by_id($session->user_id());
     if(!$fisherman) {
@@ -118,8 +128,7 @@ try {
     }
 
     // 🔹 เช็คเลข 13 หลัก ว่าเป็นนิติบุคคลหรือไม่
-    // eLicense->number มาจาก fisherman->citizen_id ตามที่เต้ยบอก
-    $citizen_no = trim($VesselData->number ?? $fisherman->citizen_id ?? '');
+    $citizen_no  = trim($VesselData->number ?? $fisherman->citizen_id ?? '');
     $is_juristic = 0;
     if ($citizen_no !== '' && strlen($citizen_no) === 13 && $citizen_no[0] === '0') {
         $is_juristic = 1;
@@ -127,13 +136,13 @@ try {
 
     // 🔹 เตรียม InspectionApplicantInfo (1 request มี 1 record)
     $applicant = InspectionApplicantInfo::find_or_initialize_by_request_id($request->id);
-    $applicant->request_id = $request->id;
+    $applicant->request_id  = $request->id;
     $applicant->is_juristic = $is_juristic;
 
     $current_user_id = $session->user_id() ?? 0;
     $current_ip      = $_SERVER['REMOTE_ADDR'] ?? '';
 
-    if(!$applicant->id) {
+    if (!$applicant->id) {
         // new record
         $applicant->created_by = $current_user_id;
         $applicant->created_ip = $current_ip;
@@ -145,7 +154,25 @@ try {
         // 🟢 บุคคลธรรมดา → ใช้ข้อมูลจาก eLicense เป็นผู้ยื่นเลย
         $applicant->applicant_name        = $VesselData->display_name ?? $fisherman->full_name ?? '';
         $applicant->applicant_age         = $VesselData->age ?? null;
-        $applicant->applicant_nationality = (string)($VesselData->nationality_id ?? '');
+
+
+        // แปลงสัญชาติจาก eLicense (numeric → text)
+        $nationalityId = $VesselData->nationality_id ?? null;
+
+        // default
+        $nationalityText = '';
+
+        // เท่าที่รู้: 259 = ไทย
+        if ($nationalityId == 259) {
+            $nationalityText = 'ไทย';
+        } else if (!empty($nationalityId)) {
+            // ถ้าเป็นตัวเลขอื่น (กันอนาคต)
+            $nationalityText = 'อื่นๆ';
+        } else {
+            // ถ้าไม่มีข้อมูลเลย
+            $nationalityText = '';
+        }
+        $applicant->applicant_nationality = $nationalityText;
         $applicant->applicant_phone       = $contact_phone;
 
         $applicant->applicant_address_no  = $VesselData->street ?? '';
@@ -158,13 +185,13 @@ try {
         $applicant->applicant_tambon_id   = $VesselData->tambon_id ?? null;
         $applicant->applicant_tambon      = $VesselData->tambon_name ?? '';
 
-        // ฝั่ง juristic_* ปล่อยว่าง
         $applicant->juristic_name = $applicant->juristic_name ?? '';
     } else {
         $applicant->applicant_phone       = $contact_phone;
-        // 🔵 นิติบุคคล → เก็บข้อมูลบริษัทไว้ก่อน, ผู้ยื่น (คน) ให้กรอกตอนกดพิมพ์ สร.1
+
+        // 🔵 นิติบุคคล → เก็บข้อมูลบริษัทไว้ก่อน
         $applicant->juristic_name        = $VesselData->display_name ?? '';
-        $applicant->juristic_office      = ''; // ถ้ามีฟิลด์อาคาร/สำนักงานเพิ่มทีหลังได้
+        $applicant->juristic_office      = '';
         $applicant->juristic_address_no  = $VesselData->street ?? '';
         $applicant->juristic_moo         = $VesselData->moo ?? '';
 
@@ -175,68 +202,75 @@ try {
         $applicant->juristic_tambon_id   = $VesselData->tambon_id ?? null;
         $applicant->juristic_tambon      = $VesselData->tambon_name ?? '';
 
-        // ผู้ยื่นตัวบุคคลจะมาเติมทีหลังใน modal
         if (is_blank($applicant->applicant_name)) {
-            $applicant->applicant_name = ''; 
+            $applicant->applicant_name = '';
         }
     }
 
-    if(!$applicant->save()) {
+    if (!$applicant->save()) {
         $err = is_array($applicant->errors ?? null) ? implode(', ', $applicant->errors) : ($applicant->errors ?? '');
         throw new Exception("ไม่สามารถบันทึกข้อมูลผู้ยื่นคำขอได้" . ($err ? " ({$err})" : ''));
     }
 
-
     // อัปโหลดรูปแนบ (เฉพาะรูป)
     if (!empty($_FILES['attachments'])) {
-        $types = $_POST['attachment_types'] ?? [];
+        $types   = $_POST['attachment_types'] ?? [];
         $allowed = ['image/jpeg','image/png','image/gif','image/webp'];
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $cnt = count($_FILES['attachments']['name']);
+        $finfo   = new finfo(FILEINFO_MIME_TYPE);
+        $cnt     = count($_FILES['attachments']['name']);
 
-        for ($i=0; $i<$cnt; $i++) {
-        if ($_FILES['attachments']['error'][$i] !== UPLOAD_ERR_OK) continue;
-        
-        $tmp  = $_FILES['attachments']['tmp_name'][$i];
-        $name = $_FILES['attachments']['name'][$i];
-        $mime = $finfo->file($tmp) ?: 'application/octet-stream';
-        $size = (int)$_FILES['attachments']['size'][$i];
+        for ($i = 0; $i < $cnt; $i++) {
+            if ($_FILES['attachments']['error'][$i] !== UPLOAD_ERR_OK) continue;
 
-        if (!in_array($mime,$allowed,true)) continue;
-        if ($size > 10*1024*1024) continue;
+            $tmp  = $_FILES['attachments']['tmp_name'][$i];
+            $name = $_FILES['attachments']['name'][$i];
+            $mime = $finfo->file($tmp) ?: 'application/octet-stream';
+            $size = (int)$_FILES['attachments']['size'][$i];
 
-        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-        $new = date('YmdHis').'_'.bin2hex(random_bytes(4)).'.'.$ext;
+            if (!in_array($mime, $allowed, true)) continue;
+            if ($size > 10 * 1024 * 1024) continue;
 
-        $rel = '/uploads/inspection/'.$new;
-        $abs = PUBLIC_PATH . $rel;
-        if (!is_dir(dirname($abs))) { mkdir(dirname($abs), 0775, true); }
-        if (!move_uploaded_file($tmp,$abs)) continue;
-        $type = $types[$i] ?? '';
-        
-        $att = new InspectionAttachment([
-            'request_id' => $request->id,
-            'attachment_type' => $type,
-            'file_path'  => $rel,
-            'file_name'  => $name,
-            'file_type'  => $mime,
-            'file_size'  => $size,
-            'created_by' => $session->user_id() ?? 0
-        ]);
-        $att->save();
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            $new = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+
+            $rel = '/uploads/inspection/' . $new;
+            $abs = PUBLIC_PATH . $rel;
+
+            if (!is_dir(dirname($abs))) {
+                mkdir(dirname($abs), 0775, true);
+            }
+
+            if (!move_uploaded_file($tmp, $abs)) continue;
+
+            $type = $types[$i] ?? '';
+
+            $att = new InspectionAttachment([
+                'request_id'      => $request->id,
+                'attachment_type' => $type,
+                'file_path'       => $rel,
+                'file_name'       => $name,
+                'file_type'       => $mime,
+                'file_size'       => $size,
+                'created_by'      => $session->user_id() ?? 0
+            ]);
+            $att->save(); // ถ้า fail ก็แค่ข้ามไป ไม่ถึงขั้น throw
         }
     }
 
+    // Log การยื่นคำขอ
     $log = new InspectionLog();
     $log->inspection_request_id = $request->id;
     $log->action_id             = 2;
     $log->note                  = ($inspection_form_type === 2)
                                   ? 'ชาวประมงยื่นคำขอ: ตรวจสุขอนามัยเพื่อขอใบรับรอง EU'
                                   : 'ชาวประมงยื่นคำขอ: ตรวจสุขอนามัยแบบทั่วไป';
-    $log->save();
-    
+
+    if (!$log->save()) {
+        throw new Exception('ไม่สามารถบันทึกประวัติคำขอได้');
+    }
+
     // 🔔 Notification → เจ้าหน้าที่หน่วยงานที่เลือก
-    $officers = Officer::find_by_department_id($department_id);
+    $officers    = Officer::find_by_department_id($department_id);
     $notif_title = ($inspection_form_type === 2)
         ? "มีคำขอ 'ตรวจ EU Export' ใหม่จากชาวประมง เรือ {$request->vessel_name}"
         : "มีคำขอตรวจสุขอนามัยเรือใหม่จากชาวประมง เรือ {$request->vessel_name}";
@@ -252,18 +286,25 @@ try {
         );
     }
 
+    // ✅ ทุกอย่างผ่าน → COMMIT
+    $db->query("COMMIT");
+
     echo json_encode([
         'success' => true,
         'message' => 'บันทึกคำขอเรียบร้อยแล้ว',
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 
 } catch (Exception $ex) {
+
+    // ❌ มี error ใด ๆ → ROLLBACK
+    if ($db instanceof mysqli) {
+        @$db->query("ROLLBACK");
+    }
+
     echo json_encode([
         'success' => false,
         'message' => $ex->getMessage(),
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
-?>
-

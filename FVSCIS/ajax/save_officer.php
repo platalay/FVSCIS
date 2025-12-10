@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $officer->created_by = $tmp['user_id_tmp'] ?? 0;
     $officer->created_at = date('Y-m-d H:i:s');
     $officer->updated_at = date('Y-m-d H:i:s');
+    
 
     if ($officer->save()) {
         $admins = Officer::find_admins();  
