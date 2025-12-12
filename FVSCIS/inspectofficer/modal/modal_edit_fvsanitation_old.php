@@ -6,7 +6,7 @@
                         <div class="modal-content">
                         <form id="form-fvscisold-edit" autocomplete="off" method="post" enctype="multipart/form-data">
                             <div class="modal-header">
-                            <h5 class="modal-title" id="modalFvscisOldEditLabel">แก้ไขข้อมูลใบรับรอง (เก่า)</h5>
+                            <h5 class="modal-title" id="modalFvscisOldEditLabel">แก้ไขบันทึกผลการตรวจเรือจากเอกสาร</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
                             </div>
 

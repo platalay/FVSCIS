@@ -160,49 +160,40 @@ class InspectionFormMaterial extends DatabaseObject {
         public static $statusMap = [
             '2_1' => [
                 'page' => 1,
-                'pass' => ['x' => 133, 'y' => 218],
-                'fail' => ['x' => 147, 'y' => 218],
+                'pass' => ['x' => 133, 'y' => 220],
+                'fail' => ['x' => 147, 'y' => 220],
+                'fails' => ['fail_2_1_1', 'fail_2_1_2'],
             ],
             '2_2' => [
                 'page' => 1,
                 'pass' => ['x' => 133, 'y' => 238],
                 'fail' => ['x' => 147, 'y' => 238],
+                'fails' => ['fail_2_2_1'],
             ],
             '2_3' => [
                 'page' => 1,
-                'pass' => ['x' => 133, 'y' => 253],
-                'fail' => ['x' => 147, 'y' => 253],
+                'pass' => ['x' => 133, 'y' => 255],
+                'fail' => ['x' => 147, 'y' => 255],
+                'fails' => ['fail_2_3_1'],
             ],
-        ];
-
-        public static $statusMapP2 = [
             '2_4' => [
                 'page' => 2,
                 'pass' => ['x' => 133, 'y' => 60],
                 'fail' => ['x' => 147, 'y' => 60],
+                'fails' => ['fail_2_4_1','fail_2_4_2','fail_2_4_3'],
             ],
             '2_5' => [
                 'page' => 2,
                 'pass' => ['x' => 133, 'y' => 75],
                 'fail' => ['x' => 147, 'y' => 75],
+                'fails' => ['fail_2_5_1'],
             ],
             '2_6' => [
                 'page' => 2,
-                'pass' => ['x' => 133, 'y' => 92],
-                'fail' => ['x' => 147, 'y' => 92],
+                'pass' => ['x' => 133, 'y' => 94],
+                'fail' => ['x' => 147, 'y' => 94],
+                'fails' => ['fail_2_6_1','fail_2_6_2'],
             ],
-        ];
-
-        public static $failSubMap = [
-            '2_1' => ['fail_2_1_1', 'fail_2_1_2'],
-            '2_2' => [], // ไม่มี fail ย่อย
-            '2_3' => [], // ไม่มี fail ย่อย
-        ];
-
-        public static $failSubMapP2 = [
-            '2_4' => ['fail_2_4_1', 'fail_2_4_2', 'fail_2_4_3'],
-            '2_5' => [], // ไม่มี fail ย่อย
-            '2_6' => ['fail_2_6_1', 'fail_2_6_2'],
         ];
 
      /**
@@ -214,44 +205,26 @@ class InspectionFormMaterial extends DatabaseObject {
     {
         $count = 0;
 
-        $subs = self::$failSubMap[$section] ?? [];
+        $map = self::$statusMap[$section] ?? null;
+        if (!$map) {
+            return 0;
+        }
 
-        // 1) นับ fail_1_x_y == 1
-        foreach ($subs as $field) {
+        foreach ($map['fails'] ?? [] as $field) {
             if (!empty($form->$field) && (int)$form->$field === 1) {
                 $count++;
             }
         }
 
-        // 2) ถ้ามี remark_1_x → บวกเพิ่ม 1
-        $remarkField = "remark_" . $section;
+        $remarkField = "remark_{$section}";
         if (!empty($form->$remarkField)) {
             $count++;
         }
 
         return $count;
     }
-    public static function countFailsP2($form, string $section): int
-    {
-        $count = 0;
 
-        $subs = self::$failSubMapP2[$section] ?? [];
 
-        // 1) นับ fail_1_x_y == 1
-        foreach ($subs as $field) {
-            if (!empty($form->$field) && (int)$form->$field === 1) {
-                $count++;
-            }
-        }
-
-        // 2) ถ้ามี remark_1_x → บวกเพิ่ม 1
-        $remarkField = "remark_" . $section;
-        if (!empty($form->$remarkField)) {
-            $count++;
-        }
-
-        return $count;
-    }
 
 
         /**

@@ -216,4 +216,27 @@ class InspectionApplicantInfo extends DatabaseObject
             return !empty($obj_array) ? array_shift($obj_array) : null;
         }
 
+        public static function extract_doc_running_number(?string $docnumber): ?int
+        {
+            $docnumber = trim((string)$docnumber);
+            if ($docnumber === '') {
+                return null;
+            }
+
+            // จับเลขท้ายสุดของสตริง (เช่น 00002)
+            if (preg_match('/(\d+)\s*$/', $docnumber, $m)) {
+                return (int)$m[1]; // (int) จะตัด 0 นำหน้าให้เอง
+            }
+
+            return null;
+        }
+
+        /**
+        * convenience: ดึงเลขจาก form1_doc_number ของ record นี้
+        */
+        public function form1_running_number(): ?int
+        {
+            return self::extract_doc_running_number($this->form1_doc_number);
+        }
+
 }

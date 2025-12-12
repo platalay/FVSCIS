@@ -155,38 +155,35 @@ class InspectionFormCrew extends DatabaseObject {
 
         public static $statusMap = [
             '3_1' => [
-                'page' => 1,
+                'page' => 2,
                 'pass' => ['x' => 133, 'y' => 120],
                 'fail' => ['x' => 147, 'y' => 120],
+                'fails' => ['fail_3_1_1', 'fail_3_1_2', 'fail_3_1_3', 'fail_3_1_4'],
             ],
             '3_2' => [
-                'page' => 1,
-                'pass' => ['x' => 133, 'y' => 133],
-                'fail' => ['x' => 147, 'y' => 133],
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 135],
+                'fail' => ['x' => 147, 'y' => 135],
+                'fails' => ['fail_3_2_1'],
             ],
             '3_3' => [
-                'page' => 1,
-                'pass' => ['x' => 133, 'y' => 142],
-                'fail' => ['x' => 147, 'y' => 142],
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 144],
+                'fail' => ['x' => 147, 'y' => 144],
+                'fails' => ['fail_3_3_1'],
             ],
             '3_4' => [
-                'page' => 1,
-                'pass' => ['x' => 133, 'y' => 152],
-                'fail' => ['x' => 147, 'y' => 152],
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 154],
+                'fail' => ['x' => 147, 'y' => 154],
+                'fails' => ['fail_3_4_1'],
             ],
             '3_5' => [
-                'page' => 1,
-                'pass' => ['x' => 133, 'y' => 160],
-                'fail' => ['x' => 147, 'y' => 160],
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 162],
+                'fail' => ['x' => 147, 'y' => 162],
+                'fails' => ['fail_3_5_1'],
             ],
-        ];
-
-         public static $failSubMap = [
-            '3_1' => ['fail_3_1_1', 'fail_3_1_2', 'fail_3_1_3', 'fail_3_1_4'],
-            '3_2' => ['fail_3_2_1'],
-            '3_3' => ['fail_3_3_1'],
-            '3_4' => ['fail_3_4_1'],
-            '3_5' => ['fail_3_5_1'],
         ];
 
            /**
@@ -198,23 +195,25 @@ class InspectionFormCrew extends DatabaseObject {
     {
         $count = 0;
 
-        $subs = self::$failSubMap[$section] ?? [];
+        $map = self::$statusMap[$section] ?? null;
+        if (!$map) {
+            return 0;
+        }
 
-        // 1) นับ fail_1_x_y == 1
-        foreach ($subs as $field) {
+        foreach ($map['fails'] ?? [] as $field) {
             if (!empty($form->$field) && (int)$form->$field === 1) {
                 $count++;
             }
         }
 
-        // 2) ถ้ามี remark_1_x → บวกเพิ่ม 1
-        $remarkField = "remark_" . $section;
+        $remarkField = "remark_{$section}";
         if (!empty($form->$remarkField)) {
             $count++;
         }
 
         return $count;
     }
+
 
         /**
         * วาด X ที่ช่อง pass/fail ตามค่า status

@@ -132,7 +132,9 @@ include("../../private/shared/topbarofficer.php"); ?>
                   <td>
                       <button
                               type="button"
-                              title="ดูข้อมูลเก่า"
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="right"
+                              title="ดูข้อมูล"
                               class="btn btn-info btn-sm me-1 mb-1"
                               onclick="openOldCertificationModalById(<?= h($req->id) ?>)"
                           >
@@ -140,7 +142,9 @@ include("../../private/shared/topbarofficer.php"); ?>
                       </button>
                       <button
                           type="button"
-                          title="แก้ไขข้อมูลเก่า"
+                          data-bs-toggle="tooltip"
+                          data-bs-placement="right"
+                          title="แก้ไขข้อมูล"
                           class="btn btn-primary btn-sm btn-edit-fvscisold me-1 mb-1"
                           data-id="<?= h($req->id) ?>"
                       >
@@ -149,7 +153,9 @@ include("../../private/shared/topbarofficer.php"); ?>
 
                       <button
                           type="button"
-                          title="ลบข้อมูลเก่า"
+                          data-bs-toggle="tooltip"
+                          data-bs-placement="right"
+                          title="ลบข้อมูล"
                           class="btn btn-danger btn-sm me-1 mb-1"
                           onclick="deleteOldCertification(<?= h($req->id) ?>, this)"
                       >
@@ -162,6 +168,8 @@ include("../../private/shared/topbarofficer.php"); ?>
                       ?>
                           <button
                               class="btn btn-sm btn-warning btn-attachments me-1 mb-1"
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="right"
                               title="ไฟล์แนบ (<?= $attCount ?>)"
                               data-id="<?= $req->id ?>"
                           >
@@ -1282,6 +1290,8 @@ function deleteOldCertification(id, btn) {
     showCancelButton: true,
     confirmButtonText: 'ลบ',
     cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
   }).then((result) => {
     if (!result.isConfirmed) return;
 

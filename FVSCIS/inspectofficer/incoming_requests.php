@@ -108,6 +108,8 @@ include("../../private/shared/topbarofficer.php");
                                                 <!-- ปุ่มดูรายละเอียด -->
                                                 <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
                                                         data-bs-target="#modalRequestDetail"
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="right"                                                        
                                                         title="รายละเอียดคำขอ"
                                                         onclick="loadRequestDetail(<?= h($req->id) ?>)">
                                                     <i class="fas fa-search"></i>
@@ -115,6 +117,8 @@ include("../../private/shared/topbarofficer.php");
 
                                                 <!-- ปุ่มพิมพ์ สร.1 -->
                                                 <button class="btn btn-sm btn-outline-primary btn-print-form1"
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="right"
                                                         title="พิมพ์ สร.๑"
                                                         data-id="<?= h($req->id) ?>">
                                                   <i class="fas fa-print"></i>
@@ -125,7 +129,8 @@ include("../../private/shared/topbarofficer.php");
                                                 $attCount = InspectionAttachment::count_by_request_id($req->id);
                                                 if ($attCount > 0): ?>
                                                 <button class="btn btn-sm btn-warning btn-attachments"
-                                                        title="ไฟล์แนบ (<?= $attCount ?>)"
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="right"                                                        title="ไฟล์แนบ (<?= $attCount ?>)"
                                                         data-id="<?= $req->id ?>">
                                                     <i class="fas fa-paperclip"></i>
                                                 </button>
@@ -135,14 +140,16 @@ include("../../private/shared/topbarofficer.php");
                                                 <?php if ((int)$session->user_id() === (int)$req->created_by) { ?>
                                                     <button type="button"
                                                             class="btn btn-sm btn-warning btn-edit-manual"
-                                                            title="แก้ไขคำขอ"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="right"                                                            title="แก้ไขคำขอ"
                                                             data-id="<?= h($req->id); ?>">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
 
                                                     <button type="button"
                                                             class="btn btn-sm btn-danger btn-delete-request"
-                                                            title="ลบคำขอ"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="right"                                                            title="ลบคำขอ"
                                                             data-id="<?= h($req->id); ?>">
                                                         <i class="bi bi-trash"></i> 
                                                     </button>

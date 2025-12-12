@@ -4,7 +4,7 @@
                     <div class="modal-dialog modal-lg modal-dialog-scrollable">
                         <div class="modal-content border-0 shadow-lg">
                         <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title" id="oldCertLabel">รายละเอียดใบรับรองสุขอนามัยเรือ (ข้อมูลเก่า)</h5>
+                            <h5 class="modal-title" id="oldCertLabel">รายละเอียดผลการประเมินมาตรฐานสุขอนามัยเรือ</h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="ปิด"></button>
                         </div>
 

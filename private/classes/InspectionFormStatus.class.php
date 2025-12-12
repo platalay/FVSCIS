@@ -88,15 +88,24 @@ class InspectionFormStatus extends DatabaseObject {
         return static::find_by_sql($sql);
     }
 
-    public static function find_or_create($vessel_id, $inspection_date, $inspector_id, $department_code, $request_id) {
+    public static function find_or_create($vessel_id, $inspection_date, $inspector_id, $department_code, $request_id)
+    {
         global $session;
-        $vessel_id = self::$database->escape_string($vessel_id);
-        $inspection_date = self::$database->escape_string($inspection_date);
-        $inspector_id = self::$database->escape_string($inspector_id);
-        $department_code = self::$database->escape_string($department_code);
 
-        // 1. ค้นหา record เดิมที่ยัง active ของ user นี้
-        $sql = "SELECT * FROM " . static::$table_name;
+        $vessel_id        = self::$database->escape_string($vessel_id);
+        $inspection_date  = self::$database->escape_string($inspection_date);
+        $inspector_id     = self::$database->escape_string($inspector_id);
+        $department_code  = self::$database->escape_string($department_code);
+        $request_id       = self::$database->escape_string($request_id);
+
+        // 0️⃣ ดึง InspectionRequest (สำคัญ)
+        $request = InspectionRequest::find_by_id($request_id);
+        if (!$request) {
+            throw new Exception("ไม่พบ InspectionRequest สำหรับ request_id = {$request_id}");
+        }
+
+        // 1️⃣ ค้นหา record เดิมที่ยัง active
+        $sql  = "SELECT * FROM " . static::$table_name;
         $sql .= " WHERE vessel_id = '{$vessel_id}'";
         $sql .= " AND inspection_date = '{$inspection_date}'";
         $sql .= " AND inspector_id = '{$inspector_id}'";
@@ -108,36 +117,41 @@ class InspectionFormStatus extends DatabaseObject {
             return array_shift($existing);
         }
 
-        // 2. ยังไม่มี → สร้างใหม่
+        // 2️⃣ ยังไม่มี → สร้างใหม่
         $new = new self();
-        $new->request_id = $request_id;
-        $new->vessel_id = $vessel_id;
-        $new->inspection_date = $inspection_date;
-        $new->inspector_id = $inspector_id;
-        $new->department_code = $department_code;
-        $new->document_number = self::generate_document_number($department_code);
-        $new->locked_by = $inspector_id;
-        $new->locked_at = date('Y-m-d H:i:s');
-        $new->create_at = date('Y-m-d H:i:s');
-        $new->document_token = self::generate_uuid_v4();
-        $new->is_active = 1;
+        $new->request_id       = $request_id;
+        $new->vessel_id        = $vessel_id;
+        $new->inspection_date  = $inspection_date;
+        $new->inspector_id     = $inspector_id;
+        $new->department_code  = $department_code;
+
+        // 🔥 ใช้ document_number จาก InspectionRequest
+        $new->document_number  = $request->document_number;
+
+        $new->locked_by        = $inspector_id;
+        $new->locked_at        = date('Y-m-d H:i:s');
+        $new->create_at        = date('Y-m-d H:i:s');
+        $new->document_token   = self::generate_uuid_v4();
+        $new->is_active        = 1;
         $new->save();
 
-        // ✅ เพิ่มบันทึก log
+        // 3️⃣ log
         $log = new InspectionLog();
-        $log->inspection_request_id = null;
-        $log->action_id = 7; // รหัสสำหรับ action เช่น "สร้างแบบฟอร์ม"
+        $log->inspection_request_id = $request_id;
+        $log->action_id = 7;
         $log->old_value = null;
         $log->new_value = "form_status_id: " . $new->id;
-        $log->note = "สร้างฟอร์มการตรวจเรือใหม่อัตโนมัติ";
+        $log->note = "สร้างฟอร์มการตรวจเรือใหม่ (อ้างอิงเลขคำขอ)";
         $log->performed_by = $session->user_id();
         $log->performed_at = date('Y-m-d H:i:s');
         $log->target_department_id = null;
         $log->target_usertype_id = null;
-        $log->target_officer_id =  $session->user_id();
+        $log->target_officer_id = $session->user_id();
         $log->save();
+
         return $new;
     }
+
 
     // ✅ ฟังก์ชันเพิ่มเองตามแนวของคุณ
     public static function find_active_by_vessel($vessel_id) {

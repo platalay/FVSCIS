@@ -164,6 +164,25 @@ function thai_date(?string $dateStr, array $options = []): string
     return implode(' ', $parts);
 }
 
+// -- ฟังก์ชั่นย่อย: คืนเฉพาะปี พ.ศ.
+function thai_year(?string $dateStr, array $options = []): string
+{
+    if (
+        empty($dateStr) ||
+        $dateStr === '0000-00-00' ||
+        $dateStr === '0000-00-00 00:00:00' ||
+        strtolower($dateStr) === 'null'
+    ) {
+        return $options['null'] ?? '-';
+    }
+
+    $ts = strtotime($dateStr);
+    if ($ts === false) {
+        return $options['null'] ?? '-';
+    }
+
+    return (string)((int)date('Y', $ts) + 543);
+}
 
 // --- ฟังก์ชันย่อย: คืนเฉพาะชื่อวันไทย (เช่น "วันเสาร์")
 function thai_day(string $dateStr): string

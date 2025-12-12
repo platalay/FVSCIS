@@ -153,4 +153,113 @@ class InspectionFormPreservation extends DatabaseObject {
         $result = static::find_by_sql($sql);
         return !empty($result) ? array_shift($result) : null;
     }
+
+    public static $statusMap = [
+            '5_1' => [
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 243],
+                'fail' => ['x' => 147, 'y' => 243],
+                'fails' => ['fail_5_1_1', 'fail_5_1_2'],
+            ],
+            '5_2' => [
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 260],
+                'fail' => ['x' => 147, 'y' => 260],
+                'fails' => ['fail_5_2_1'], 
+            ],
+            '5_3' => [
+                'page' => 3,
+                'pass' => ['x' => 133, 'y' => 65],
+                'fail' => ['x' => 147, 'y' => 65],
+                'fails' => ['fail_5_3_1', 'fail_5_3_2'],
+            ],
+            '5_4' => [
+                'page' => 3,
+                'pass' => ['x' => 133, 'y' => 80],
+                'fail' => ['x' => 147, 'y' => 80],
+                'fails' => ['fail_5_4_1', 'fail_5_4_2'],
+            ],
+            '5_5' => [
+                'page' => 3,
+                'pass' => ['x' => 133, 'y' => 95],
+                'fail' => ['x' => 147, 'y' => 95],
+                'fails' => ['fail_5_5_1'],
+            ],
+            '5_6' => [
+                'page' => 3,
+                'pass' => ['x' => 133, 'y' => 108],
+                'fail' => ['x' => 147, 'y' => 108],
+                'fails' => ['fail_5_6_1'],
+            ],
+            '5_7' => [
+                'page' => 3,
+                'pass' => ['x' => 133, 'y' => 120],
+                'fail' => ['x' => 147, 'y' => 120],
+                'fails' => ['fail_5_7_1','fail_5_7_2'],
+            ],
+            '5_8' => [
+                'page' => 3,
+                'pass' => ['x' => 133, 'y' => 130],
+                'fail' => ['x' => 147, 'y' => 130],
+                'fails' => ['fail_5_8_1','fail_5_8_2'],
+            ],
+            '5_9' => [
+                'page' => 3,
+                'pass' => ['x' => 133, 'y' => 140],
+                'fail' => ['x' => 147, 'y' => 140],
+                'fails' => ['fail_5_9_1'],
+            ],
+        ];
+
+     /**
+     * นับจำนวนประเด็นบกพร่องของข้อหนึ่ง ๆ
+     * - นับ fail_1_x_y ที่เป็น 1
+     * - ถ้ามี remark_1_x → +1
+     */
+    public static function countFails($form, string $section): int
+    {
+        $count = 0;
+        $map = self::$statusMap[$section] ?? null;
+        if (!$map) return 0;
+
+        foreach ($map['fails'] as $field) {
+            if (!empty($form->$field) && (int)$form->$field === 1) {
+                $count++;
+            }
+        }
+
+        $remarkField = "remark_{$section}";
+        if (!empty($form->$remarkField)) {
+            $count++;
+        }
+
+        return $count;
+    }
+
+
+
+        /**
+        * วาด X ที่ช่อง pass/fail ตามค่า status
+        * $status = 'pass' หรือ 'fail'
+        */
+        public static function drawStatus(\FPDF $pdf, string $status, array $pos, string $mark = 'X'): void
+        {
+            $xy = ($status === 'pass') ? $pos['pass'] : $pos['fail'];
+            $mark = ($status === 'pass') ? '/' : 'X';
+            $pdf->SetXY($xy['x'], $xy['y']);
+            $pdf->SetFont('THSarabunPSK', '', 16);
+            $pdf->Cell(4, 4, $mark, 0, 0, 'C');
+        }
+
+        /**
+        * helper สำหรับ text "บกพร่อง x ประเด็น / รายละเอียดใน สร.2-4"
+        */
+        public static function buildFailSummaryText(int $count): string
+        {
+            if ($count <= 0) {
+                return '';
+            }
+            return "บกพร่อง {$count} ประเด็น";
+        }
+
 }

@@ -1,18 +1,81 @@
 <?php
 require_once('../../private/initialize.php');
 $session->require_role(['inspectofficer']);
+
 require_once('../../private/fpdf/fpdf.php');
 require_once('../../private/fpdi/src/autoload.php');
 
 use setasign\Fpdi\Fpdi;
+
+// ===================== สำหรับเขียน pdf ตามตำแหน่งจาก map =====================
+// - ใช้กับ FPDI (เพราะต้อง importPage/useTemplate)
+// - รับ currentPage เข้าไป และ return currentPage กลับออกมา เพื่อให้ไหลต่อเนื่อง
+function renderInspectionForm(
+    \setasign\Fpdi\Fpdi $pdf,
+    $form,
+    array $statusMap,
+    callable $drawStatus,
+    callable $countFails,
+    callable $buildText,
+    array $pageTemplates,
+    int $currentPage
+): int {
+
+    if (!$form) {
+        return $currentPage;
+    }
+
+    foreach ($statusMap as $section => $cfg) {
+
+        $targetPage = $cfg['page'] ?? $currentPage;
+
+        // เปลี่ยนหน้าเมื่อ map บอกว่าข้ามหน้า
+        if ($targetPage !== $currentPage) {
+            $currentPage = $targetPage;
+
+            $pdf->AddPage();
+
+            if (isset($pageTemplates[$currentPage])) {
+                $tpl = $pdf->importPage($pageTemplates[$currentPage]);
+                $pdf->useTemplate($tpl, 0, 0);
+            }
+        }
+
+        $statusField = "status_{$section}";
+        $statusVal   = $form->$statusField ?? null;
+        if (!$statusVal) {
+            continue;
+        }
+
+        // วาด pass/fail
+        $drawStatus($pdf, $statusVal, $cfg);
+
+        // ถ้า fail -> นับประเด็น + ใส่ข้อความ
+        if ($statusVal === 'fail') {
+            $failCount = $countFails($form, $section);
+            $text      = $buildText($failCount);
+
+            if ($text !== '') {
+                $pdf->SetXY($cfg['fail']['x'] + 13, $cfg['fail']['y']);
+                $pdf->SetFont('THSarabunPSK', '', 16);
+                $pdf->MultiCell(80, 5, iconv('UTF-8', 'cp874', $text));
+            }
+        }
+    }
+
+    return $currentPage;
+}
+
+// ===================== รับ request_id =====================
+$request_id = $_GET['request_id'] ?? 4;
+$request_id = (int)$request_id;
 
 // test
 if (!class_exists('setasign\Fpdi\Fpdi')) {
     die("FPDI not loaded");
 }
 
-
-// สร้าง Pdf
+// ===================== สร้าง PDF =====================
 $pdf = new FPDI();
 $pdf->SetAutoPageBreak(false);
 
@@ -20,162 +83,133 @@ $pdf->SetAutoPageBreak(false);
 $source = '../../private/pdftemplate/FVS21.pdf';
 $pageCount = $pdf->setSourceFile($source);
 
-// ======================= หน้า 1 =======================
+// template map: หน้าในเอกสารที่คุณสร้าง => หน้า template ในไฟล์ FVS21.pdf
+$pageTemplates = [
+    1 => 1,
+    2 => 2,
+    3 => 3,
+];
+
+// ===================== ดึงข้อมูลจากฐานข้อมูล =====================
+
+// คำขอตรวจ
+$request = InspectionRequest::find_by_id($request_id);
+if (!$request) {
+    die('ไม่พบข้อมูลคำขอตรวจ');
+}
+
+// ผู้ยื่นคำขอ สร.1
+$applicant = InspectionApplicantInfo::find_by_request_id($request_id);
+if (!$applicant) {
+    die('ไม่พบข้อมูลผู้ยื่นคำขอสำหรับแบบ สร.1');
+}
+
+// ===================== เตรียมตัวแปรที่ต้องใช้บนฟอร์ม =====================
+
+// เขียนที่ / วันที่
+$writtenAt   = $applicant->written_at   ?? '';
+$writtenDate = $applicant->written_date ?? null; // Y-m-d
+
+// ต้องมีฟังก์ชัน thai_year() อยู่แล้วในระบบคุณ
+$thai_year = thai_year($writtenDate);
+
+// running number จาก doc number
+$run = $applicant ? $applicant->form1_running_number() : null;
+
+// ======================= เริ่ม หน้า 1 =======================
+$currentPage = 1;
+
 $pdf->AddPage();
 $tpl = $pdf->importPage(1);
 $pdf->useTemplate($tpl, 0, 0);
 
 $pdf->AddFont('THSarabunPSK','','THSarabunPSK.php');
 $pdf->SetFont('THSarabunPSK','',16);
-$pdf->SetXY(160, 24);
-$pdf->Cell(80, 8, iconv('UTF-8','cp874','1'));
-$pdf->SetXY(175, 24);
-$pdf->Cell(80, 8, iconv('UTF-8','cp874','2568'));
-$pdf->SetXY(158, 50);
-$pdf->Cell(80, 8, iconv('UTF-8','cp874','รายละเอียดใน สร.2-4'));
-$form = InspectionFormStructure::find_by_request_id(3);
-foreach (InspectionFormStructure::$statusMap as $section => $pos) {
 
-    $statusField = "status_" . $section;
+// ตัวอย่างวางเลขเอกสาร
+$pdf->SetXY(161, 24);
+$pdf->Cell(80, 8, iconv('UTF-8','cp874', (string)$run));
 
-    // ดึงจาก property ของ object
-    $statusVal = $form->$statusField ?? null;
-
-    if (!$statusVal) {
-        continue;
-    }
-
-    InspectionFormStructure::drawStatus($pdf, $statusVal, $pos);
-
-    if ($statusVal === 'fail') {
-        $failCount = InspectionFormStructure::countFails($form, $section);
-        $text      = InspectionFormStructure::buildFailSummaryText($failCount);
-
-        if ($text !== '') {
-            $xText = $pos['fail']['x'] + 11;
-            $yText = $pos['fail']['y'];
-
-            $pdf->SetXY($xText, $yText);
-            $pdf->SetFont('THSarabunPSK', '', 16);
-            $pdf->MultiCell(80, 5, iconv('UTF-8', 'cp874', $text), 0, 'L');
-        }
-    }
-}
-
-$form = InspectionFormMaterial::find_by_request_id(3);
-foreach (InspectionFormMaterial::$statusMap as $section => $pos) {
-    $statusField = "status_" . $section;
-    // ดึงจาก property ของ object
-    $statusVal = $form->$statusField ?? null;
-    if (!$statusVal) {
-        continue;
-    }
-    InspectionFormMaterial::drawStatus($pdf, $statusVal, $pos);
-    if ($statusVal === 'fail') {
-        $failCount = InspectionFormMaterial::countFails($form, $section);
-        $text      = InspectionFormMaterial::buildFailSummaryText($failCount);
-        error_log("fail".$section." = ".$failCount);
-        if ($text !== '') {
-            $xText = $pos['fail']['x'] + 11;
-            $yText = $pos['fail']['y'];
-
-            $pdf->SetXY($xText, $yText);
-            $pdf->SetFont('THSarabunPSK', '', 16);
-            $pdf->MultiCell(80, 5, iconv('UTF-8', 'cp874', $text), 0, 'L');
-        }
-    }
-}
+$pdf->SetXY(176, 24);
+$pdf->Cell(80, 8, iconv('UTF-8','cp874', (string)$thai_year));
 
 
-// ======================= หน้า 2 =======================
-$pdf->AddPage();
-$tpl = $pdf->importPage(2);
-$pdf->useTemplate($tpl, 0, 0);
-foreach (InspectionFormMaterial::$statusMapP2 as $section => $pos) {
-    $statusField = "status_" . $section;
-    // ดึงจาก property ของ object
-    $statusVal = $form->$statusField ?? null;
-    if (!$statusVal) {
-        continue;
-    }
-    InspectionFormMaterial::drawStatus($pdf, $statusVal, $pos);
-    if ($statusVal === 'fail') {
-        $failCount = InspectionFormMaterial::countFailsP2($form, $section);
-        $text      = InspectionFormMaterial::buildFailSummaryText($failCount);
-        error_log("fail".$section." = ".$failCount);
-        if ($text !== '') {
-            $xText = $pos['fail']['x'] + 11;
-            $yText = $pos['fail']['y'];
+// ======================= หมวด 1: Structure (page 1) =======================
+$form = InspectionFormStructure::find_by_request_id($request_id);
+$currentPage = renderInspectionForm(
+    $pdf,
+    $form,
+    InspectionFormStructure::$statusMap,
+    [InspectionFormStructure::class, 'drawStatus'],
+    [InspectionFormStructure::class, 'countFails'],
+    [InspectionFormStructure::class, 'buildFailSummaryText'],
+    $pageTemplates,
+    $currentPage
+);
 
-            $pdf->SetXY($xText, $yText);
-            $pdf->SetFont('THSarabunPSK', '', 16);
-            $pdf->MultiCell(80, 5, iconv('UTF-8', 'cp874', $text), 0, 'L');
-        }
-    }
-}
+// ======================= หมวด 2: Material (page 1,2) =======================
+$form = InspectionFormMaterial::find_by_request_id($request_id);
+$currentPage = renderInspectionForm(
+    $pdf,
+    $form,
+    InspectionFormMaterial::$statusMap,
+    [InspectionFormMaterial::class, 'drawStatus'],
+    [InspectionFormMaterial::class, 'countFails'],
+    [InspectionFormMaterial::class, 'buildFailSummaryText'],
+    $pageTemplates,
+    $currentPage
+);
 
-$form = InspectionFormCrew::find_by_request_id(3);
-foreach (InspectionFormCrew::$statusMap as $section => $pos) {
-    $statusField = "status_" . $section;
-    // ดึงจาก property ของ object
-    $statusVal = $form->$statusField ?? null;
-    if (!$statusVal) {
-        continue;
-    }
-    InspectionFormCrew::drawStatus($pdf, $statusVal, $pos);
-    if ($statusVal === 'fail') {
-        $failCount = InspectionFormCrew::countFails($form, $section);
-        $text      = InspectionFormCrew::buildFailSummaryText($failCount);
-        error_log("fail".$section." = ".$failCount);
-        if ($text !== '') {
-            $xText = $pos['fail']['x'] + 11;
-            $yText = $pos['fail']['y'];
+// ตัวอย่างวางเลขเอกสาร
+$pdf->SetXY(161, 24);
+$pdf->Cell(80, 8, iconv('UTF-8','cp874', (string)$run));
 
-            $pdf->SetXY($xText, $yText);
-            $pdf->SetFont('THSarabunPSK', '', 16);
-            $pdf->MultiCell(80, 5, iconv('UTF-8', 'cp874', $text), 0, 'L');
-        }
-    }
-}
+$pdf->SetXY(176, 24);
+$pdf->Cell(80, 8, iconv('UTF-8','cp874', (string)$thai_year));
+// ======================= หมวด 3: Crew (page 2) =======================
+$form = InspectionFormCrew::find_by_request_id($request_id);
+$currentPage = renderInspectionForm(
+    $pdf,
+    $form,
+    InspectionFormCrew::$statusMap,
+    [InspectionFormCrew::class, 'drawStatus'],
+    [InspectionFormCrew::class, 'countFails'],
+    [InspectionFormCrew::class, 'buildFailSummaryText'],
+    $pageTemplates,
+    $currentPage
+);
 
-$form = InspectionFormWaterAndIce::find_by_request_id(3);
-foreach (InspectionFormWaterAndIce::$statusMap as $section => $pos) {
-    $statusField = "status_" . $section;
-    // ดึงจาก property ของ object
-    $statusVal = $form->$statusField ?? null;
-    if (!$statusVal) {
-        continue;
-    }
-    InspectionFormWaterAndIce::drawStatus($pdf, $statusVal, $pos);
-    if ($statusVal === 'fail') {
-        $failCount = InspectionFormWaterAndIce::countFails($form, $section);
-        $text      = InspectionFormWaterAndIce::buildFailSummaryText($failCount);
-        error_log("fail".$section." = ".$failCount);
-        if ($text !== '') {
-            $xText = $pos['fail']['x'] + 11;
-            $yText = $pos['fail']['y'];
+// ======================= หมวด 4: WaterAndIce (page 2) =======================
+$form = InspectionFormWaterAndIce::find_by_request_id($request_id);
+$currentPage = renderInspectionForm(
+    $pdf,
+    $form,
+    InspectionFormWaterAndIce::$statusMap,
+    [InspectionFormWaterAndIce::class, 'drawStatus'],
+    [InspectionFormWaterAndIce::class, 'countFails'],
+    [InspectionFormWaterAndIce::class, 'buildFailSummaryText'],
+    $pageTemplates,
+    $currentPage
+);
 
-            $pdf->SetXY($xText, $yText);
-            $pdf->SetFont('THSarabunPSK', '', 16);
-            $pdf->MultiCell(80, 5, iconv('UTF-8', 'cp874', $text), 0, 'L');
-        }
-    }
-}
+// ======================= หมวด 5: Preservation (page 2,3) =======================
+$form = InspectionFormPreservation::find_by_request_id($request_id);
+$currentPage = renderInspectionForm(
+    $pdf,
+    $form,
+    InspectionFormPreservation::$statusMap,
+    [InspectionFormPreservation::class, 'drawStatus'],
+    [InspectionFormPreservation::class, 'countFails'],
+    [InspectionFormPreservation::class, 'buildFailSummaryText'],
+    $pageTemplates,
+    $currentPage
+);
+// ตัวอย่างวางเลขเอกสาร
+$pdf->SetXY(161, 24);
+$pdf->Cell(80, 8, iconv('UTF-8','cp874', (string)$run));
 
-$ydata = 258;
-$pdf->SetXY(133, $ydata);
-$pdf->Cell(80, 8, iconv('UTF-8','cp874','/'));
-$pdf->SetXY(147, $ydata);
-$pdf->Cell(80, 8, iconv('UTF-8','cp874','X'));
-
-
-// ======================= หน้า 3 =======================
-$pdf->AddPage();
-$tpl = $pdf->importPage(3);
-$pdf->useTemplate($tpl, 0, 0);
-
-$pdf->SetXY(120, 230);
-$pdf->Cell(60, 8, iconv('UTF-8','cp874','นายทดสอบ ทดสอบดี'));
-
+$pdf->SetXY(176, 24);
+$pdf->Cell(80, 8, iconv('UTF-8','cp874', (string)$thai_year));
+// ======================= Output =======================
 $pdf->Output('I', 'FailNotice.pdf');
 exit;

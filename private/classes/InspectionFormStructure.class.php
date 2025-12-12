@@ -194,50 +194,45 @@ class InspectionFormStructure extends DatabaseObject {
                 'page' => 1,
                 'pass' => ['x' => 133, 'y' => 72],
                 'fail' => ['x' => 147, 'y' => 72],
+                'fails' => ['fail_1_1_1', 'fail_1_1_2', 'fail_1_1_3', 'fail_1_1_4'],
             ],
             '1_2' => [
                 'page' => 1,
-                'pass' => ['x' => 133, 'y' => 88],
-                'fail' => ['x' => 147, 'y' => 88],
+                'pass' => ['x' => 133, 'y' => 90],
+                'fail' => ['x' => 147, 'y' => 90],
+                'fails' => ['fail_1_2_1'],
             ],
             '1_3' => [
                 'page' => 1,
                 'pass' => ['x' => 133, 'y' => 105],
                 'fail' => ['x' => 147, 'y' => 105],
+                'fails' => ['fail_1_3_1', 'fail_1_3_2'],
             ],
             '1_4' => [
                 'page' => 1,
                 'pass' => ['x' => 133, 'y' => 125],
                 'fail' => ['x' => 147, 'y' => 125],
+                'fails' => ['fail_1_4_1', 'fail_1_4_2'],
             ],
             '1_5' => [
                 'page' => 1,
                 'pass' => ['x' => 133, 'y' => 150],
                 'fail' => ['x' => 147, 'y' => 150],
+                'fails' => ['fail_1_5_1', 'fail_1_5_2', 'fail_1_5_3'],
             ],
             '1_6' => [
                 'page' => 1,
                 'pass' => ['x' => 133, 'y' => 170],
                 'fail' => ['x' => 147, 'y' => 170],
+                'fails' => ['fail_1_6_1', 'fail_1_6_2'],
             ],
             '1_7' => [
                 'page' => 1,
                 'pass' => ['x' => 133, 'y' => 188],
                 'fail' => ['x' => 147, 'y' => 188],
+                'fails' => ['fail_1_7_1', 'fail_1_7_2', 'fail_1_7_3', 'fail_1_7_4'],
             ],
         ];
-
-        
-
-    public static $failSubMap = [
-        '1_1' => ['fail_1_1_1', 'fail_1_1_2', 'fail_1_1_3'],
-        '1_2' => [], // ไม่มี fail ย่อย
-        '1_3' => ['fail_1_3_1', 'fail_1_3_2'],
-        '1_4' => ['fail_1_4_1', 'fail_1_4_2'],
-        '1_5' => ['fail_1_5_1', 'fail_1_5_2', 'fail_1_5_3'],
-        '1_6' => ['fail_1_6_1', 'fail_1_6_2'],
-        '1_7' => ['fail_1_7_1', 'fail_1_7_2', 'fail_1_7_3', 'fail_1_7_4'],
-    ];
 
     /**
      * นับจำนวนประเด็นบกพร่องของข้อหนึ่ง ๆ
@@ -248,17 +243,18 @@ class InspectionFormStructure extends DatabaseObject {
     {
         $count = 0;
 
-        $subs = self::$failSubMap[$section] ?? [];
+        $map = self::$statusMap[$section] ?? null;
+        if (!$map) {
+            return 0;
+        }
 
-        // 1) นับ fail_1_x_y == 1
-        foreach ($subs as $field) {
+        foreach ($map['fails'] ?? [] as $field) {
             if (!empty($form->$field) && (int)$form->$field === 1) {
                 $count++;
             }
         }
 
-        // 2) ถ้ามี remark_1_x → บวกเพิ่ม 1
-        $remarkField = "remark_" . $section;
+        $remarkField = "remark_{$section}";
         if (!empty($form->$remarkField)) {
             $count++;
         }

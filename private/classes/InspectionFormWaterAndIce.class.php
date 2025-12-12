@@ -146,32 +146,29 @@ class InspectionFormWaterAndIce extends DatabaseObject {
         }
         public static $statusMap = [
             '4_1' => [
-                'page' => 1,
-                'pass' => ['x' => 133, 'y' => 183],
-                'fail' => ['x' => 147, 'y' => 183],
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 186],
+                'fail' => ['x' => 147, 'y' => 186],
+                'fails' => ['fail_4_1_1', 'fail_4_1_2', 'fail_4_1_3', 'fail_4_1_4'],
             ],
             '4_2' => [
-                'page' => 1,
+                'page' => 2,
                 'pass' => ['x' => 133, 'y' => 198],
                 'fail' => ['x' => 147, 'y' => 198],
+                'fails' => ['fail_4_2_1', 'fail_4_2_2'],
             ],
             '4_3' => [
-                'page' => 1,
-                'pass' => ['x' => 133, 'y' => 212],
-                'fail' => ['x' => 147, 'y' => 212],
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 216],
+                'fail' => ['x' => 147, 'y' => 216],
+                'fails' => ['fail_4_3_1', 'fail_4_3_2'],
             ],
             '4_4' => [
-                'page' => 1,
-                'pass' => ['x' => 133, 'y' => 219],
-                'fail' => ['x' => 147, 'y' => 219],
+                'page' => 2,
+                'pass' => ['x' => 133, 'y' => 223],
+                'fail' => ['x' => 147, 'y' => 223],
+                'fails' => ['fail_4_4_1'],
             ],
-        ];
-
-         public static $failSubMap = [
-            '4_1' => ['fail_4_1_1', 'fail_4_1_2', 'fail_4_1_3', 'fail_4_1_4'],
-            '4_2' => [],
-            '4_3' => ['fail_4_3_1'],
-            '4_4' => [],
         ];
 
        
@@ -179,23 +176,25 @@ class InspectionFormWaterAndIce extends DatabaseObject {
     {
         $count = 0;
 
-        $subs = self::$failSubMap[$section] ?? [];
+        $map = self::$statusMap[$section] ?? null;
+        if (!$map) {
+            return 0;
+        }
 
-        // 1) นับ fail_1_x_y == 1
-        foreach ($subs as $field) {
+        foreach ($map['fails'] ?? [] as $field) {
             if (!empty($form->$field) && (int)$form->$field === 1) {
                 $count++;
             }
         }
 
-        // 2) ถ้ามี remark_1_x → บวกเพิ่ม 1
-        $remarkField = "remark_" . $section;
+        $remarkField = "remark_{$section}";
         if (!empty($form->$remarkField)) {
             $count++;
         }
 
         return $count;
     }
+
 
        
         public static function drawStatus(\FPDF $pdf, string $status, array $pos, string $mark = 'X'): void

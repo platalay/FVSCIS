@@ -5,7 +5,7 @@
                         <div class="modal-content">
                         <form id="form-fvscisold-add" autocomplete="off" method="post" enctype="multipart/form-data">
                             <div class="modal-header">
-                            <h5 class="modal-title" id="modalFvscisOldAddLabel">เพิ่มข้อมูลใบรับรอง(manual)</h5>
+                            <h5 class="modal-title" id="modalFvscisOldAddLabel">การบันทึกผลการตรวจเรือจากเอกสาร</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
                             </div>
 

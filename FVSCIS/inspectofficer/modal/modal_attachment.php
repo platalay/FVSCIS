@@ -5,7 +5,7 @@
       <div class="modal-header border-0">
         <h5 class="modal-title fw-bold">
             <i class="fas fa-images text-primary me-2"></i>
-            รูปภาพแนบคำขอ:
+            รูปภาพแนบผลการประเมินมาตรฐานสุขอนามัยเรือ:
             <span id="photoModalReqId" class="text-dark"></span>
             <small id="modalShipCode" class="text-secondary"></small>
         </h5>
