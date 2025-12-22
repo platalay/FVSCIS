@@ -91,6 +91,34 @@ function sci_to_plain(string $val): string {
 }
 
 
+function thai_date_safe($value) {
+    $value = trim((string)$value);
+    if ($value === '' || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
+        return '-';
+    }
+
+    // ตัดเวลาออกถ้ามี
+    $value10 = substr($value, 0, 10);
+
+    // ถ้าเป็น YYYY-MM-DD ส่งเข้า thai_date ได้ตรงๆ
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value10)) {
+        return thai_date($value10);
+    }
+
+    // ถ้าเป็น DD/MM/YYYY แปลงก่อน
+    if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $value10)) {
+        $dt = DateTime::createFromFormat('d/m/Y', $value10);
+        if ($dt) return thai_date($dt->format('Y-m-d'));
+    }
+
+    // fallback
+    $ts = strtotime($value);
+    if ($ts) return thai_date(date('Y-m-d', $ts));
+
+    return '-';
+}
+
+
 /**
  * แปลงวันที่/เวลา (YYYY-MM-DD หรือ DATETIME จาก MySQL) เป็นรูปแบบไทย (พ.ศ.)
  *
@@ -98,7 +126,7 @@ function sci_to_plain(string $val): string {
  * @param array  $options  ['format' => 'long'|'short', 'show_day' => bool, 'show_time' => bool, 'null' => string]
  * @return string
  */
-function thai_date(?string $dateStr, array $options = []): string
+function thai_date(?string $dateStr, array $options = [])
 {
     // กันค่าที่ไม่พร้อมใช้หรือไม่ใช่วันที่
     if (
@@ -112,10 +140,11 @@ function thai_date(?string $dateStr, array $options = []): string
 
     // ตั้งค่าพื้นฐาน (override ด้วย $options)
     $opt = array_merge([
-        'format'    => 'short',   // short = ม.ค., long = มกราคม
-        'show_day'  => false,     // แสดงวัน เช่น วันอังคาร
-        'show_time' => false,     // แสดงเวลา HH:MM น.
-        'null'      => '-',
+        'format'       => 'short',  // short = ม.ค., long = มกราคม
+        'show_day'     => false,    // แสดงวัน เช่น วันอังคาร
+        'show_time'    => false,    // แสดงเวลา HH:MM น.
+        'return_parts' => false,    // ⭐ คืนค่าเป็น array
+        'null'         => '-',
     ], $options);
 
     // timezone
@@ -146,23 +175,52 @@ function thai_date(?string $dateStr, array $options = []): string
     // เลือกชื่อเดือนตาม format
     $monthName = ($opt['format'] === 'short') ? $monthsShort[$m] : $monthsLong[$m];
 
+    // ---------- ⭐ โหมดคืนค่าแบบโครงสร้าง ----------
+    if ($opt['return_parts']) {
+        $weekdayIndex = (int)date('w', $ts);
+
+        return [
+            // วันที่ที่คุณต้องการชัด ๆ
+            'day'        => $d,
+            'month'      => $m,
+            'month_name' => $monthName,
+            'year_be'    => $y,
+            'year_ce'    => (int)date('Y', $ts),
+
+            // วันในสัปดาห์
+            'weekday'        => $days[$weekdayIndex],
+            'weekday_index' => $weekdayIndex,
+
+            // เวลา
+            'time'      => $opt['show_time'] ? date('H:i', $ts) : null,
+            'time_full' => $opt['show_time'] ? date('H:i:s', $ts) : null,
+
+            // ข้อความพร้อมใช้
+            'date_th' => "{$d} {$monthName} {$y}",
+            'text'    => implode(' ', array_filter([
+                $opt['show_day'] ? 'วัน' . $days[$weekdayIndex] : null,
+                "{$d} {$monthName} {$y}",
+                $opt['show_time'] ? 'เวลา ' . date('H:i', $ts) . ' น.' : null
+            ])),
+        ];
+    }
+
+    // ---------- โหมดเดิม (คืน string) ----------
     $parts = [];
 
-    // วันในสัปดาห์
     if ($opt['show_day']) {
         $parts[] = 'วัน' . $days[(int)date('w', $ts)];
     }
 
-    // วันที่
     $parts[] = "{$d} {$monthName} {$y}";
 
-    // เวลา (ถ้าต้องการ)
     if ($opt['show_time']) {
         $parts[] = date('H:i', $ts) . ' น.';
     }
 
     return implode(' ', $parts);
 }
+
 
 // -- ฟังก์ชั่นย่อย: คืนเฉพาะปี พ.ศ.
 function thai_year(?string $dateStr, array $options = []): string

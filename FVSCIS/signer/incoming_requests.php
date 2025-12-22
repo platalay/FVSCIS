@@ -36,118 +36,128 @@ include("../../private/shared/topbarofficer.php");
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    // ✅ ดึงเฉพาะคำขอที่ department_id ตรงกับเจ้าหน้าที่
-                                    $DepartmentgroupObj = DepartmentGroup::find_one_by_officer_id($Officer->id);
-                                    $requests = InspectionRequest::find_by_department_group_id($DepartmentgroupObj->id); 
+                                <?php
+                                // ✅ ดึงเฉพาะคำขอที่ department_group ตรงกับเจ้าหน้าที่
+                                $DepartmentgroupObj = DepartmentGroup::find_one_by_officer_id($Officer->id);
+                                $requests = InspectionRequest::find_by_department_group_id($DepartmentgroupObj->id);
 
-                                    if (empty($requests)) :
-                                    ?>
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือที่รับผิดชอบ</td>
-                                        </tr>
-                                    <?php
-                                    else:
-                                        foreach ($requests as $req) :
-                                    ?>
-                                        <tr style="font-size: 14px;">
-                                            <td>
+                                if (empty($requests)) :
+                                ?>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือที่รับผิดชอบ</td>
+                                    </tr>
+                                <?php
+                                else:
+                                    foreach ($requests as $req) :
+
+                                        // ==========================
+                                        // กำหนดสีแถว (เหมือนตัวอย่าง)
+                                        // ==========================
+                                        $trClass   = '';
+                                        $status    = $req->status;
+                                        $hasDate   = !empty($req->confirmed_inspect_date) && $req->confirmed_inspect_date !== '0000-00-00';
+                                        $isConfirm = (int)($req->is_confirm ?? 0);
+
+                                        if ($status === InspectionRequest::STATUS_PENDING && !$hasDate) {
+                                            $trClass = 'tr-not-scheduled';          // เทา
+                                        }
+                                        else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 0) {
+                                            $trClass = 'tr-wait-confirm';           // เหลือง
+                                        }
+                                        else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 1) {
+                                            $trClass = 'tr-pending-confirmed';      // เขียวอ่อน
+                                        }
+                                        else if (
+                                            $status === InspectionRequest::STATUS_INSPECTING ||
+                                            $status === InspectionRequest::STATUS_PASSED
+                                        ) {
+                                            $trClass = 'tr-inspecting';             // ฟ้าอ่อน
+                                        }
+                                        else if (
+                                            $status === InspectionRequest::STATUS_FAILED ||
+                                            $status === InspectionRequest::STATUS_CONDITIONAL ||
+                                            $status === InspectionRequest::STATUS_COMPLETED
+                                        ) {
+                                            $trClass = 'tr-completed';              // เขียว (จบกระบวนการ)
+                                        }
+                                        else if ($status === InspectionRequest::STATUS_CANCELLED) {
+                                            $trClass = 'tr-cancelled';              // แดงอ่อน
+                                        }
+                                ?>
+                                    <tr style="font-size: 14px;" class="<?= $trClass ?>">
+                                        <td>
                                             <div class="d-flex align-items-center gap-1">
-                                                <!-- ปุ่มดูรายละเอียด -->
-                                                <button type="button" title="อนุมัติ" class="btn btn-info btn-sm" data-bs-toggle="modal"
-                                                        data-bs-target="#modalApproveRequest"
-                                                        onclick="loadRequestDetail(<?= h($req->id) ?>)">
-                                                    <i class="fas fa-file-signature"></i>
+                                            <?php if ($req->status === InspectionRequest::STATUS_FAILED): ?>
+                                                <!-- ยืนยันผลไม่ผ่าน -->
+                                                <button type="button" class="btn btn-danger btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalConfirmFail"
+                                                        onclick="loadRequestDetail(<?= h($req->id) ?>, 'fail')">
+                                                <i class="fas fa-times-circle"></i>
                                                 </button>
+                                            <?php else: ?>
+                                                <!-- อนุมัติ -->
+                                                <button type="button" class="btn btn-info btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalApproveRequest"
+                                                        onclick="loadRequestDetail(<?= h($req->id) ?>, 'approve')">
+                                                <i class="fas fa-file-signature"></i>
+                                                </button>
+                                            <?php endif; ?>
                                             </div>
-                                            </td>
+                                        </td>
 
-
-                                            <td><?= h($req->ship_code) ?></td>
-                                            <td><?= h($req->vessel_name) ?></td>
-                                            <td><?= thai_date($req->inspect_date_start). " ถึงวันที่ ".thai_date($req->inspect_date_end) ?></td>
-                                            <td><?= thai_date($req->submitted_at) ?></td>
-                                            <td><?= thai_date($req->created_at) ?></td>
-                                            <td>
-                                                <?php
-                                                switch ($req->status) {
-                                                    case InspectionRequest::STATUS_PENDING:
-                                                        echo '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_INSPECTING:
-                                                        echo '<span class="badge bg-primary">อยู่ระหว่างตรวจ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_PASSED:
-                                                        echo '<span class="badge bg-info text-dark">รออนุมัติ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_FAILED:
-                                                        echo '<span class="badge bg-danger">ไม่ผ่านการตรวจ</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_CONDITIONAL:
-                                                        echo '<span class="badge bg-info text-dark">ผ่านแบบมีเงื่อนไข</span>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_COMPLETED:
-                                                        echo '<a href="certificate_preview.php?id=' . h($req->id) . '" target="_blank" class="badge bg-success text-decoration-none">
-                                                                    <i class="fas fa-file-image"></i> อนุมัติ
-                                                                </a>';
-                                                        break;
-                                                    case InspectionRequest::STATUS_CANCELLED:
-                                                        echo '<span class="badge bg-secondary">ยกเลิก</span>';
-                                                        break;
-                                                    default:
-                                                        echo '<span class="badge bg-dark">ไม่ทราบ</span>';
-                                                }
-                                                ?>
-
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; endif; ?>
+                                        <td><?= h($req->ship_code) ?></td>
+                                        <td><?= h($req->vessel_name) ?></td>
+                                        <td><?= thai_date($req->inspect_date_start) . " ถึงวันที่ " . thai_date($req->inspect_date_end) ?></td>
+                                        <td><?= thai_date($req->submitted_at) ?></td>
+                                        <td><?= thai_date($req->created_at) ?></td>
+                                        <td>
+                                            <?php
+                                            switch ($req->status) {
+                                                case InspectionRequest::STATUS_PENDING:
+                                                    echo '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_INSPECTING:
+                                                    echo '<span class="badge bg-primary">อยู่ระหว่างตรวจ</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_PASSED:
+                                                    echo '<span class="badge bg-info text-dark">รออนุมัติ</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_FAILED:
+                                                    echo '<span class="badge bg-danger">ไม่ผ่านการตรวจ</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_CONDITIONAL:
+                                                    echo '<span class="badge bg-info text-dark">ผ่านแบบมีเงื่อนไข</span>';
+                                                    break;
+                                                case InspectionRequest::STATUS_COMPLETED:
+                                                    echo '<a href="certificate_preview.php?id=' . h($req->id) . '" target="_blank"
+                                                            class="badge bg-success text-decoration-none">
+                                                            <i class="fas fa-file-image"></i> อนุมัติ
+                                                        </a>';
+                                                    break;
+                                                case InspectionRequest::STATUS_CANCELLED:
+                                                    echo '<span class="badge bg-secondary">ยกเลิก</span>';
+                                                    break;
+                                                default:
+                                                    echo '<span class="badge bg-dark">ไม่ทราบ</span>';
+                                            }
+                                            ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; endif; ?>
                                 </tbody>
+
                             </table>
                         </div>
                     </div>
 
 
                     </div>
-                    <!-- modalApproveRequest -->
-                    <div class="modal fade" id="modalApproveRequest" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content">
-                        <form id="approveInspectionForm">
-                            <div class="modal-header">
-                            <h5 class="modal-title">อนุมัติคำขอตรวจเรือ</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body" id="modalApproveBody">
-                            <!-- ✅ รายละเอียดคำขอจะโหลดมาใส่ตรงนี้โดย JS -->
-                            </div>
-                            <div class="modal-footer flex-column align-items-stretch">
-                            <input type="hidden" name="request_id" id="approve_request_id">
-                            <!-- ✅ วันที่มีผลบังคับใช้ -->
-                            <div class="mb-3 w-100">
-                                <label for="effective_date" class="form-label">วันที่มีผลบังคับใช้</label>
-                                <input type="date" class="form-control" name="effective_date" id="effective_date" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="temporary_reason" class="form-label">เหตุผลออกใบรับรองชั่วคราว</label>
-                                <textarea class="form-control" name="temporary_reason" id="temporary_reason" rows="2"></textarea>
-                            </div>    
-                            <div class="mb-3">
-                                <label for="approval_note" class="form-label">หมายเหตุ (ถ้ามี)</label>
-                                <textarea class="form-control" name="approval_note" id="approval_note" rows="2"></textarea>
-                            </div>
-
-                            <button type="submit" class="btn btn-success w-100" id="btnApproveRequest">
-                                ✅ อนุมัติคำขอและออกใบรับรอง
-                            </button>
-                            </div>
-                        </form>
-                        </div>
-                    </div>
-                    </div>
-                    <!-- /modalApproveRequest -->
-                              
+                    <?php
+                    include("modal/approve_request_modal.php");
+                    include("modal/confirm_fail_request_modal.php");        
+                    ?>
                                
 </div><!-- <div class="container-fluid"> -->
 
@@ -163,84 +173,107 @@ include("../../private/shared/topbarofficer.php");
                                                 
     <script src="../js/fvscis.js"></script>                                            
             <script>
-                function loadRequestDetail(id) {
-                    $.ajax({
-                        url: 'ajax/get_request_detail.php',
-                        method: 'GET',
-                        data: { id: id },
-                        dataType: 'json',
-                        success: function (data) {
-                            if (!data.success) {
-                                Swal.fire('ผิดพลาด', data.message, 'error');
-                                return;
-                            }
+                function loadRequestDetail(id, mode = 'approve') {
+                $.ajax({
+                    url: 'ajax/get_request_detail.php',
+                    method: 'GET',
+                    data: { id: id },
+                    dataType: 'json',
+                    success: function (data) {
+                    if (!data.success) {
+                        Swal.fire('ผิดพลาด', data.message, 'error');
+                        return;
+                    }
 
-                            const req = data.request;
-                            const statusMap = {
-                                pending: 'รอดำเนินการ',
-                                cancelled: 'ยกเลิก',
-                                inspecting: 'อยู่ระหว่างตรวจ',
-                                passed: 'ผ่านการตรวจ',
-                                failed: 'ไม่ผ่านการตรวจ',
-                                conditional: 'ผ่านแบบมีเงื่อนไข',
-                                completed: 'อนุมัติ'
-                            };
+                    const req = data.request;
+                    const statusMap = {
+                        pending: 'รอดำเนินการ',
+                        cancelled: 'ยกเลิก',
+                        inspecting: 'อยู่ระหว่างตรวจ',
+                        passed: 'ผ่านการตรวจ',
+                        failed: 'ไม่ผ่านการตรวจ',
+                        conditional: 'ผ่านแบบมีเงื่อนไข',
+                        completed: 'อนุมัติ'
+                    };
 
-                            let html = `
-                                <p><strong>ชื่อเรือ:</strong> ${req.ship_name || '-'}</p>
-                                <p><strong>ทะเบียนเรือ:</strong> ${req.ship_code || '-'}</p>
-                                <p><strong>ช่วงวันที่ขอตรวจ:</strong> ${req.inspect_date_start} ถึง ${req.inspect_date_end}</p>
-                                <p><strong>ใบอนุญาตท่า:</strong> ${req.port_license_no || '-'}</p>
-                                <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}</p>
-                            `;
+                    let html = `
+                        <p><strong>ชื่อเรือ:</strong> ${req.ship_name || '-'}</p>
+                        <p><strong>ทะเบียนเรือ:</strong> ${req.ship_code || '-'}</p>
+                        <p><strong>ช่วงวันที่ขอตรวจ:</strong> ${req.inspect_date_start} ถึง ${req.inspect_date_end}</p>
+                        <p><strong>ใบอนุญาตท่า:</strong> ${req.port_license_no || '-'}</p>
+                        <p><strong>สถานะ:</strong> ${statusMap[req.status] || 'ไม่ทราบ'}</p>
+                    `;
 
-                            const rawDate = req.actual_inspect_date ? req.actual_inspect_date.split(' ')[0] : null;
-                            let displayDate = 'ไม่พบวันที่';
+                    const rawDate = req.actual_inspect_date ? req.actual_inspect_date.split(' ')[0] : null;
+                    let displayDate = 'ไม่พบวันที่';
 
-                            if (rawDate  && rawDate !== '0000-00-00') {
-                                const parsed = new Date(rawDate);
-                                if (!isNaN(parsed)) {
-                                    displayDate = parsed.toLocaleDateString('th-TH', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric'
-                                    });
-                                }
-                            }
-
-                            html += `<p><strong>วันที่ตรวจแล้วเสร็จ:</strong> <span class="text-success"><i class="fas fa-calendar-check"></i> ${displayDate}</span></p>`;
-
-                            // วันที่อนุมัติ
-                            const rawApproveDate = req.approved_at ? req.approved_at.split(' ')[0] : null;
-                            let displayApproveDate = 'ยังไม่อนุมัติ';
-
-                            if (rawApproveDate && rawApproveDate !== '0000-00-00') {
-                                const parsed = new Date(rawApproveDate);
-                                if (!isNaN(parsed)) {
-                                    displayApproveDate = parsed.toLocaleDateString('th-TH', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric'
-                                    });
-                                }
-                            }
-                            html += `<p><strong>วันที่อนุมัติ:</strong> <span class="text-primary"><i class="fas fa-user-check"></i> ${displayApproveDate}</span></p>`;
-
-                            $('#modalApproveBody').html(html);
-                            $('#approve_request_id').val(req.id);
-                            // ✅ ปิดปุ่มอนุมัติถ้าสถานะเป็น completed
-                            if (req.status === 'completed') {
-                                $('#btnApproveRequest').prop('disabled', true).addClass('btn-secondary').removeClass('btn-success');
-                            } else {
-                                $('#btnApproveRequest').prop('disabled', false).addClass('btn-success').removeClass('btn-secondary');
-                            }
-
-                        },
-                        error: function () {
-                            Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้', 'error');
+                    if (rawDate && rawDate !== '0000-00-00') {
+                        const parsed = new Date(rawDate);
+                        if (!isNaN(parsed)) {
+                        displayDate = parsed.toLocaleDateString('th-TH', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
                         }
-                    });
+                    }
+
+                    html += `<p><strong>วันที่ตรวจแล้วเสร็จ:</strong> <span class="text-success"><i class="fas fa-calendar-check"></i> ${displayDate}</span></p>`;
+
+                    const rawApproveDate = req.approved_at ? req.approved_at.split(' ')[0] : null;
+                    let displayApproveDate = 'ยังไม่อนุมัติ';
+
+                    if (rawApproveDate && rawApproveDate !== '0000-00-00') {
+                        const parsed = new Date(rawApproveDate);
+                        if (!isNaN(parsed)) {
+                        displayApproveDate = parsed.toLocaleDateString('th-TH', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                        }
+                    }
+
+                    html += `<p><strong>วันที่อนุมัติ:</strong> <span class="text-primary"><i class="fas fa-user-check"></i> ${displayApproveDate}</span></p>`;
+
+                    if (mode === 'fail') {
+                        $('#modalConfirmFailBody').html(html);
+                        $('#fail_request_id').val(req.id);
+
+                        // ปิดปุ่มถ้าไม่ใช่ failed
+                        $('#btnConfirmFail').prop('disabled', req.status !== 'failed');
+
+                        // (ไม่บังคับ) เคลียร์ค่าฟอร์ม
+                        $('#effective_date_fail').val('');
+                        $('#approval_note_fail').val('');
+                    } else {
+                        $('#modalApproveBody').html(html);
+                        $('#approve_request_id').val(req.id);
+
+                        // ปิดปุ่มอนุมัติถ้า completed
+                        if (req.status === 'completed') {
+                        $('#btnApproveRequest')
+                            .prop('disabled', true)
+                            .addClass('btn-secondary')
+                            .removeClass('btn-success');
+                        } else {
+                        $('#btnApproveRequest')
+                            .prop('disabled', false)
+                            .addClass('btn-success')
+                            .removeClass('btn-secondary');
+                        }
+
+                        // (ไม่บังคับ) เคลียร์ค่าฟอร์ม
+                        $('#effective_date_approve').val('');
+                        $('#approval_note_approve').val('');
+                    }
+                    },
+                    error: function () {
+                    Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้', 'error');
+                    }
+                });
                 }
+
                 </script>
 
 
@@ -250,9 +283,9 @@ include("../../private/shared/topbarofficer.php");
 
                     const formData = {
                         request_id: $('#approve_request_id').val(),
-                        effective_date: $('#effective_date').val(),
+                        effective_date: $('#effective_date_approve').val(),
                         temporary_reason: $('#temporary_reason').val(),
-                        approval_note: $('#approval_note').val()
+                        approval_note: $('#approval_note_approve').val()
                     };
 
                     $.ajax({
@@ -262,20 +295,77 @@ include("../../private/shared/topbarofficer.php");
                         dataType: 'json',
                         success: function (res) {
                             if (res.success) {
-                                Swal.fire('สำเร็จ', 'อนุมัติคำขอและออกใบรับรองเรียบร้อยแล้ว', 'success')
-                                    .then(() => {
-                                        location.reload(); // หรือจะปิด modal แล้วรีเฟรชเฉพาะตารางก็ได้
-                                    });
+                                Swal.fire(
+                                    'สำเร็จ',
+                                    'อนุมัติคำขอและออกใบรับรองเรียบร้อยแล้ว',
+                                    'success'
+                                ).then(() => {
+                                    location.reload();
+                                });
                             } else {
-                                Swal.fire('ผิดพลาด', res.message || 'ไม่สามารถอนุมัติได้', 'error');
+                                Swal.fire(
+                                    'ผิดพลาด',
+                                    res.message || 'ไม่สามารถอนุมัติได้',
+                                    'error'
+                                );
                             }
                         },
                         error: function () {
-                            Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
+                            Swal.fire(
+                                'ผิดพลาด',
+                                'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์',
+                                'error'
+                            );
                         }
                     });
                 });
                 </script>
+
+
+                <script>
+                $('#confirmFailForm').on('submit', function (e) {
+                    e.preventDefault();
+
+                    const formData = {
+                        request_id: $('#fail_request_id').val(),
+                        effective_date: $('#effective_date_fail').val(),
+                        approval_note: $('#approval_note_fail').val()
+                    };
+
+                    $.ajax({
+                        url: 'ajax/confirm_fail.php',
+                        method: 'POST',
+                        data: formData,
+                        dataType: 'json',
+                        success: function (res) {
+                            if (res.success) {
+                                Swal.fire(
+                                    'สำเร็จ',
+                                    'ยืนยันผลไม่ผ่านเรียบร้อยแล้ว',
+                                    'success'
+                                ).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire(
+                                    'ผิดพลาด',
+                                    res.message || 'ไม่สามารถยืนยันผลไม่ผ่านได้',
+                                    'error'
+                                );
+                            }
+                        },
+                        error: function () {
+                            Swal.fire(
+                                'ผิดพลาด',
+                                'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์',
+                                'error'
+                            );
+                        }
+                    });
+                });
+                </script>
+
+
 
 <?php 
 include("../../private/shared/footerall.php");

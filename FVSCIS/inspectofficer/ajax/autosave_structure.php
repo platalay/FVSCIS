@@ -6,7 +6,10 @@ header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Method not allowed'
+    ]);
     exit;
 }
 
@@ -17,7 +20,10 @@ $value      = $_POST['value'] ?? '';
 // ตรวจค่าเบื้องต้น
 if ($request_id <= 0 || $field === '') {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Missing request_id or field']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Missing request_id or field'
+    ]);
     exit;
 }
 
@@ -32,14 +38,37 @@ foreach ($allowed_prefixes as $prefix) {
 }
 if (!$ok) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid field name']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid field name'
+    ]);
     exit;
 }
 
+/**
+ * 🔒 ดักล็อกเอกสาร: ส่งยืนยันผลแล้ว → ไม่ autosave
+ * ใช้ response 200 + locked=true เพื่อให้ JS แจ้งเตือนได้ทันที
+ */
+$formStatus = InspectionFormStatus::find_by_request_id($request_id); // ปรับชื่อเมธอดถ้าคุณใช้ต่างออกไป
+
+if ($formStatus && (int)$formStatus->document_locked === 1) {
+    echo json_encode([
+        'success' => false,
+        'locked'  => true,
+        'field'   => $field,
+        'value'   => $value,
+        'message' => 'เอกสารถูกยืนยันผลแล้ว ไม่สามารถบันทึกการแก้ไขได้'
+    ]);
+    exit;
+}
+
+// autosave สำหรับหมวดโครงสร้าง (structure)
 $success = InspectionFormStructure::autosave($request_id, $field, $value);
 
 echo json_encode([
     'success' => (bool)$success,
+    'locked'  => false,
     'field'   => $field,
     'value'   => $value,
+    'message' => $success ? 'บันทึกสำเร็จ' : 'บันทึกล้มเหลว'
 ]);

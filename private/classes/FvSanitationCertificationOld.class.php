@@ -104,22 +104,8 @@ class FvSanitationCertificationOld extends DatabaseObject
         $sql .= "ORDER BY id DESC";
         return static::find_by_sql($sql);
     }
-    public static function count_active_by_fisherman($fisherman_id) {
-        $fisherman_id = self::$database->escape_string($fisherman_id);
-
-        // สมมติว่าถือว่า "ยังใช้ได้" = expire_at >= TODAY และ status = 'active'
-        $sql  = "SELECT COUNT(*) AS cnt ";
-        $sql .= "FROM " . static::$table_name . " ";
-        $sql .= "WHERE fisherman_id = '{$fisherman_id}' ";
-        $sql .= "AND expiration_date >= CURDATE() ";
-        $sql .= "AND status = 'active'";
-
-        $result = self::$database->query($sql);
-        $row = $result->fetch_assoc();
-        return (int)($row['cnt'] ?? 0);
-    }
-
-     public static function link_to_fisherman_by_citizen(Fisherman $fisherman) {
+    
+    public static function link_to_fisherman_by_citizen(Fisherman $fisherman) {
 
         if (empty($fisherman->citizen_id)) {
             return;
@@ -160,233 +146,271 @@ class FvSanitationCertificationOld extends DatabaseObject
         self::$database->query($sql);
     }    
 
-    public static function count_active_by_responsible_unit($unit_id = null) {
-        global $database;
 
-        $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name .
-            " WHERE status = 'active'";
 
-        if ($unit_id !== null) {
-            $sql .= " AND responsible_unit = '" . $database->escape_string($unit_id) . "'";
-        }
-
-        $result = $database->query($sql);
-        $row = $result->fetch_assoc();
-        return (int)$row['cnt'];
-    }
-
-        public static function mark_pending($ship_code) {
-        $ship_code = self::$database->escape_string($ship_code);
-
-        $sql = "UPDATE " . static::$table_name . "
-                SET status = 'pending'
-                WHERE ship_code = '{$ship_code}'";
-
-        return self::$database->query($sql);
-    }
-
-    public static function mark_fail($ship_code) {
-        $ship_code = self::$database->escape_string($ship_code);
-
-        $sql = "UPDATE " . static::$table_name . "
-                SET status = 'fail'
-                WHERE ship_code = '{$ship_code}'";
-
-        return self::$database->query($sql);
-    }
-
-    public static function mark_pass($ship_code, $new_active_id) {
-        $ship_code     = self::$database->escape_string($ship_code);
-        $new_active_id = self::$database->escape_string($new_active_id);
-
-        // อัปเดตเฉพาะแถวเก่า ไม่แตะ active ใหม่
-        $sql = "UPDATE " . static::$table_name . "
-                SET status = 'pass'
-                WHERE ship_code = '{$ship_code}'
-                AND id <> '{$new_active_id}'";
-
-        return self::$database->query($sql);
-    }
-
-    public static function mark_inactive($ship_code) {
-        $ship_code = self::$database->escape_string($ship_code);
-
-        $sql = "UPDATE " . static::$table_name . "
-                SET status = 'inactive'
-                WHERE ship_code = '{$ship_code}'";
-
-        return self::$database->query($sql);
-    }
-
-    public static function reset_after_request_deleted($ship_code)
+    // ======== ตระกูลนับ ================
+    protected static function build_latest_join_sql(string $where = ''): string
     {
-        $ship_code = self::$database->escape_string($ship_code);
+        $where = trim($where);
+        $whereSql = $where !== '' ? "WHERE {$where}" : "";
 
-        // 1) เช็กสถานะล่าสุดจาก InspectionRequest ของเรือลำนี้
-        $latestReq = InspectionRequest::find_latest_by_ship_code($ship_code);
-
-        // ใช้ฟิลด์ status (ไม่ใช่ cert_status)
-        $latestStatus = $latestReq->status ?? null;
-
-        // 1.1) ถ้ามี request ล่าสุด และสถานะล่าสุด = 'fail'
-        //      → ให้เรือลำนี้เป็น fail ทั้งหมด
-        if ($latestReq && $latestStatus === 'fail') {
-            return static::mark_fail($ship_code);
-        }
-
-        // 2) ถ้าไม่มี request เลย หรือมีแต่สถานะล่าสุดไม่ใช่ fail
-        //    → ใช้ logic expiration_date
-        $today = date('Y-m-d');
-
-        // หาใบที่ยังไม่หมดอายุของเรือลำนี้
-        $sql  = "SELECT id FROM " . static::$table_name . " ";
-        $sql .= "WHERE ship_code = '{$ship_code}' ";
-        $sql .= "  AND expiration_date IS NOT NULL ";
-        $sql .= "  AND expiration_date >= '{$today}' ";
-        $sql .= "ORDER BY expiration_date DESC ";
-        $sql .= "LIMIT 1";
-
-        $obj_array = static::find_by_sql($sql);
-
-        if (!empty($obj_array)) {
-            // มีใบที่ยังไม่หมดอายุ → อันนี้ active ที่เหลือ pass
-            $active_record = array_shift($obj_array);
-            $active_id     = self::$database->escape_string($active_record->id);
-
-            $sql_update  = "UPDATE " . static::$table_name . " ";
-            $sql_update .= "SET status = CASE ";
-            $sql_update .= "    WHEN id = '{$active_id}' THEN 'active' ";
-            $sql_update .= "    ELSE 'pass' ";
-            $sql_update .= "END ";
-            $sql_update .= "WHERE ship_code = '{$ship_code}'";
-
-            return self::$database->query($sql_update);
-        }
-
-        // 3) ถ้าไม่มีใบที่ยังไม่หมดอายุเลย → inactive ทั้งลำ
-        return static::mark_inactive($ship_code);
-    }
-
-    public static function mark_active($ship_code)
-    {
-        $ship_code = self::$database->escape_string($ship_code);
-        $today     = date('Y-m-d');
-
-        // 1) เลือก "ใบที่ยังไม่หมดอายุ" ที่หมดอายุช้าที่สุดของเรือลำนี้
-        $sql  = "SELECT id FROM " . static::$table_name . " ";
-        $sql .= "WHERE ship_code = '{$ship_code}' ";
-        $sql .= "  AND expiration_date IS NOT NULL ";
-        $sql .= "  AND expiration_date >= '{$today}' ";
-        $sql .= "ORDER BY expiration_date DESC, id DESC ";
-        $sql .= "LIMIT 1";
-
-        $obj_array = static::find_by_sql($sql);
-
-        // 2) ถ้าไม่มีใบที่ยังไม่หมดอายุเลย → inactive ทั้งลำ
-        if (empty($obj_array)) {
-            return static::mark_inactive($ship_code);
-            // หรือถ้าอยากให้แค่คืน false ไม่เปลี่ยน status ก็ใช้
-            // return false;
-        }
-
-        // 3) มีใบที่ยังไม่หมดอายุ → ใบนั้น active, ที่เหลือ pass
-        $active_record = array_shift($obj_array);
-        $active_id     = self::$database->escape_string($active_record->id);
-
-        $sql_update  = "UPDATE " . static::$table_name . " ";
-        $sql_update .= "SET status = CASE ";
-        $sql_update .= "    WHEN id = '{$active_id}' THEN 'active' ";
-        $sql_update .= "    ELSE 'pass' ";
-        $sql_update .= "END ";
-        $sql_update .= "WHERE ship_code = '{$ship_code}'";
-
-        return self::$database->query($sql_update);
-    }
-
-
-
-    public static function count_distinct_shipcode_by_status() {
-        $sql = "SELECT status, COUNT(DISTINCT ship_code) AS total
+        return "
+            FROM (
+                SELECT ship_code, MAX(id) AS last_id
                 FROM " . static::$table_name . "
-                WHERE status IN ('active', 'inactive', 'pending')
-                GROUP BY status";
+                {$whereSql}
+                GROUP BY ship_code
+            ) t
+            JOIN " . static::$table_name . " o ON o.id = t.last_id
+        ";
+    }
+
+    public static function count_active_by_fisherman($fisherman_id) {
+        $fisherman_id = self::$database->escape_string($fisherman_id);
+
+        // สมมติว่าถือว่า "ยังใช้ได้" = expire_at >= TODAY และ status = 'active'
+        $sql  = "SELECT COUNT(*) AS cnt ";
+        $sql .= "FROM " . static::$table_name . " ";
+        $sql .= "WHERE fisherman_id = '{$fisherman_id}' ";
+        $sql .= "AND expiration_date >= CURDATE() ";
+        $sql .= "AND status = 'active'";
 
         $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+        return (int)($row['cnt'] ?? 0);
+    }
 
-        // เตรียมค่า default เผื่อบาง status ไม่มีข้อมูล
+    public static function count_active_by_responsible_unit($unit_id = null): int
+    {
+        $where = "";
+        if ($unit_id !== null) {
+            $unit_id = self::$database->escape_string($unit_id);
+            $where = "responsible_unit = '{$unit_id}'";
+        }
+
+        $sql = "SELECT COUNT(*) AS cnt "
+            . static::build_latest_join_sql($where)
+            . " WHERE o.status = 'active'";
+
+        $result = self::$database->query($sql);
+        if (!$result) return 0;
+
+        $row = $result->fetch_assoc();
+        return (int)($row['cnt'] ?? 0);
+    }
+
+
+
+    public static function count_distinct_shipcode_by_status(): array
+    {
         $counts = [
             'active'   => 0,
             'inactive' => 0,
             'pending'  => 0,
         ];
 
+        $sql = "
+            SELECT o.status, COUNT(*) AS total
+            " . static::build_latest_join_sql() . "
+            WHERE o.status IN ('active', 'inactive', 'pending')
+            GROUP BY o.status
+        ";
+
+        $result = self::$database->query($sql);
+        if (!$result) return $counts;
+
         while ($row = $result->fetch_assoc()) {
             $status = $row['status'];
-            $counts[$status] = (int)$row['total'];
+            if (isset($counts[$status])) {
+                $counts[$status] = (int)$row['total'];
+            }
         }
 
         return $counts;
     }
 
-    public static function count_by_status_responsible_unit($status, $responsible_unit)
+
+    public static function count_by_status_responsible_unit($status, $responsible_unit): int
     {
         $status = self::$database->escape_string($status);
         $unit   = self::$database->escape_string($responsible_unit);
 
         $sql = "
             SELECT COUNT(*) AS total
-            FROM (
-                SELECT ship_code, MAX(id) AS last_id
-                FROM " . static::$table_name . "
-                WHERE responsible_unit = '{$unit}'
-                GROUP BY ship_code
-            ) AS t
-            JOIN " . static::$table_name . " o ON o.id = t.last_id
+            " . static::build_latest_join_sql("responsible_unit = '{$unit}'") . "
             WHERE o.status = '{$status}'
         ";
 
         $result = self::$database->query($sql);
+        if (!$result) return 0;
 
-        if ($result) {
-            $row = $result->fetch_assoc();
-            return $row['total'] ?? 0;
-        }
-        return 0;
+        $row = $result->fetch_assoc();
+        return (int)($row['total'] ?? 0);
     }
 
-    public static function count_by_status_evaluation_agency($status, $evaluation_agency)
+    public static function count_by_status_evaluation_agency($status, $evaluation_agency): int
     {
         $status = self::$database->escape_string($status);
         $unit   = self::$database->escape_string($evaluation_agency);
 
         $sql = "
             SELECT COUNT(*) AS total
-            FROM (
-                SELECT ship_code, MAX(id) AS last_id
-                FROM " . static::$table_name . "
-                WHERE evaluation_agency = '{$unit}'
-                GROUP BY ship_code
-            ) AS t
-            JOIN " . static::$table_name . " o ON o.id = t.last_id
+            " . static::build_latest_join_sql("evaluation_agency = '{$unit}'") . "
             WHERE o.status = '{$status}'
         ";
 
         $result = self::$database->query($sql);
+        if (!$result) return 0;
 
-        if ($result) {
-            $row = $result->fetch_assoc();
-            return $row['total'] ?? 0;
-        }
-        return 0;
+        $row = $result->fetch_assoc();
+        return (int)($row['total'] ?? 0);
     }
 
-    /* 
-    การใช้งาน
-    $counts = FvSanitationCertificationOld::count_distinct_shipcode_by_status();
+            // ====== ตระกูล mark ทั้งหลายแหล่ =======
+            // ====== Helper: หา id ล่าสุดของเรือลำนี้ ======
+            protected static function latest_id_by_ship_code(string $ship_code): ?int
+            {
+                $ship_code = self::$database->escape_string($ship_code);
 
-    $active_count   = $counts['active'];
-    $inactive_count = $counts['inactive'];
-    $pending_count  = $counts['pending'];
-    */
+                $sql = "SELECT id
+                        FROM " . static::$table_name . "
+                        WHERE ship_code = '{$ship_code}'
+                        ORDER BY id DESC
+                        LIMIT 1";
+
+                $result = self::$database->query($sql);
+                if (!$result) return null;
+
+                $row = $result->fetch_assoc();
+                return $row ? (int)$row['id'] : null;
+            }
+
+            // ====== Helper: update status เฉพาะ id ที่ระบุ ======
+            protected static function update_status_by_id(int $id, string $status): int|false
+            {
+                $id     = self::$database->escape_string((string)$id);
+                $status = self::$database->escape_string($status);
+
+                $sql = "UPDATE " . static::$table_name . "
+                        SET status = '{$status}'
+                        WHERE id = '{$id}'
+                        AND (status IS NULL OR status <> '{$status}')";
+
+                $ok = self::$database->query($sql);
+                if (!$ok) return false;
+
+                return (int) self::$database->affected_rows; // 0 หรือ 1
+            }
+
+            // ====== Helper: update status เฉพาะ record ล่าสุดของ ship_code ======
+            protected static function update_latest_status(string $ship_code, string $status): int|false
+            {
+                $latest_id = static::latest_id_by_ship_code($ship_code);
+                if (!$latest_id) return false; // ไม่พบ record ล่าสุด
+
+                return static::update_status_by_id($latest_id, $status);
+            }
+
+            // ===================================================================
+            // MARK FUNCTIONS (ใหม่): กระทบเฉพาะ record ล่าสุด เพื่อให้สอดคล้อง UI
+            // ===================================================================
+
+            public static function mark_pending(string $ship_code): int|false
+            {
+                return static::update_latest_status($ship_code, 'pending');
+            }
+
+            public static function mark_fail(string $ship_code): int|false
+            {
+                return static::update_latest_status($ship_code, 'fail');
+            }
+
+            public static function mark_pass(string $ship_code): int|false
+            {
+                return static::update_latest_status($ship_code, 'pass');
+            }
+
+            public static function mark_inactive(string $ship_code): int|false
+            {
+                return static::update_latest_status($ship_code, 'inactive');
+            }
+
+            // ===================================================================
+            // mark_active: เลือก "ใบที่ยังไม่หมดอายุ" ที่หมดอายุช้าที่สุด → ให้เป็น active
+            // และเพื่อให้สอดคล้องหน้าโชว์ "ล่าสุดเท่านั้น" ให้เราอัปเดตเฉพาะ record ที่เลือก
+            // ===================================================================
+
+            public static function mark_active(string $ship_code): int|false
+            {
+                $ship_code = self::$database->escape_string($ship_code);
+                $today     = date('Y-m-d');
+
+                // 1) เลือก "ใบที่ยังไม่หมดอายุ" ที่หมดอายุช้าที่สุดของเรือลำนี้
+                $sql  = "SELECT id FROM " . static::$table_name . " ";
+                $sql .= "WHERE ship_code = '{$ship_code}' ";
+                $sql .= "  AND expiration_date IS NOT NULL ";
+                $sql .= "  AND expiration_date >= '{$today}' ";
+                $sql .= "ORDER BY expiration_date DESC, id DESC ";
+                $sql .= "LIMIT 1";
+
+                $result = self::$database->query($sql);
+                if (!$result) return false;
+
+                $row = $result->fetch_assoc();
+
+                // 2) ถ้าไม่มีใบที่ยังไม่หมดอายุเลย → set ล่าสุดเป็น inactive
+                if (!$row) {
+                    // ใช้ latest ตาม id (หน้าโชว์)
+                    $latest_id = static::latest_id_by_ship_code($ship_code);
+                    if (!$latest_id) return false;
+                    return static::update_status_by_id($latest_id, 'inactive');
+                }
+
+                // 3) มีใบที่ยังไม่หมดอายุ → ใบนั้น active (อัปเดตแค่ record นั้น)
+                $active_id = (int)$row['id'];
+                return static::update_status_by_id($active_id, 'active');
+            }
+
+            // ===================================================================
+            // reset_after_request_deleted: หลังลบ request ให้ reset สถานะใน old
+            // - ถ้า request ล่าสุดของเรือลำนี้เป็น fail → mark_fail (เฉพาะล่าสุดของ old)
+            // - ถ้าไม่ fail → ใช้ logic expiration_date เลือก active หรือ inactive
+            // ===================================================================
+
+            public static function reset_after_request_deleted(string $ship_code): int|false
+            {
+                $ship_code_esc = self::$database->escape_string($ship_code);
+
+                // 1) เช็กสถานะล่าสุดจาก InspectionRequest ของเรือลำนี้
+                $latestReq = InspectionRequest::find_latest_by_ship_code($ship_code_esc);
+                $latestStatus = $latestReq->status ?? null;
+
+                if ($latestReq && $latestStatus === 'fail') {
+                    return static::mark_fail($ship_code);
+                }
+
+                // 2) ไม่ fail → ใช้ logic expiration_date
+                $today = date('Y-m-d');
+
+                $sql  = "SELECT id FROM " . static::$table_name . " ";
+                $sql .= "WHERE ship_code = '{$ship_code_esc}' ";
+                $sql .= "  AND expiration_date IS NOT NULL ";
+                $sql .= "  AND expiration_date >= '{$today}' ";
+                $sql .= "ORDER BY expiration_date DESC, id DESC ";
+                $sql .= "LIMIT 1";
+
+                $result = self::$database->query($sql);
+                if (!$result) return false;
+
+                $row = $result->fetch_assoc();
+
+                if ($row) {
+                    return static::update_status_by_id((int)$row['id'], 'active');
+                }
+
+                // 3) ไม่มีใบที่ยังไม่หมดอายุเลย → inactive ล่าสุด (ตามหน้าโชว์)
+                return static::mark_inactive($ship_code);
+            }
+
 
 }

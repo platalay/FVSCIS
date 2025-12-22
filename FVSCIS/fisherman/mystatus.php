@@ -124,7 +124,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                                   <i class="fas fa-print"></i>
                                               </button>
 
-                                              <?php if ($status === InspectionRequest::STATUS_PENDING && !$has_confirmed_date): ?>
+                                              <?php if ($status === InspectionRequest::STATUS_PENDING && !$has_confirmed_date && !$isConfirm): ?>
                                                   <!-- กรณียื่นแล้ว ยังไม่มีวันนัดตรวจ: แก้ไข + ยกเลิกได้ -->
                                                   <button type="button"
                                                           class="btn btn-sm btn-warning mb-1"

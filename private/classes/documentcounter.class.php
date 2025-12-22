@@ -97,4 +97,32 @@ class DocumentCounter extends DatabaseObject
 
         return [$doc_code, $running, $year_int];
     }
+
+    /**
+    * แยก document code เพื่อคืนค่า running และ year (พ.ศ.)
+    *
+    * @param string $code
+    * @return array [$running, $year_be]
+    * @throws Exception
+    */
+    public static function parse_running_year_from_code(string $code)
+    {
+        $code = trim($code);
+        
+        if (empty($code)) {
+            error_log("[FVSCIS] document_code is empty, cannot parse");
+            echo "❌ ยังไม่มีเลขเอกสาร ไม่สามารถสร้าง PDF ได้ คุณต้องสั่งพิมพ์ สร.1 ก่อนจึงจะพิมพ์ฟอร์มตรวจได้";
+            exit;
+        }
+
+        if (!preg_match('/^efvscis-(\d{4})-[A-Z0-9]+-(\d{5})$/', $code, $matches)) {
+            throw new Exception("Invalid document code format: {$code}");
+        }
+
+        $year_be = (int)$matches[1];   // 2568
+        $running = (int)$matches[2];   // 00001 -> 1
+
+        return [$running, $year_be];
+    }
+
 }

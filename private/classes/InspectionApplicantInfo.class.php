@@ -45,6 +45,7 @@ class InspectionApplicantInfo extends DatabaseObject
         'updated_ip',
 
         'form1_doc_number',
+        'document_token',
         'form1_locked',
         'form1_locked_at',
         'form1_locked_by',
@@ -92,6 +93,7 @@ class InspectionApplicantInfo extends DatabaseObject
     public $updated_ip;
 
     public $form1_doc_number;
+    public $document_token;
     public $form1_locked;
     public $form1_locked_at;
     public $form1_locked_by;
@@ -139,12 +141,24 @@ class InspectionApplicantInfo extends DatabaseObject
         $this->updated_ip  = $args['updated_ip']  ?? '';
         
         $this->form1_doc_number  = $args['form1_doc_number']  ?? '';
+        $this->document_token  = $args['document_token']  ?? '';
         $this->form1_locked  = $args['form1_locked']  ?? '';
         $this->form1_locked_at  = $args['form1_locked_at']  ?? '';
         $this->form1_locked_by  = $args['form1_locked_by']  ?? '';
 
         $this->written_at  = $args['written_at']  ?? '';
         $this->written_date  = $args['written_date']  ?? '';
+    }
+
+    public static function generate_uuid_v4() {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000, // เวอร์ชัน 4
+            mt_rand(0, 0x3fff) | 0x8000, // variant
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
     }
 
     protected function validate()

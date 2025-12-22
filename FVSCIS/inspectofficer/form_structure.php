@@ -81,7 +81,7 @@ if (!empty($main_item_ids)) {
     ไม่มีใบอนุญาตทำการประมง
   </span>
 <?php endif; ?>
-<span class="badge bg-secondary ms-2">เรือห้องเย็น: <?= $is_cold_room ? 'ใช่' : 'ไม่ใช่' ?></span>
+
     <a href="form_inspect.php?id=<?= htmlspecialchars($request->id, ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary ms-2" id="btn-back">← กลับไปหน้าฟอร์มตรวจสอบ</a>
   </h1>
 

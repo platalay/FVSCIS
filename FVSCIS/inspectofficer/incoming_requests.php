@@ -157,10 +157,33 @@ include("../../private/shared/topbarofficer.php");
 
                                                 <!-- ปุ่มฟอร์มตรวจ -->
                                                 <?php if ($req->is_confirm == 1): ?>
-                                                    <a href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>"
-                                                      class="btn btn-success btn-sm" title="ฟอร์มตรวจ">
-                                                        <i class="fas fa-file-signature"></i>
-                                                    </a>
+                                                    <?php
+                                                    $form_status = InspectionFormStatus::find_by_request_id($req->id);
+
+                                                    if (!$form_status) {
+                                                        // ❌ ยังไม่เริ่มตรวจ → ต้องกดเริ่ม
+                                                    ?>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-success btn-sm btn-start-inspect"
+                                                            data-id="<?= h($req->id) ?>"
+                                                            data-department="<?= h($req->department_id) ?>"
+                                                            title="เริ่มตรวจเรือ">
+                                                            <i class="fas fa-file-signature"></i>
+                                                        </button>
+                                                    <?php
+                                                    } else {
+                                                        // ✅ เริ่มตรวจแล้ว → เข้า form ได้เลย
+                                                    ?>
+                                                        <a
+                                                            href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>"
+                                                            class="btn btn-success btn-sm"
+                                                            title="ฟอร์มตรวจ">
+                                                            <i class="fas fa-file-signature"></i>
+                                                        </a>
+                                                    <?php
+                                                    }
+                                                    ?>
                                                 <?php else : ?>
                                                     <button class="btn btn-secondary btn-sm" title="ยังไม่สามารถกรอกฟอร์มตรวจได้" disabled>
                                                         <i class="fas fa-file-signature"></i>
@@ -354,13 +377,25 @@ function loadRequestDetail(id) {
 
       html += `</p>`
 
-      if (req.is_confirm == 1) {
-        html += `<p><span class="text-success"><i class="fas fa-calendar-check"></i> ผู้ขอตรวจยืนยันวันนัดตรวจแล้ว</span></p>`
-        $('#btnConfirmDate').prop('disabled', true)
-      } else {
-        html += `<p><span class="text-danger"><i class="fas fa-calendar-check"></i> ยังไม่มีการยืนยันวันนัดตรวจ</span></p>`
-        $('#btnConfirmDate').prop('disabled', false);
-      }
+      if (req.is_confirm == 1 && req.confirmed_inspect_date) {
+            html += `<p><span class="text-success">
+              <i class="fas fa-calendar-check"></i>
+              ยืนยันวันนัดตรวจแล้ว (${req.confirmed_inspect_date})
+            </span></p>`;
+          } else {
+            html += `<p><span class="text-danger">
+              <i class="fas fa-calendar-times"></i>
+              ยังไม่มีการยืนยันวันนัดตรวจ
+            </span></p>`;
+          }
+
+      if (req.is_start_inspect == 1) {
+          // เริ่มตรวจแล้ว = ล็อกทุกคน
+          $('#btnConfirmDate').prop('disabled', true);
+        } else {
+          // ยังไม่เริ่มตรวจ = ให้ดูตามสิทธิ์
+          $('#btnConfirmDate').prop('disabled', false);
+        }
 
       $('#modalRequestBody').html(html)
 
@@ -1841,6 +1876,30 @@ $(document).ready(function () {
 })();
 </script>
 
+<script>
+$(document).on('click', '.btn-start-inspect', function () {
+    const requestId = $(this).data('id');
+    const departmentId = $(this).data('department');
+
+    Swal.fire({
+        title: 'เริ่มการตรวจเรือ?',
+        text: 'หากกดเริ่ม ระบบจะถือว่าเริ่มการตรวจในวันนี้',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'เริ่มตรวจ',
+        cancelButtonText: 'ยังไม่ตรวจ',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // ✅ แค่พาเข้า form
+            window.location.href =
+                'form_inspect.php?id=' + requestId +
+                '&department_id=' + departmentId;
+        }
+        // ❌ Cancel = ไม่ต้องทำอะไร
+    });
+});
+</script>
 
 <?php 
 include("../../private/shared/footerall.php");

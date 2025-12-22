@@ -126,8 +126,10 @@ class InspectionFormStatus extends DatabaseObject {
         $new->department_code  = $department_code;
 
         // 🔥 ใช้ document_number จาก InspectionRequest
-        $new->document_number  = $request->document_number;
-
+        $InspectionApplicantInfo = InspectionApplicantInfo::find_by_request_id($request_id);
+        $doc_number = $InspectionApplicantInfo->form1_doc_number;
+        $new->document_number  = $doc_number;
+        
         $new->locked_by        = $inspector_id;
         $new->locked_at        = date('Y-m-d H:i:s');
         $new->create_at        = date('Y-m-d H:i:s');

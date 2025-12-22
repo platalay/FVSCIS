@@ -16,6 +16,8 @@ try {
     $tambon = Tambon::find_by_id($request->port_tambon_id);
     $amphur = Amphur::find_by_id($request->port_amphur_id);
     $province = Province::find_by_id($request->port_province_id);
+    $InspectionFormStatus = InspectionFormStatus::find_by_request_id($request->id);
+    $is_start_inspect = !empty($InspectionFormStatus->inspection_date);
     $data = [
         'id' => $id,
         'vessel_name'         => $request->vessel_name,
@@ -32,6 +34,7 @@ try {
         'status'              => $request->status,
         'confirmed_inspect_date' => $request->confirmed_inspect_date,
         'is_confirm' => $request->is_confirm,
+        'is_start_inspect' => $is_start_inspect,
     ];
     echo json_encode([
         'success' => true,

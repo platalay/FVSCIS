@@ -115,6 +115,9 @@ try {
         $applicant->form1_locked     = 1;
         $applicant->form1_locked_at  = date('Y-m-d H:i:s');
         $applicant->form1_locked_by  = $session->user_id ?? null;
+
+        $document_token = $applicant->generate_uuid_v4();
+        $applicant->document_token = $document_token;
     }
 
     // ---------- 6) save ----------

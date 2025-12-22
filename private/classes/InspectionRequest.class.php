@@ -118,43 +118,6 @@ class InspectionRequest extends DatabaseObject {
         return static::find_by_sql($sql);
     }
 
-    public static function count_by_fisherman($fisherman_id) {
-        $fisherman_id = self::$database->escape_string($fisherman_id);
-        $sql  = "SELECT COUNT(*) AS cnt ";
-        $sql .= "FROM " . static::$table_name . " ";
-        $sql .= "WHERE created_by = '{$fisherman_id}'";
-        
-        $result = self::$database->query($sql);
-        $row = $result->fetch_assoc();
-        return (int)($row['cnt'] ?? 0);
-    }
-
-    // 2) นับจำนวนคำขอตามสถานะ (รับได้ทั้งค่าเดียวหรือ array)
-    public static function count_by_fisherman_and_status($fisherman_id, $statuses = []) {
-        $fisherman_id = self::$database->escape_string($fisherman_id);
-
-        $sql  = "SELECT COUNT(*) AS cnt ";
-        $sql .= "FROM " . static::$table_name . " ";
-        $sql .= "WHERE created_by = '{$fisherman_id}' ";
-
-        if (!empty($statuses)) {
-            if (!is_array($statuses)) {
-                $statuses = [$statuses];
-            }
-
-            $escaped_statuses = [];
-            foreach ($statuses as $st) {
-                $escaped_statuses[] = "'" . self::$database->escape_string($st) . "'";
-            }
-            $status_list = implode(',', $escaped_statuses);
-            $sql .= "AND status IN ({$status_list}) ";
-        }
-
-        $result = self::$database->query($sql);
-        $row = $result->fetch_assoc();
-        return (int)($row['cnt'] ?? 0);
-    }
-
     // 3) ดึงคำขอล่าสุดของชาวประมง (limit ตามต้องการ, default 5)
     public static function find_recent_by_fisherman($fisherman_id, $limit = 5) {
         $fisherman_id = self::$database->escape_string($fisherman_id);
@@ -171,28 +134,172 @@ class InspectionRequest extends DatabaseObject {
 
 
 
-    // ...
+    // ...แก๊ง count ........
 
-    public static function count_by_department($department_id) {
-        $department_id = self::$database->escape_string($department_id);
-        $sql  = "SELECT COUNT(*) AS cnt FROM " . static::$table_name;
-        $sql .= " WHERE department_id = '{$department_id}'";
-        $result = self::$database->query($sql);
-        $row = $result->fetch_assoc();
-        return (int)($row['cnt'] ?? 0);
+    // ================================
+// COUNT (latest per ship_code only)
+// ================================
+
+/**
+ * สร้าง SQL ส่วนกลางสำหรับ "เอา record ล่าสุดต่อทะเบียนเรือ"
+ * - คืนค่าเป็น FROM (...) JOIN ... พร้อม alias r (record ล่าสุด)
+ * - $baseWhere : เงื่อนไขใน subquery (ก่อน group by) เช่น created_by/department/group
+ */
+protected static function sql_latest_per_ship(string $baseWhere = ''): string
+{
+    $baseWhere = trim($baseWhere);
+    if ($baseWhere !== '' && stripos($baseWhere, 'AND') !== 0) {
+        // กันคนส่ง "created_by = ..." มาเฉยๆ
+        $baseWhere = " AND " . $baseWhere;
     }
 
-    public static function count_by_department_and_status($department_id, $status) {
-        $department_id = self::$database->escape_string($department_id);
-        $status        = self::$database->escape_string($status);
+    $sql = "
+        FROM (
+            SELECT ship_code, MAX(id) AS last_id
+            FROM " . static::$table_name . "
+            WHERE ship_code IS NOT NULL
+              AND ship_code <> ''
+              {$baseWhere}
+            GROUP BY ship_code
+        ) t
+        JOIN " . static::$table_name . " r ON r.id = t.last_id
+    ";
 
-        $sql  = "SELECT COUNT(*) AS cnt FROM " . static::$table_name;
-        $sql .= " WHERE department_id = '{$department_id}'";
-        $sql .= "   AND status = '{$status}'";
-        $result = self::$database->query($sql);
-        $row = $result->fetch_assoc();
-        return (int)($row['cnt'] ?? 0);
+    return $sql;
+}
+
+/**
+ * แปลง status input (string/array) -> SQL "AND r.status IN (...)"
+ */
+protected static function sql_filter_statuses($statuses, string $alias = 'r'): string
+{
+    if (empty($statuses)) {
+        return '';
     }
+    if (!is_array($statuses)) {
+        $statuses = [$statuses];
+    }
+
+    $escaped = [];
+    foreach ($statuses as $st) {
+        $escaped[] = "'" . self::$database->escape_string((string)$st) . "'";
+    }
+    $list = implode(',', $escaped);
+
+    return " AND {$alias}.status IN ({$list}) ";
+}
+
+/**
+ * helper รัน query แล้วคืน int cnt
+ */
+protected static function fetch_count(string $sql): int
+{
+    $result = self::$database->query($sql);
+    $row = $result ? $result->fetch_assoc() : null;
+    return (int)($row['cnt'] ?? 0);
+}
+
+
+// ------------------------------------------------------
+// 1) นับของชาวประมง (นับทะเบียนเรือ "ล่าสุด" เท่านั้น)
+// ------------------------------------------------------
+public static function count_by_fisherman($fisherman_id): int
+{
+    $fisherman_id = self::$database->escape_string($fisherman_id);
+
+    $sql  = "SELECT COUNT(*) AS cnt ";
+    $sql .= self::sql_latest_per_ship("created_by = '{$fisherman_id}'");
+
+    return self::fetch_count($sql);
+}
+
+
+// ---------------------------------------------------------------------
+// 2) นับของชาวประมง + สถานะ (รับได้ทั้งค่าเดียวหรือ array)
+// ---------------------------------------------------------------------
+public static function count_by_fisherman_and_status($fisherman_id, $statuses = []): int
+{
+    $fisherman_id = self::$database->escape_string($fisherman_id);
+
+    $sql  = "SELECT COUNT(*) AS cnt ";
+    $sql .= self::sql_latest_per_ship("created_by = '{$fisherman_id}'");
+    $sql .= " WHERE 1=1 ";
+    $sql .= self::sql_filter_statuses($statuses, 'r');
+
+    return self::fetch_count($sql);
+}
+
+
+// ------------------------------------------------------
+// 3) นับของหน่วยงาน (นับทะเบียนเรือล่าสุดเท่านั้น)
+// ------------------------------------------------------
+public static function count_by_department($department_id): int
+{
+    $department_id = self::$database->escape_string($department_id);
+
+    $sql  = "SELECT COUNT(*) AS cnt ";
+    $sql .= self::sql_latest_per_ship("department_id = '{$department_id}'");
+
+    return self::fetch_count($sql);
+}
+
+
+// ------------------------------------------------------
+// 4) นับของหน่วยงาน + สถานะ (นับทะเบียนเรือล่าสุดเท่านั้น)
+// ------------------------------------------------------
+public static function count_by_department_and_status($department_id, $status): int
+{
+    $department_id = self::$database->escape_string($department_id);
+    $status        = self::$database->escape_string($status);
+
+    $sql  = "SELECT COUNT(*) AS cnt ";
+    $sql .= self::sql_latest_per_ship("department_id = '{$department_id}'");
+    $sql .= " WHERE r.status = '{$status}' ";
+
+    return self::fetch_count($sql);
+}
+
+
+// ------------------------------------------------------
+// 5) นับรวมทั้งระบบตามสถานะ (นับทะเบียนเรือล่าสุดเท่านั้น)
+// ------------------------------------------------------
+public static function count_by_status($status): int
+{
+    $status = self::$database->escape_string($status);
+
+    $sql  = "SELECT COUNT(*) AS cnt ";
+    $sql .= self::sql_latest_per_ship(); // ไม่กรอง baseWhere
+    $sql .= " WHERE r.status = '{$status}' ";
+
+    return self::fetch_count($sql);
+}
+
+
+// --------------------------------------------------------------------
+// 6) นับตาม department_group_id หลายค่า + optional status (latest only)
+// --------------------------------------------------------------------
+public static function count_by_department_groups($group_ids = [], $status = null): int
+{
+    if (empty($group_ids)) { return 0; }
+
+    $ids = array_map('intval', $group_ids);
+    $id_list = implode(',', $ids);
+
+    $baseWhere = "department_group_id IN ({$id_list})";
+
+    $sql  = "SELECT COUNT(*) AS cnt ";
+    $sql .= self::sql_latest_per_ship($baseWhere);
+    $sql .= " WHERE 1=1 ";
+
+    if ($status !== null) {
+        $status = self::$database->escape_string($status);
+        $sql .= " AND r.status = '{$status}' ";
+    }
+
+    return self::fetch_count($sql);
+}
+
+        // ...แก๊ง count ........
 
     public static function find_recent_by_department_and_status($department_id, array $statuses, $limit = 10) {
         $department_id = self::$database->escape_string($department_id);
@@ -259,39 +366,13 @@ class InspectionRequest extends DatabaseObject {
         return $map[$status] ?? $status;
     }
 
-        public static function count_by_status($status) {
-        $status = self::$database->escape_string($status);
-        $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name;
-        $sql .= " WHERE status = '{$status}'";
-        $result = self::$database->query($sql);
-        $row = $result->fetch_assoc();
-        return (int)$row['cnt'];
-        }
+        
 
         public static function find_recent_for_admin($limit = 10) {
         $sql = "SELECT * FROM " . static::$table_name;
         $sql .= " ORDER BY created_at DESC";
         $sql .= " LIMIT " . (int)$limit;
         return static::find_by_sql($sql);
-        }
-
-        public static function count_by_department_groups($group_ids = [], $status = null) {
-            if (empty($group_ids)) { return 0; }
-
-            $ids = array_map('intval', $group_ids);
-            $id_list = implode(',', $ids);
-
-            $sql = "SELECT COUNT(*) AS cnt FROM " . static::$table_name .
-                " WHERE department_group_id IN ({$id_list})";
-
-            if ($status !== null) {
-                $status = self::$database->escape_string($status);
-                $sql .= " AND status = '{$status}'";
-            }
-
-            $result = self::$database->query($sql);
-            $row = $result->fetch_assoc();
-            return (int)$row['cnt'];
         }
 
     public static function find_recent_by_department_groups_and_status($group_ids = [], $statuses = [], $limit = 10) {

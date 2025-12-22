@@ -47,12 +47,30 @@ if (!$ok) {
     exit;
 }
 
+/**
+ * ✅ เช็กล็อกเอกสาร: ถ้ามีการส่งยืนยันผลการตรวจแล้ว (document_locked = 1) ห้ามแก้ไข
+ * ใช้ response 200 เพื่อให้ฝั่ง JS เข้า success callback แล้วเอา message ไปเตือนได้
+ */
+$formStatus = InspectionFormStatus::find_by_request_id($request_id); // ถ้าคุณใช้ find_by_id จริง ค่อยเปลี่ยน
+
+if ($formStatus && (int)$formStatus->document_locked === 1) {
+    echo json_encode([
+        'success' => false,
+        'locked'  => true,
+        'field'   => $field,
+        'value'   => $value,
+        'message' => 'ไม่สามารถปรับข้อมูลได้แล้ว เนื่องจากมีการส่งยืนยันผลการตรวจแล้ว'
+    ]);
+    exit;
+}
+
 // ดำเนินการ autosave ที่ฟอร์มหมวดวัสดุ/อุปกรณ์
 $success = InspectionFormMaterial::autosave($request_id, $field, $value);
 
 // ตอบกลับ
 echo json_encode([
     'success' => (bool)$success,
+    'locked'  => false,
     'field'   => $field,
     'value'   => $value,
     'message' => $success ? 'บันทึกสำเร็จ' : 'บันทึกล้มเหลว'

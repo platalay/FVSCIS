@@ -8,12 +8,10 @@ try {
     $confirmed_date       = $_POST['confirmed_date'] ?? null;
     $original_date_hidden = $_POST['original_confirmed_date'] ?? '';
 
-    // ตรวจสอบข้อมูลที่ส่งมาว่าครบถ้วน
     if (!$request_id || !$confirmed_date) {
-        throw new Exception("ข้อมูลไม่ครบถ้วน <br>original_date_hidden = $original_date_hidden<br>request_id = $request_id");
+        throw new Exception("ข้อมูลไม่ครบถ้วน");
     }
 
-    // ตรวจสอบรูปแบบวันที่
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $confirmed_date) || $confirmed_date === '0000-00-00') {
         throw new Exception("วันที่ไม่ถูกต้อง");
     }
@@ -21,45 +19,96 @@ try {
     $request = InspectionRequest::find_by_id($request_id);
     if (!$request) throw new Exception("ไม่พบคำขอ");
 
-    // ป้องกันการยืนยันซ้ำจากข้อมูลที่ล้าสมัย
+    // ✅ กันแก้วันหลังเริ่มตรวจจริง
+    $form_status = InspectionFormStatus::find_by_request_id($request_id);
+    if ($form_status) {
+        throw new Exception("เริ่มตรวจแล้ว ไม่สามารถเปลี่ยนวันนัดตรวจได้");
+    }
+
+    // optimistic lock กันข้อมูลหน้าเว็บเก่า
     $current_date = $request->confirmed_inspect_date ?? '';
     $original_date_hidden = $original_date_hidden ?? '';
 
-    // เทียบวันที่โดยพิจารณาว่าค่าว่างคือ "ยังไม่มีนัดหมาย"
     $isEmptyCurrent  = ($current_date === '' || $current_date === '0000-00-00' || is_null($current_date));
     $isEmptyOriginal = ($original_date_hidden === '' || $original_date_hidden === '0000-00-00' || is_null($original_date_hidden));
 
     if (!$isEmptyCurrent && $current_date !== $original_date_hidden) {
-        throw new Exception("มีเจ้าหน้าที่คนอื่นยืนยันวันตรวจแล้ว กรุณารีเฟรชข้อมูลก่อนดำเนินการ");
+        throw new Exception("มีเจ้าหน้าที่คนอื่นแก้ไขวันนัดแล้ว กรุณารีเฟรชข้อมูลก่อนดำเนินการ");
     }
 
-    // บันทึกวันที่ใหม่
+    // ถ้าวันเดิม = วันใหม่
+    if (!$isEmptyCurrent && $current_date === $confirmed_date) {
+        echo json_encode(['success' => true, 'message' => 'วันนัดตรวจเป็นวันเดิม ไม่มีการเปลี่ยนแปลง']);
+        exit;
+    }
+
+    // เก็บวันเดิมไว้ทำ log
+    $old_date = $isEmptyCurrent ? null : $current_date;
+    $old_text = $old_date ? thai_date($old_date) : 'ยังไม่เคยนัด';
+    $new_text = thai_date($confirmed_date);
+
+    // ✅ ถ้าชาวประมงเคยยืนยันแล้ว → ต้องยืนยันใหม่เมื่อเจ้าหน้าที่เปลี่ยนวัน
+    $need_reconfirm = ((int)$request->is_confirm === 1);
+
+    // อัปเดตวันนัดใหม่ (เจ้าหน้าที่ "กำหนด/เสนอ" วัน)
     $request->confirmed_inspect_date = $confirmed_date;
+
+    if ($need_reconfirm) {
+        $request->is_confirm = 0; // reset ให้ชาวประมงยืนยันใหม่
+    }
 
     if (!$request->save()) {
         throw new Exception("ไม่สามารถอัปเดตวันตรวจได้");
     }
 
-        $log = new InspectionLog();
-        $log->inspection_request_id = $request->id;
-        $log->action_id             = 7;
-        $log->note                  = "เจ้าหน้าที่ได้ยืนยันวันตรวจเรือเป็นวันที่ ".thai_date($confirmed_date);
-        $log->save();
-    
-    // แจ้งเตือนเจ้าของคำขอ
+    // ✅ LOG: ใช้คำว่า "กำหนด/เสนอ" ไม่ใช้ "ยืนยัน"
+    $log = new InspectionLog();
+    $log->inspection_request_id = $request->id;
+
+    // action_id: คุณใช้ 7 อยู่ ผมคงไว้ก่อน (v1.0 ไม่ต้องรื้อ)
+    $log->action_id = 7;
+
+    if ($need_reconfirm) {
+        $log->note = "เจ้าหน้าที่เสนอเปลี่ยนวันตรวจเรือ จาก {$old_text} เป็น {$new_text} (รอชาวประมงยืนยันใหม่)";
+    } else {
+        $log->note = "เจ้าหน้าที่กำหนดวันตรวจเรือเป็นวันที่ {$new_text}";
+    }
+    $log->save();
+
+    // ✅ แจ้งเตือนชาวประมง
+    if ($need_reconfirm) {
         Notification::create_notification(
-        $request->created_by,
-        'fisherman',
-        $request->id,
-        7,
-        "เจ้าหน้าที่ได้ยืนยันวันตรวจเรือ {$request->vessel_name} เป็นวันที่ {$confirmed_date}",
-        'warning'
-    );
+            $request->created_by,
+            'fisherman',
+            $request->id,
+            7,
+            "เจ้าหน้าที่เสนอเปลี่ยนวันตรวจเรือ {$request->vessel_name} จาก {$old_text} เป็น {$confirmed_date} กรุณายืนยันวันนัดใหม่",
+            'warning'
+        );
+    } else {
+        Notification::create_notification(
+            $request->created_by,
+            'fisherman',
+            $request->id,
+            7,
+            "เจ้าหน้าที่กำหนดวันตรวจเรือ {$request->vessel_name} เป็นวันที่ {$confirmed_date} กรุณากดยืนยันวันนัด",
+            'warning'
+        );
+    }
+
+    // คง logic เดิมของคุณ
     $officers = Officer::find_by_department_id($request->department_id);
     foreach ($officers as $officer) {
-    Notification::mark_action_taken($officer->id, 'inspectofficer', $request->id, [2,3]);
-    }    
-    echo json_encode(['success' => true, 'message' => 'ยืนยันวันตรวจเรียบร้อยแล้ว']);
+        Notification::mark_action_taken($officer->id, 'inspectofficer', $request->id, [2,3]);
+    }
+
+    echo json_encode([
+        'success' => true,
+        'message' => $need_reconfirm
+            ? 'เสนอเปลี่ยนวันนัดแล้ว (รอชาวประมงยืนยันใหม่)'
+            : 'กำหนดวันนัดเรียบร้อยแล้ว (รอชาวประมงยืนยัน)'
+    ]);
+
 } catch (Exception $ex) {
     echo json_encode(['success' => false, 'message' => $ex->getMessage()]);
 }

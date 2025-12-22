@@ -127,8 +127,7 @@ $pending = '⏳';
                     $form->form_material_status &&
                     $form->form_crew_status &&
                     $form->form_water_ice_status &&
-                    $form->form_preservation_status &&
-                    !$form->document_locked
+                    $form->form_preservation_status 
                 ): ?>
                     <div class="text-center mt-1">
                         <a href="generate_pdf.php?token=<?= h($form->document_token); ?>"
@@ -177,7 +176,7 @@ $pending = '⏳';
                     $form->form_crew_status &&
                     $form->form_water_ice_status &&
                     $form->form_preservation_status &&
-                    !$form->document_locked
+                    $form->document_locked
                 ):
                 ?>
 

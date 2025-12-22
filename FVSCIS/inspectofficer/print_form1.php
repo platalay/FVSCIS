@@ -109,7 +109,7 @@ $juristicAmphoe      = $applicant->juristic_amphoe      ?? '';
 $juristicProvince    = $applicant->juristic_province    ?? '';
 
 // เลขเอกสาร สร.1 ที่ gen ไว้แล้ว (เช่น efvscis-2025-SR1-00001)
-$form1DocNumber = $applicant->form1_doc_number ?? '';
+$form1DocNumber = $applicant->document_token ?? '';
 
 // ===================== แตกเลขเอกสาร → ปี / ลำดับ =====================
 // รูปแบบ: efvscis-YYYY-TYPE-RUNNN

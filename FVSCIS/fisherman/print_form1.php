@@ -110,6 +110,7 @@ $juristicProvince    = $applicant->juristic_province    ?? '';
 
 // เลขเอกสาร สร.1 ที่ gen ไว้แล้ว (เช่น efvscis-2025-SR1-00001)
 $form1DocNumber = $applicant->form1_doc_number ?? '';
+$form1Doctoken = $applicant->document_token ?? '';
 
 // ===================== แตกเลขเอกสาร → ปี / ลำดับ =====================
 // รูปแบบที่เราออก: efvscis-YYYY-TYPE-RUNNN
@@ -142,7 +143,7 @@ $inspectedAt  = $request->inspect_date ?? ''; // Y-m-d ถ้ามี
 $qrText = '';
 if (!empty($form1DocNumber)) {
     $qrText = 'https://fishlanding.fisheries.go.th/fvscis/verify_fvs01.php?docnumber='
-            . urlencode($form1DocNumber);
+            . urlencode($form1Doctoken);
 } else {
     $qrText = 'https://fishlanding.fisheries.go.th/fvscis/login.php';
 }
@@ -190,6 +191,8 @@ $pdf->SetXY(35, 20);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $docRunning), 0, 0, 'L');
 $pdf->SetXY(50, 20);
 $pdf->Cell(0, 8, iconv('UTF-8','cp874', $docYearBE), 0, 0, 'L');
+
+error_log("test : ".$qrText." Docnumber : ".$form1DocNumber."  docRunning = ".$docRunning." docYearBE = ".$docYearBE);
 
 // 2) เขียนที่ / วันที่
 $pdf->SetXY(137, 37);

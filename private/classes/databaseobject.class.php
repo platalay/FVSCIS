@@ -11,6 +11,13 @@ class DatabaseObject {
     self::$database = $database;
   }
 
+  public function __get($name) {
+      if ($name === 'affected_rows') {
+          return $this->connection->affected_rows;
+      }
+      return null;
+  }
+  
   static public function find_by_sql($sql) {
     $result = self::$database->query($sql);
     if(!$result) {

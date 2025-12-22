@@ -41,6 +41,7 @@ include("../../private/shared/topbarofficer.php");
         <table class="table table-hover table-sm" id="dataTable">
           <thead class="thead-light">
             <tr>
+              <th class="d-none"></th>
               <th class="text-center">เลขที่คำขอ</th>
               <th>ชื่อเรือ</th>
               <th>เจ้าของเรือ</th>
@@ -51,82 +52,109 @@ include("../../private/shared/topbarofficer.php");
             </tr>
           </thead>
           <tbody>
-          <?php if(empty($requests)) { ?>
-            <tr>
-              <td colspan="6" class="text-center text-muted py-4">
-                ยังไม่มีคำขอรับรองสุขอนามัยเรือในระบบ
-              </td>
-            </tr>
-          <?php } else { ?>
-            <?php foreach($requests as $req) { ?>
-
-              <?php
-                // หา department ที่รับผิดชอบจาก map
-                $dept_name = '-';
-                if(!empty($req->department_id) && isset($department_map[$req->department_id])) {
-                    $dept = $department_map[$req->department_id];
-                    // ปรับ field ตามจริง เช่น $dept->name / $dept->department_name
-                    $dept_name = $dept->name ?? $dept->department_name ?? ('หน่วย #' . $dept->id);
-                }
-
-                // กำหนดสี badge ตาม status
-                $badge_class = 'badge-secondary';
-                switch($req->status) {
-                  case 'pending':
-                    $badge_class = 'badge-warning';
-                    break;
-                  case 'inspecting':
-                    $badge_class = 'badge-info';
-                    break;
-                  case 'passed':
-                  case 'conditional':
-                  case 'completed':
-                    $badge_class = 'badge-success';
-                    break;
-                  case 'failed':
-                    $badge_class = 'badge-danger';
-                    break;
-                }
-              ?>
-
+            <?php if(empty($requests)) { ?>
               <tr>
-                <td class="text-center">
-                  <div class="d-flex flex-column align-items-center mt-2" style="gap: 10px;">
-                                        <!-- ภายใน foreach ของ Officer -->
-                                        
-                                        <button class="btn btn-primary btn-sm" title="แก้ไขคำขอ"
-                                                style="width: 35px; height: 35px;"
-                                                onclick="editInspectionRequest(<?= $req->request_code ?>)">
-                                            <i class="fas fa-edit text-white"></i>
-                                        </button>
-                  </div>
-                </td>
-                <td><?php echo h($req->vessel_name ?? '-'); ?></td>
-                <td><?php echo h($req->owner_name ?? '-'); ?></td>
-
-                <td class="text-center">
-                  <span class="badge <?php echo $badge_class; ?>">
-                    <?php echo InspectionRequest::status_text($req->status); ?>
-                  </span>
-                </td>
-
-                <td><?php echo h($dept_name); ?></td>
-
-                <td class="text-center">
-                  <?php echo !empty($req->created_at)
-                    ? date('d/m/Y', strtotime($req->created_at))
-                    : '-'; ?>
-                </td>
-                <td class="text-center">
-                  <?php echo !empty($req->confirmed_inspect_date)
-                    ? date('d/m/Y', strtotime($req->confirmed_inspect_date))
-                    : '-'; ?>
+                <td colspan="7" class="text-center text-muted py-4">
+                  ยังไม่มีคำขอรับรองสุขอนามัยเรือในระบบ
                 </td>
               </tr>
+            <?php } else { ?>
+              <?php foreach($requests as $req) { ?>
 
-            <?php } // endforeach ?>
-          <?php } // endif ?>
-          </tbody>
+                <?php
+                  // ==========================
+                  // หน่วยตรวจ (ของเดิม)
+                  // ==========================
+                  $dept_name = '-';
+                  if(!empty($req->department_id) && isset($department_map[$req->department_id])) {
+                      $dept = $department_map[$req->department_id];
+                      $dept_name = $dept->name ?? $dept->department_name ?? ('หน่วย #' . $dept->id);
+                  }
+
+                  // ==========================
+                  // สีแถว + badge (ยึดแนวเดียวกับอีกตาราง)
+                  // ==========================
+                  $trClass     = '';
+                  $status      = $req->status;
+                  $hasDate     = !empty($req->confirmed_inspect_date) && $req->confirmed_inspect_date !== '0000-00-00';
+                  $isConfirm   = (int)($req->is_confirm ?? 0);
+
+                  // 1) PENDING: ยังไม่ได้นัดตรวจ
+                  if ($status === InspectionRequest::STATUS_PENDING && !$hasDate) {
+                      $trClass = 'tr-not-scheduled';
+                  }
+                  // 2) PENDING: นัดแล้ว แต่ผู้ยื่นยังไม่ยืนยัน
+                  else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 0) {
+                      $trClass = 'tr-wait-confirm';
+                  }
+                  // 3) PENDING: นัดแล้ว และผู้ยื่นยืนยันแล้ว
+                  else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 1) {
+                      $trClass = 'tr-pending-confirmed';
+                  }
+                  // 4) อยู่ระหว่างตรวจ / ส่งอนุมัติ (inspecting + passed)
+                  else if ($status === InspectionRequest::STATUS_INSPECTING || $status === InspectionRequest::STATUS_PASSED) {
+                      $trClass = 'tr-inspecting';
+                  }
+                  // 5) กระบวนการเสร็จสิ้นแล้ว (failed/conditional/completed)
+                  else if (
+                      $status === InspectionRequest::STATUS_FAILED ||
+                      $status === InspectionRequest::STATUS_CONDITIONAL ||
+                      $status === InspectionRequest::STATUS_COMPLETED
+                  ) {
+                      $trClass = 'tr-completed';
+                  }
+                  // 6) ยกเลิก
+                  else if ($status === InspectionRequest::STATUS_CANCELLED) {
+                      $trClass = 'tr-cancelled';
+                  }
+
+                  // badge ตาม status (แบบ bootstrap 4 ใช้ badge-xxx)
+                  $badge_class = 'badge-secondary';
+                  if ($status === InspectionRequest::STATUS_PENDING)         $badge_class = 'badge-warning';
+                  else if ($status === InspectionRequest::STATUS_INSPECTING) $badge_class = 'badge-primary';
+                  else if ($status === InspectionRequest::STATUS_PASSED)     $badge_class = 'badge-info';
+                  else if ($status === InspectionRequest::STATUS_FAILED)     $badge_class = 'badge-danger';
+                  else if ($status === InspectionRequest::STATUS_CONDITIONAL)$badge_class = 'badge-info';
+                  else if ($status === InspectionRequest::STATUS_COMPLETED)  $badge_class = 'badge-success';
+                  else if ($status === InspectionRequest::STATUS_CANCELLED)  $badge_class = 'badge-secondary';
+                ?>
+
+                <tr class="<?= h($trClass) ?>">
+                  <td class="d-none"></td>
+                  <td class="text-center">
+                    <div class="d-flex flex-column align-items-center mt-2" style="gap: 10px;">
+                      <button class="btn btn-primary btn-sm" title="แก้ไขคำขอ"
+                              style="width: 35px; height: 35px;"
+                              onclick="editInspectionRequest(<?= (int)$req->request_code ?>)">
+                          <i class="fas fa-edit text-white"></i>
+                      </button>
+                    </div>
+                  </td>
+
+                  <td><?= h($req->vessel_name ?? '-') ?></td>
+                  <td><?= h($req->owner_name ?? '-') ?></td>
+
+                  <td class="text-center">
+                    <span class="badge <?= h($badge_class) ?>">
+                      <?= h(InspectionRequest::status_text($status)) ?>
+                    </span>
+                  </td>
+
+                  <td><?= h($dept_name) ?></td>
+
+                  <td class="text-center">
+                    <?= !empty($req->created_at) ? thai_date_safe($req->created_at) : '-' ?>
+                  </td>
+
+                  <td class="text-center">
+                    <?= !empty($req->confirmed_inspect_date) ? thai_date_safe($req->confirmed_inspect_date) : '-' ?>
+                  </td>
+                </tr>
+
+              <?php } // endforeach ?>
+            <?php } // endif ?>
+            </tbody>
+
         </table>
       </div>
 

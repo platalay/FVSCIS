@@ -4,7 +4,7 @@ $session->require_role(['inspectofficer']);
 
 require_once('../../private/fpdf/fpdf.php');
 require_once('../../private/fpdi/src/autoload.php');
-
+require_once('../../private/phpqrcode/qrlib.php');
 use setasign\Fpdi\Fpdi;
 
 // ===================== สำหรับเขียน pdf ตามตำแหน่งจาก map =====================
