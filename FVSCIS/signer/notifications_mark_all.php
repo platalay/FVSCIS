@@ -1,9 +1,9 @@
 <?php
 require_once('../../private/initialize.php');
-$session->require_role(['inspectofficer']);
+$session->require_role(['signer']);
 
 $user_id   = $session->user_id();
-$user_role = $session->user_role ?? 'inspectofficer';
+$user_role = $session->user_role ?? 'signer';
 
 Notification::mark_all_as_read($user_id, $user_role);
 

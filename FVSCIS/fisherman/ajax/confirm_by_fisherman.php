@@ -20,12 +20,13 @@ try {
     $req->is_confirm = true;
     $req->status = "inspecting";
     if (!$req->save()) throw new Exception("ไม่สามารถบันทึกการยืนยันได้".$req->is_confirm);
-
+    $confirmed_inspect_date = thai_date($req->confirmed_inspect_date);
     $log = new InspectionLog();
         $log->inspection_request_id = $req->id;
         $log->action_id             = 8;
-        $log->note                  = "ยืนยันวันนัดตรวจเรือ {$req->vessel_name} วันที่ {$req->confirmed_date}";
+        $log->note                  = "ชาวประมงยืนยันวันนัดตรวจเรือ {$req->vessel_name} วันที่ {$req->confirmed_inspect_date}";
         $log->save();
+        
 
     // ✅ 4. แจ้งเตือนเจ้าหน้าที่กลุ่มที่รับผิดชอบ
     $message = "ชาวประมงยืนยันวันตรวจเรือ {$req->vessel_name} เรียบร้อยแล้ว";

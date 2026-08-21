@@ -110,7 +110,7 @@ class FvSanitationCertificationOld extends DatabaseObject
         if (empty($fisherman->citizen_id)) {
             return;
         }
-        error_log("fisherman->citizen_id = " . $fisherman->citizen_id);
+        //error_log("fisherman->citizen_id = " . $fisherman->citizen_id);
         $vessels = Elicense::find_full_by_citizen_id_auto($fisherman->citizen_id);
         if (empty($vessels)) {
             return;
@@ -120,7 +120,7 @@ class FvSanitationCertificationOld extends DatabaseObject
         foreach ($vessels as $vessel) {
             if (!empty($vessel->ship_code)) {
                 $ship_codes[] = $vessel->ship_code;
-                error_log("vessel->ship_code = " . $vessel->ship_code);
+                //error_log("vessel->ship_code = " . $vessel->ship_code);
             }
         }
 

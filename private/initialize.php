@@ -4,9 +4,15 @@
   define("PROJECT_PATH", dirname(PRIVATE_PATH));
   define("PUBLIC_PATH", PROJECT_PATH . '/FVSCIS');
   define("SHARED_PATH", PRIVATE_PATH . '/shared');
-  $public_end = strpos($_SERVER['SCRIPT_NAME'], '/public') + 7;
-  $doc_root = substr($_SERVER['SCRIPT_NAME'], 0, $public_end);
-  define("WWW_ROOT", $doc_root);
+
+  $base = '/FVSCIS';
+  $pos  = strpos($_SERVER['SCRIPT_NAME'], $base);
+
+  if ($pos !== false) {
+      define("WWW_ROOT", $base);
+  } else {
+      define("WWW_ROOT", '');
+  }
 
   require_once('functions.php');
   require_once('status_error_functions.php');
@@ -22,8 +28,9 @@
 
 	spl_autoload_register('my_autoload');
   
-  
+  date_default_timezone_set('Asia/Bangkok');
 	$database = db_connect();
+  $database->query("SET time_zone = '+07:00'");
 	DatabaseObject::set_database($database);
 
 	$el_db = db_el_connect();

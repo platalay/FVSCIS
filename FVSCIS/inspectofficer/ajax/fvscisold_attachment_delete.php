@@ -6,7 +6,7 @@ $session->require_role(['inspectofficer']);
 header('Content-Type: application/json; charset=utf-8');
 
 try {
-    $idParam = $_POST['attachment_id'] ?? '';
+    $idParam = $_POST['attachment_id'] ?? ($_POST['id'] ?? '');
     if ($idParam === '' || !ctype_digit((string)$idParam)) {
         throw new Exception('missing or invalid attachment id');
     }

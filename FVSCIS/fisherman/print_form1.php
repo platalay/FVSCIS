@@ -114,21 +114,7 @@ $form1Doctoken = $applicant->document_token ?? '';
 
 // ===================== แตกเลขเอกสาร → ปี / ลำดับ =====================
 // รูปแบบที่เราออก: efvscis-YYYY-TYPE-RUNNN
-$docYearAD    = '';
-$docYearBE    = '';
-$docRunning   = '';
-
-if (!empty($form1DocNumber)) {
-    if (preg_match('/^efvscis-(\d{4})-[^-]+-(\d{5})$/', $form1DocNumber, $m)) {
-        $docYearAD  = $m[1];              // 2025
-        $docRunning = ltrim($m[2], '0');  // "00001" -> "1"
-
-        $y = (int)$docYearAD;
-        if ($y > 0) {
-            $docYearBE = (string)($y + 543); // 2025 -> 2568
-        }
-    }
-}
+list($running, $year) =   DocumentCounter::parse_running_year_from_code($form1DocNumber);
 
 // ===================== ข้อมูลเรือ (ถ้าต้องการใช้) =====================
 $shipCode     = $request->ship_code    ?? '';
@@ -188,11 +174,9 @@ $pdf->useTemplate($tpl, 0, 0);
 
 // 1) เลขที่ / ลำดับ / ปี
 $pdf->SetXY(35, 20);
-$pdf->Cell(0, 8, iconv('UTF-8','cp874', $docRunning), 0, 0, 'L');
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $running), 0, 0, 'L');
 $pdf->SetXY(50, 20);
-$pdf->Cell(0, 8, iconv('UTF-8','cp874', $docYearBE), 0, 0, 'L');
-
-error_log("test : ".$qrText." Docnumber : ".$form1DocNumber."  docRunning = ".$docRunning." docYearBE = ".$docYearBE);
+$pdf->Cell(0, 8, iconv('UTF-8','cp874', $year), 0, 0, 'L');
 
 // 2) เขียนที่ / วันที่
 $pdf->SetXY(137, 37);

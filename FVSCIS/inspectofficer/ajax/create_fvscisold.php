@@ -60,6 +60,29 @@ try {
         $types = $_POST['attachment_type'] ?? [];
         $finfo = new finfo(FILEINFO_MIME_TYPE);
 
+        // (ถ้าคุณอยากจำกัดชนิดไฟล์ค่อยเพิ่ม allowed ได้ภายหลัง)
+        // ตัวอย่าง: $allowed = ['image/jpeg','image/png','image/gif','image/webp','application/pdf'];
+
+        // === folder: /uploads/certificationold/YYYY/CERT_00012345/ ===
+        $year      = date('Y');
+        $certFolder = 'CERT_' . str_pad((string)$cert_id, 8, '0', STR_PAD_LEFT);
+
+        $baseRelDir = "/uploads/certificationold/{$year}/{$certFolder}";
+        $baseAbsDir = rtrim(PUBLIC_PATH, '/\\') . $baseRelDir;
+
+        if (!is_dir($baseAbsDir)) {
+            mkdir($baseAbsDir, 0775, true);
+        }
+
+        // map mime -> ext กันกรณี ext จากชื่อไฟล์ไม่ตรง/ไม่มี ext
+        $mimeToExt = [
+            'image/jpeg'       => 'jpg',
+            'image/png'        => 'png',
+            'image/gif'        => 'gif',
+            'image/webp'       => 'webp',
+            'application/pdf'  => 'pdf',
+        ];
+
         foreach ($_FILES['attachments']['name'] as $i => $origName) {
 
             if ($_FILES['attachments']['error'][$i] !== UPLOAD_ERR_OK) {
@@ -70,28 +93,26 @@ try {
             $mime     = $finfo->file($tmp_name) ?: 'application/octet-stream';
             $size     = (int)$_FILES['attachments']['size'][$i];
 
-            // สร้างชื่อใหม่ป้องกันชื่อซ้ำ
-            $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-            $safeName = uniqid('att_') . '.' . $ext;
+            // ext จากชื่อไฟล์ (อาจว่าง/เพี้ยน)
+            $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
 
-            // ที่เก็บไฟล์
-            $upload_dir = PROJECT_PATH . '/FVSCIS/uploads/certificationold/';
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
+            // ถ้า ext ว่าง/ไม่ชัวร์ ให้ใช้จาก mime แทน
+            if ($ext === '' || !in_array($ext, ['jpg','jpeg','png','gif','webp','pdf'], true)) {
+                $ext = $mimeToExt[$mime] ?? 'bin';
             }
+            if ($ext === 'jpeg') $ext = 'jpg';
 
-            $target_path = $upload_dir . $safeName;
+            // ตั้งชื่อไฟล์ใหม่กันชน
+            $safeName = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
 
+            $target_path = $baseAbsDir . '/' . $safeName;
             if (!move_uploaded_file($tmp_name, $target_path)) {
-                // ถ้าจะถือว่า fail ทั้ง transaction จริง ๆ ก็โยน error ได้
-                // throw new Exception("อัปโหลดไฟล์ {$origName} ไม่สำเร็จ");
                 continue;
             }
 
-            // type จากฟอร์ม
             $type = $types[$i] ?? '';
 
-            // บันทึกลงฐานข้อมูล
+            // บันทึกลงฐานข้อมูล (file_path เก็บเป็น /uploads/... ให้สอดคล้อง)
             $att = new FvCertificateAttachment([
                 'certificate_id'  => $cert_id,
                 'file_name'       => $origName,
@@ -99,18 +120,19 @@ try {
                 'file_type'       => $mime,
                 'file_size'       => $size,
                 'attachment_type' => $type,
-                'file_path'       => 'uploads/certificationold/' . $safeName,
+                'file_path'       => $baseRelDir . '/' . $safeName,
             ]);
 
             if ($att->save()) {
                 $files_saved++;
             } else {
-                // ถ้าอยากให้ไฟล์แนบ fail แล้ว rollback ทั้งหมด:
-                // throw new Exception("บันทึกไฟล์แนบ {$origName} ไม่สำเร็จ");
+                // ถ้า save ไม่ได้ จะปล่อยไฟล์ค้างไหม?
+                // ถ้าไม่อยากให้ค้าง: @unlink($target_path);
                 continue;
             }
         }
     }
+
 
     // -----------------------------
     // 4) log + แจ้งเตือน (ย่อ)

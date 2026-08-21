@@ -42,7 +42,7 @@ $fisherman=Fisherman::find_by_id($session->user_id());
                                   if (empty($requests)) :
                                   ?>
                                       <tr>
-                                          <td colspan="7" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือ</td>
+                                          <td colspan="9" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือ</td>
                                       </tr>
                                   <?php
                                   else:

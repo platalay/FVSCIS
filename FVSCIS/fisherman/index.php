@@ -188,7 +188,7 @@ include("../../private/shared/topbaruser.php");
         </div>
         <div class="card-body">
           <?php if (empty($my_today_tasks)) { ?>
-            <div class="text-muted small">วันนี้ยังไม่มีภารกิจตรวจเรือที่ได้รับมอบหมาย</div>
+            <div class="text-muted small">วันนี้ยังไม่มีภารกิจนัดตรวจเรือ</div>
           <?php } else { ?>
             <ul class="list-group list-group-flush">
               <?php foreach ($my_today_tasks as $task) : ?>

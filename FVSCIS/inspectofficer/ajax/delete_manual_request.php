@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once('../../../private/initialize.php');
 global $database;          // ดึงตัวแปร $database ที่ initialize.php สร้างไว้
 $db = $database;           // แค่ alias เฉย ๆ จะได้อ่านง่าย
-
+$currentUserId = $session->user_id();
 $session->require_role(['inspectofficer']);
 header('Content-Type: application/json; charset=utf-8');
 
@@ -66,7 +66,7 @@ try {
             throw new Exception('ลบไฟล์แนบในฐานข้อมูลไม่สำเร็จ');
         }
     }
-
+    $applicant = InspectionApplicantInfo::find_by_request_id($id);
     // 2) ลบข้อมูลผู้ยื่น + reset ใบรับรอง
     InspectionApplicantInfo::delete_by_request_id($req_id);
 
@@ -80,13 +80,20 @@ try {
         throw new Exception('ลบคำขอไม่สำเร็จ');
     }
 
+
+
     // 4) LOG + Notification (ยังอยู่ใน Transaction)
     $action = LogAction::find_by_code('request_deleted_by_officer');
+    $officer = Officer::find_by_id($currentUserId);
     if ($action) {
         $log = new InspectionLog();
         $log->inspection_request_id = $req->id;
         $log->action_id             = $action->id;
-        $log->note                  = "เจ้าหน้าที่ลบคำขอตรวจเรือแทนชาวประมง เรือ".$req->vessel_name;
+        if ($applicant && !empty($applicant->form1_doc_number)) {
+        $log->note = "เรือ {$req->vessel_name} หมายเลขทะเบียน {$req->ship_code} หมายเลขเอกสาร {$applicant->form1_doc_number} ถูกลบคำขอโดย {$officer->full_name}";    
+        }else{
+        $log->note = "เรือ {$req->vessel_name} หมายเลขทะเบียน {$req->ship_code} ถูกลบคำขอโดย {$officer->full_name}";
+        }
         $log->save();
     }
 
@@ -139,8 +146,8 @@ try {
 
 } catch (Throwable $e) {
 
-    if (isset($database) && $database->is_connected()) {
-        @$database->rollback();
+    if (isset($database) && method_exists($database, 'rollback')) {
+    $database->rollback();
     }
 
     echo json_encode([

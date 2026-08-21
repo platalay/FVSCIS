@@ -4,7 +4,7 @@ error_reporting(E_ALL);
 
 
 require_once('../../private/initialize.php');
-$session->require_role(['inspectofficer']);
+$session->require_role(['signer']);
 
 require_once('../../private/fpdf/fpdf.php');
 require_once('../../private/fpdi/src/autoload.php');
@@ -25,7 +25,7 @@ if (!$form) {
 }
 $form->document_locked = 1;
 $form->save();
-    
+
 // ✅ ดึง request ที่เกี่ยวข้อง
 $request = InspectionRequest::find_by_id($form->request_id);
 if ($request && empty($request->is_submitted)) {
@@ -57,16 +57,7 @@ if ($request && empty($request->is_submitted)) {
                 'signer',
                 $request->id,
                 17,
-                "ผลการตรวจเรือ {$request->vessel_name} อยู่ในสถานะไม่ผ่าน เมื่อวันที่ {$notify_date} อยู่ระหว่างยืนยันผลการตรวจไม่ผ่าน",
-                'warning'
-                );
-
-                Notification::create_notification(
-                $request->created_by,
-                'fisherman',
-                $request->id,
-                17,
-                "ผลการตรวจเรือ {$request->vessel_name} อยู่ในสถานะไม่ผ่าน เมื่อวันที่ {$notify_date} อยู่ระหว่างยืนยันผลการตรวจไม่ผ่าน",
+                "ผลการตรวจเรือ {$request->vessel_name} อยู่ในสถานะไม่ผ่าน เมื่อวันที่ {$notify_date} กรุณาตรวจสอบและยืนยันผลการตรวจ",
                 'warning'
                 );
 
@@ -84,15 +75,6 @@ if ($request && empty($request->is_submitted)) {
                 'info'
             );
 
-            Notification::create_notification(
-                $request->created_by,
-                'fisherman',
-                $request->id,
-                16,
-                "ผลการตรวจเรือ {$request->vessel_name} ผ่านการตรวจ เมื่อวันที่ {$notify_date} อยู่ระหว่างรอการอนุมัติ",
-                'info'
-            );
-
         }   elseif ($request->status === 'conditional') {
 
                 $log->action_id = 17;
@@ -101,15 +83,6 @@ if ($request && empty($request->is_submitted)) {
                 Notification::create_notification(
                 $approver_id,
                 'signer',
-                $request->id,
-                16,
-                "ผลการตรวจเรือ {$request->vessel_name} ผ่านการตรวจแบบมีเงื่อนไข เมื่อวันที่ {$notify_date} อยู่ระหว่างรอการอนุมัติ",
-                'info'
-                );
-
-                Notification::create_notification(
-                $request->created_by,
-                'fisherman',
                 $request->id,
                 16,
                 "ผลการตรวจเรือ {$request->vessel_name} ผ่านการตรวจแบบมีเงื่อนไข เมื่อวันที่ {$notify_date} อยู่ระหว่างรอการอนุมัติ",

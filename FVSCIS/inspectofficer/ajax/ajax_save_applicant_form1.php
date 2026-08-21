@@ -125,7 +125,7 @@ try {
         throw new Exception('บันทึกข้อมูลผู้ยื่นคำขอไม่สำเร็จ');
     }
 
-    error_log("[FVSCIS] FORM1 saved: request_id={$request_id}, doc={$applicant->form1_doc_number}");
+    //error_log("[FVSCIS] FORM1 saved: request_id={$request_id}, doc={$applicant->form1_doc_number}");
 
     // URL สำหรับเปิด PDF (คุณไปเขียน print_form1.php ให้ปล่อย FPDF/QR ออกมา)
     $print_url = 'print_form1.php?request_id=' . urlencode($request_id);
@@ -140,7 +140,7 @@ try {
 
 } catch (Exception $e) {
 
-    error_log("[FVSCIS] FORM1 error: " . $e->getMessage());
+    //error_log("[FVSCIS] FORM1 error: " . $e->getMessage());
 
     echo json_encode([
         'success' => false,

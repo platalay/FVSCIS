@@ -53,6 +53,7 @@ try {
     $now = date('Y-m-d H:i:s');
 
     // 1) save inspection request ก่อน
+    $request->status = 'completed'; 
     $request->approved_by    = $user_id;
     $request->approved_at    = $now;
     $request->approved_ip    = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
@@ -72,6 +73,32 @@ try {
     $old = new FvSanitationCertificationOld();
     $old->vessel_name          = $request->vessel_name;
     $old->ship_code            = $request->ship_code;
+    if ($request->is_manual_case == 0) {
+
+        // กรณีชาวประมงสร้างคำขอเอง
+        if (!empty($request->created_by)) {
+            $old->fisherman_id = $request->created_by;
+        }
+
+    } else {
+
+        // กรณีเจ้าหน้าที่สร้างคำขอ → ดึงจาก eLicense
+        $elicense = Elicense::find_one_by_ship_code($el_db, $request->ship_code);
+
+        if ($elicense && !empty($elicense->nationality_id)) {
+
+            $fisherman = Fisherman::find_by_citizen_id($elicense->nationality_id);
+
+            if ($fisherman && !empty($fisherman->id)) {
+                $old->fisherman_id = $fisherman->id;
+            }
+            // ถ้าไม่เจอ fisherman → ไม่ set ค่า
+
+        }
+        // ถ้าไม่เจอ elicense → ไม่ set ค่า
+    }
+
+    
     $old->vessel_mark          = $request->vessel_mark;
     $old->license_number       = $request->license_number;
     $old->gear_type            = $request->gear_type;
@@ -93,7 +120,7 @@ try {
     $old->responsible_unit     = $departmentgroup->responsible_unit;
 
     // ✅ ตามที่คุณใช้จริง
-    $old->certification_status = 'ไม่ผ่าน';
+    $old->certificate_status = 'ไม่ผ่าน';
 
     $old->remark               = $request->approval_note;
     $old->type                 = 1; // online

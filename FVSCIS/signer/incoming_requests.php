@@ -4,7 +4,7 @@ $session->require_role(['signer']);
 $Officer = Officer::find_by_id($session->user_id());
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarsigner.php");
-include("../../private/shared/topbarofficer.php");
+include("../../private/shared/topbarsigner.php");
 
 ?>
 
@@ -58,31 +58,21 @@ include("../../private/shared/topbarofficer.php");
                                         $hasDate   = !empty($req->confirmed_inspect_date) && $req->confirmed_inspect_date !== '0000-00-00';
                                         $isConfirm = (int)($req->is_confirm ?? 0);
 
-                                        if ($status === InspectionRequest::STATUS_PENDING && !$hasDate) {
-                                            $trClass = 'tr-not-scheduled';          // เทา
-                                        }
-                                        else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 0) {
-                                            $trClass = 'tr-wait-confirm';           // เหลือง
-                                        }
-                                        else if ($status === InspectionRequest::STATUS_PENDING && $hasDate && $isConfirm === 1) {
-                                            $trClass = 'tr-pending-confirmed';      // เขียวอ่อน
+                                        if ($status === InspectionRequest::STATUS_CONDITIONAL) {
+                                            $trClass = 'tr-inspecting';    //ฟ้าอ่อน  
                                         }
                                         else if (
-                                            $status === InspectionRequest::STATUS_INSPECTING ||
-                                            $status === InspectionRequest::STATUS_PASSED
-                                        ) {
-                                            $trClass = 'tr-inspecting';             // ฟ้าอ่อน
-                                        }
-                                        else if (
-                                            $status === InspectionRequest::STATUS_FAILED ||
-                                            $status === InspectionRequest::STATUS_CONDITIONAL ||
                                             $status === InspectionRequest::STATUS_COMPLETED
                                         ) {
                                             $trClass = 'tr-completed';              // เขียว (จบกระบวนการ)
                                         }
-                                        else if ($status === InspectionRequest::STATUS_CANCELLED) {
+                                        else if ($status === InspectionRequest::STATUS_FAILED) {
                                             $trClass = 'tr-cancelled';              // แดงอ่อน
                                         }
+                                        else if ($status === InspectionRequest::STATUS_PASSED) {
+                                            $trClass = 'tr-pending-confirmed';              // เขียวอ่อน
+                                        }
+                                        
                                 ?>
                                     <tr style="font-size: 14px;" class="<?= $trClass ?>">
                                         <td>
@@ -92,18 +82,31 @@ include("../../private/shared/topbarofficer.php");
                                                 <button type="button" class="btn btn-danger btn-sm"
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#modalConfirmFail"
+                                                        title="ยืนยันผลตรวจไม่ผ่าน"
                                                         onclick="loadRequestDetail(<?= h($req->id) ?>, 'fail')">
-                                                <i class="fas fa-times-circle"></i>
+                                                <i class="fas fa-exclamation-triangle"></i>
                                                 </button>
                                             <?php else: ?>
                                                 <!-- อนุมัติ -->
                                                 <button type="button" class="btn btn-info btn-sm"
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#modalApproveRequest"
+                                                        title="อนุมัติผลตรวจผ่าน"
                                                         onclick="loadRequestDetail(<?= h($req->id) ?>, 'approve')">
-                                                <i class="fas fa-file-signature"></i>
+                                                <i class="fas fa-clipboard-check"></i>
                                                 </button>
                                             <?php endif; ?>
+
+                                            <?php 
+                                                        $form = InspectionFormStatus::find_by_request_id($req->id);                                               
+                                                        ?>
+                                                        <a
+                                                            href="generate_pdf.php?token=<?= h($form->document_token); ?>"
+                                                            target="_blank"
+                                                            class="btn btn-success btn-sm"
+                                                            title="ฟอร์มตรวจ">
+                                                            <i class="fas fa-file-alt"></i>
+                                                        </a>
                                             </div>
                                         </td>
 
@@ -143,6 +146,14 @@ include("../../private/shared/topbarofficer.php");
                                                     echo '<span class="badge bg-dark">ไม่ทราบ</span>';
                                             }
                                             ?>
+                                            <button class="btn btn-link p-0 text-muted btn-log"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="top"
+                                                    title="ดูประวัติ"
+                                                    data-request-id="<?= h($req->id) ?>"
+                                                    data-vessel="<?= h($req->vessel_name); ?>">
+                                                <i class="fas fa-history"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; endif; ?>
@@ -156,7 +167,8 @@ include("../../private/shared/topbarofficer.php");
                     </div>
                     <?php
                     include("modal/approve_request_modal.php");
-                    include("modal/confirm_fail_request_modal.php");        
+                    include("modal/confirm_fail_request_modal.php");  
+                    include("modal/logmodal.php");      
                     ?>
                                
 </div><!-- <div class="container-fluid"> -->
@@ -171,7 +183,23 @@ include("../../private/shared/topbarofficer.php");
                     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                                                 
-    <script src="../js/fvscis.js"></script>                                            
+    <script src="../js/fvscis.js"></script>       
+    
+    <script>
+    $(document).ready(function () {
+    if (!$.fn.DataTable.isDataTable('#dataTable')) return;
+
+    const table = $('#dataTable').DataTable();
+
+    const params   = new URLSearchParams(window.location.search);
+    const shipcode = params.get('shipcode');
+
+    if (shipcode) {
+        table.column(1).search(shipcode).draw();
+    }
+    });
+    </script>
+
             <script>
                 function loadRequestDetail(id, mode = 'approve') {
                 $.ajax({
@@ -366,6 +394,58 @@ include("../../private/shared/topbarofficer.php");
                 </script>
 
 
+    <script>
+    $(document).ready(function () {
+      $(document).on('click', '.btn-log', function () {
+            const requestId = $(this).data('request-id');
+             const vessel = $(this).data('vessel');
+            $.ajax({
+                url: 'ajax/get_request_logs.php',
+                method: 'GET',
+                dataType: 'json',
+                data: { id: requestId },
+                success: function (resp) {
+                    if (!resp.success) {
+                        if (window.Swal) {
+                            Swal.fire('ผิดพลาด', resp.message || 'ไม่สามารถโหลดประวัติได้', 'error');
+                        } else {
+                            alert(resp.message || 'ไม่สามารถโหลดประวัติได้');
+                        }
+                        return;
+                    }
+
+                    const logs = resp.logs || [];
+                    let html = '';
+
+                    if (logs.length === 0) {
+                        html = `<tr><td colspan="4" class="text-center text-muted">ยังไม่มีประวัติการดำเนินการ</td></tr>`;
+                    } else {
+                        logs.forEach(function (log) {
+                            html += `
+                                <tr>
+                                    <td>${log.time}</td>
+                                    <td>${log.action}</td>
+                                    <td>${log.actor}</td>
+                                    <td>${log.note || '-'}</td>
+                                </tr>`;
+                        });
+                    }
+                    $('#modalVesselName').text(vessel); 
+                    $('#logModalBody').html(html);
+                    $('#logModal').modal('show');
+                },
+                error: function () {
+                    if (window.Swal) {
+                        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+                    } else {
+                        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                    }
+                }
+            });
+        });
+});
+
+    </script>
 
 <?php 
 include("../../private/shared/footerall.php");

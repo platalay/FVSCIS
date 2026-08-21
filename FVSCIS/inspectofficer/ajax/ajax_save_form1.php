@@ -123,7 +123,7 @@ try {
     }
 
     // log ลง php_error.log เผื่อ debug
-    error_log("[FVSCIS] FORM1 saved: request_id={$request_id}, doc={$applicant->form1_doc_number}");
+    //("[FVSCIS] FORM1 saved: request_id={$request_id}, doc={$applicant->form1_doc_number}");
 
     // URL หน้าพิมพ์ PDF
     $print_url = 'print_form1.php?request_id=' . urlencode($request_id);
@@ -138,7 +138,7 @@ try {
 
 } catch (Exception $e) {
 
-    error_log("[FVSCIS] FORM1 error: " . $e->getMessage());
+    //error_log("[FVSCIS] FORM1 error: " . $e->getMessage());
 
     echo json_encode([
         'success' => false,

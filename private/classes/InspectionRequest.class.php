@@ -7,7 +7,7 @@ class InspectionRequest extends DatabaseObject {
     const STATUS_PASSED     = 'passed';
     const STATUS_FAILED     = 'failed';
     const STATUS_CONDITIONAL = 'conditional';
-    const STATUS_COMPLETED  = 'completed'; 
+    const STATUS_COMPLETED  = 'completed'; //is_complete === 1
     protected static $table_name = "inspection_requests";
     protected static $db_columns = [
         'id',
@@ -39,7 +39,7 @@ class InspectionRequest extends DatabaseObject {
         'is_submitted',
         'submitted_at',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'created_ip', 'updated_ip',
-        'approved_by', 'approved_at', 'effective_date', 'expire_at', 'approval_note', 'approved_ip', 'actual_inspect_date'
+        'approved_by', 'approved_at', 'effective_date', 'expire_at', 'approval_note', 'approved_ip', 'actual_inspect_date', 'is_complete'
     ];
 
     public $id;
@@ -84,6 +84,7 @@ class InspectionRequest extends DatabaseObject {
     public $approval_note;
     public $approved_ip;
     public $actual_inspect_date;
+    public $is_complete;
 
 
     // Optional: เพิ่ม method แปลงวันที่/แสดงชื่อจังหวัดได้ภายหลัง

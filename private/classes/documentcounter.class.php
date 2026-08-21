@@ -110,7 +110,7 @@ class DocumentCounter extends DatabaseObject
         $code = trim($code);
         
         if (empty($code)) {
-            error_log("[FVSCIS] document_code is empty, cannot parse");
+            //error_log("[FVSCIS] document_code is empty, cannot parse");
             echo "❌ ยังไม่มีเลขเอกสาร ไม่สามารถสร้าง PDF ได้ คุณต้องสั่งพิมพ์ สร.1 ก่อนจึงจะพิมพ์ฟอร์มตรวจได้";
             exit;
         }

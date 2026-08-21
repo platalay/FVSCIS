@@ -37,101 +37,89 @@ try {
         throw new Exception('บันทึกไม่สำเร็จ');
     }
 
-    // ===== แนบไฟล์ใหม่ (append) =====
+    // ===== แนบไฟล์ใหม่ (append) - SHORT =====
     $certificate_id = $obj->id;
     $files_saved  = 0;
     $files_failed = 0;
     $file_errors  = [];
     $files_seen   = 0;
 
-    $ini_upload_max = ini_get('upload_max_filesize');
-    $ini_post_max   = ini_get('post_max_size');
-    $ini_max_files  = ini_get('max_file_uploads');
+    $attachment_types_new = $_POST['attachment_type_new'] ?? [];
+    if (!is_array($attachment_types_new)) $attachment_types_new = [];
 
     $upload_err_msg = [
-        UPLOAD_ERR_OK         => 'OK',
-        UPLOAD_ERR_INI_SIZE   => 'ไฟล์เกิน upload_max_filesize',
-        UPLOAD_ERR_FORM_SIZE  => 'ไฟล์เกิน MAX_FILE_SIZE จากฟอร์ม',
-        UPLOAD_ERR_PARTIAL    => 'อัปโหลดมาไม่ครบ',
-        UPLOAD_ERR_NO_FILE    => 'ไม่ได้เลือกไฟล์',
-        UPLOAD_ERR_NO_TMP_DIR => 'ไม่มีโฟลเดอร์ชั่วคราว',
-        UPLOAD_ERR_CANT_WRITE => 'เขียนไฟล์ลงดิสก์ไม่ได้',
-        UPLOAD_ERR_EXTENSION  => 'ส่วนขยาย PHP หยุดการอัปโหลด',
+    UPLOAD_ERR_OK=>'OK',UPLOAD_ERR_INI_SIZE=>'ไฟล์เกิน upload_max_filesize',UPLOAD_ERR_FORM_SIZE=>'ไฟล์เกิน MAX_FILE_SIZE',
+    UPLOAD_ERR_PARTIAL=>'อัปโหลดมาไม่ครบ',UPLOAD_ERR_NO_FILE=>'ไม่ได้เลือกไฟล์',UPLOAD_ERR_NO_TMP_DIR=>'ไม่มีโฟลเดอร์ชั่วคราว',
+    UPLOAD_ERR_CANT_WRITE=>'เขียนไฟล์ลงดิสก์ไม่ได้',UPLOAD_ERR_EXTENSION=>'ส่วนขยาย PHP หยุดการอัปโหลด',
     ];
 
-    // 👉 อ่านประเภทเอกสารของไฟล์ใหม่จากฟอร์ม (มาจาก dropdown ในหน้า Edit)
-    $attachment_types_new = $_POST['attachment_type_new'] ?? [];
-    if (!is_array($attachment_types_new)) {
-        $attachment_types_new = [];
-    }
-
     if (!empty($_FILES['attachments']) && is_array($_FILES['attachments']['name'])) {
-        $allow_ext = ['jpg','jpeg','png','gif','webp','pdf'];
 
-        // current user id
-        $currentUserId = null;
-        if (isset($session)) {
-            if (is_object($session) && method_exists($session, 'user_id')) {
-                $currentUserId = $session->user_id();
-            } elseif (isset($session->user_id)) {
-                $currentUserId = $session->user_id;
-            }
+    $allow_mime = ['image/jpeg','image/png','image/gif','image/webp','application/pdf'];
+    $mimeToExt  = ['image/jpeg'=>'jpg','image/png'=>'png','image/gif'=>'gif','image/webp'=>'webp','application/pdf'=>'pdf'];
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+
+    $currentUserId = (isset($session) && is_object($session) && method_exists($session,'user_id')) ? $session->user_id() : 0;
+
+    // === folder: /uploads/certificationold/YYYY/CERT_00012345/ ===
+    $year = date('Y');
+    $certFolder = 'CERT_' . str_pad((string)$certificate_id, 8, '0', STR_PAD_LEFT);
+    $baseRelDir = "/uploads/certificationold/{$year}/{$certFolder}";
+    $baseAbsDir = rtrim(PUBLIC_PATH, '/\\') . $baseRelDir;
+
+    if (!is_dir($baseAbsDir)) mkdir($baseAbsDir, 0775, true);
+
+    foreach ($_FILES['attachments']['name'] as $i => $origName) {
+        $files_seen++;
+
+        $err = $_FILES['attachments']['error'][$i] ?? UPLOAD_ERR_NO_FILE;
+        if ($err !== UPLOAD_ERR_OK) {
+        if ($err !== UPLOAD_ERR_NO_FILE) {
+            $files_failed++;
+            $file_errors[] = "{$origName}: " . ($upload_err_msg[$err] ?? "error={$err}");
+        }
+        continue;
         }
 
-        foreach ($_FILES['attachments']['name'] as $i => $name) {
-            $files_seen++;
+        $tmp  = $_FILES['attachments']['tmp_name'][$i] ?? '';
+        $size = (int)($_FILES['attachments']['size'][$i] ?? 0);
 
-            $file = [
-                'name'     => $_FILES['attachments']['name'][$i],
-                'type'     => $_FILES['attachments']['type'][$i] ?? '',
-                'tmp_name' => $_FILES['attachments']['tmp_name'][$i] ?? '',
-                'error'    => $_FILES['attachments']['error'][$i] ?? UPLOAD_ERR_NO_FILE,
-                'size'     => $_FILES['attachments']['size'][$i] ?? 0,
-            ];
-
-            if ($file['error'] !== UPLOAD_ERR_OK) {
-                if ($file['error'] !== UPLOAD_ERR_NO_FILE) {
-                    $files_failed++;
-                    $file_errors[] = "{$file['name']}: " . ($upload_err_msg[$file['error']] ?? "error={$file['error']}");
-                }
-                continue;
-            }
-
-            // ตรวจนามสกุล
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, $allow_ext, true)) {
-                $files_failed++;
-                $file_errors[] = "ไม่รองรับ: {$file['name']}";
-                continue;
-            }
-
-            // 👉 ดึงประเภทเอกสารตาม index เดียวกับไฟล์
-            $attachment_type = null;
-            if (array_key_exists($i, $attachment_types_new)) {
-                $attachment_type = trim((string)$attachment_types_new[$i]);
-                if ($attachment_type === '') {
-                    $attachment_type = null;
-                }
-            }
-
-            //error_log("DEBUG: saving file {$file['name']} for cert_id={$certificate_id}, type={$attachment_type}");
-
-            // เรียกเมธอดบันทึก (รองรับพารามิเตอร์ที่ 4 = attachment_type)
-            $ok = FvCertificateAttachment::create_from_upload(
-                $certificate_id,
-                $file,
-                $currentUserId,
-                $attachment_type
-            );
-
-            if ($ok) {
-                $files_saved++;
-            } else {
-                $files_failed++;
-                $file_errors[] = "อัปโหลดไม่สำเร็จ: {$file['name']}";
-            }
+        $mime = $finfo->file($tmp) ?: 'application/octet-stream';
+        if (!in_array($mime, $allow_mime, true)) {
+        $files_failed++; $file_errors[] = "ไม่รองรับชนิดไฟล์: {$origName}";
+        continue;
         }
+
+        $ext = $mimeToExt[$mime] ?? 'bin';
+        $stored = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+
+        $abs = $baseAbsDir . '/' . $stored;
+        $rel = $baseRelDir . '/' . $stored;
+
+        if (!move_uploaded_file($tmp, $abs)) {
+        $files_failed++; $file_errors[] = "อัปโหลดไม่สำเร็จ: {$origName}";
+        continue;
+        }
+
+        $attachment_type = isset($attachment_types_new[$i]) && trim($attachment_types_new[$i]) !== ''
+        ? trim((string)$attachment_types_new[$i]) : null;
+
+        $att = new FvCertificateAttachment([
+        'certificate_id'  => $certificate_id,
+        'file_name'       => $origName,
+        'stored_name'     => $stored,
+        'file_type'       => $mime,
+        'file_size'       => $size,
+        'attachment_type' => $attachment_type,
+        'file_path'       => $rel,
+        'created_by'      => $currentUserId ?? 0,
+        ]);
+
+        if ($att->save()) $files_saved++;
+        else { @unlink($abs); $files_failed++; $file_errors[] = "บันทึก DB ไม่สำเร็จ: {$origName}"; }
     }
+    }
+
 
     $action = LogAction::find_by_code('fvscis_updated_by_officer');
     if ($action) {
@@ -160,6 +148,12 @@ try {
         Notification::mark_action_taken($officer->id, 'inspectofficer', $obj->id, [2,3]);
         }*/
         Notification::mark_action_taken($session->user_id(), 'inspectofficer', $obj->id, $action1->id);
+
+        $ini_upload_max = ini_get('upload_max_filesize') ?: '';
+        $ini_post_max   = ini_get('post_max_size') ?: '';
+        $ini_max_files  = ini_get('max_file_uploads') ?: '';
+
+        if (ob_get_length()) { ob_clean(); }
 
     echo json_encode([
         'success'        => true,

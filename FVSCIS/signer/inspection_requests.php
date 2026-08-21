@@ -15,7 +15,7 @@ foreach($departments as $dept) {
 
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarsigner.php");
-include("../../private/shared/topbarofficer.php");
+include("../../private/shared/topbarsigner.php");
 ?>
 
 <div class="container-fluid">
@@ -138,6 +138,14 @@ include("../../private/shared/topbarofficer.php");
                     <span class="badge <?= h($badge_class) ?>">
                       <?= h(InspectionRequest::status_text($status)) ?>
                     </span>
+                    <button class="btn btn-link p-0 text-muted btn-log"
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top"
+                              title="ดูประวัติ"
+                              data-request-id="<?= h($req->id) ?>"
+                              data-vessel="<?= h($req->vessel_name); ?>">
+                          <i class="fas fa-history"></i>
+                    </button>
                   </td>
 
                   <td><?= h($dept_name) ?></td>
@@ -160,7 +168,7 @@ include("../../private/shared/topbarofficer.php");
 
     </div>
   </div>
-
+  <?php include("modal/logmodal.php"); ?>
 </div>
 
 <?php
@@ -169,6 +177,58 @@ include("../../private/shared/footerofficer.php");
 <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
     <script src="../js/fvscis.js"></script>
+    <script>
+    $(document).ready(function () {
+      $(document).on('click', '.btn-log', function () {
+            const requestId = $(this).data('request-id');
+             const vessel = $(this).data('vessel');
+            $.ajax({
+                url: 'ajax/get_request_logs.php',
+                method: 'GET',
+                dataType: 'json',
+                data: { id: requestId },
+                success: function (resp) {
+                    if (!resp.success) {
+                        if (window.Swal) {
+                            Swal.fire('ผิดพลาด', resp.message || 'ไม่สามารถโหลดประวัติได้', 'error');
+                        } else {
+                            alert(resp.message || 'ไม่สามารถโหลดประวัติได้');
+                        }
+                        return;
+                    }
+
+                    const logs = resp.logs || [];
+                    let html = '';
+
+                    if (logs.length === 0) {
+                        html = `<tr><td colspan="4" class="text-center text-muted">ยังไม่มีประวัติการดำเนินการ</td></tr>`;
+                    } else {
+                        logs.forEach(function (log) {
+                            html += `
+                                <tr>
+                                    <td>${log.time}</td>
+                                    <td>${log.action}</td>
+                                    <td>${log.actor}</td>
+                                    <td>${log.note || '-'}</td>
+                                </tr>`;
+                        });
+                    }
+                    $('#modalVesselName').text(vessel); 
+                    $('#logModalBody').html(html);
+                    $('#logModal').modal('show');
+                },
+                error: function () {
+                    if (window.Swal) {
+                        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+                    } else {
+                        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                    }
+                }
+            });
+        });
+});
+
+    </script>
 <?php
 include("../../private/shared/footerall.php");
 ?>

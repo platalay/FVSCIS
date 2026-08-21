@@ -840,12 +840,8 @@ $(document)
     if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
     return (n / 1048576).toFixed(1) + ' MB';
   }
-
   function isImgFile(f) {
-    return (
-      /^image\//i.test(f.type) ||
-      /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(f.name)
-    );
+    return (/^image\//i.test(f.type) || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(f.name));
   }
 
   // -------- โหลดไฟล์เดิมของใบรับรอง (EDIT) --------
@@ -857,25 +853,26 @@ $(document)
       if (!res || !res.success || !Array.isArray(res.attachments)) return;
 
       res.attachments.forEach((a) => {
-        const url = a.url_enc || a.url;
+        const url = a.url_enc || a.url || '#';
         const isImg = !!a.is_image;
         const name = a.name || '';
         const typeLabel = a.attachment_type ? a.attachment_type : '';
 
         const thumb = isImg
-          ? `<div class="thumb-wrap">
-                <img src="${url}" alt="${name}"
-                     class="img-thumbnail w-100"
-                     style="height:120px; object-fit:cover;">
-             </div>`
-          : `<div class="border rounded p-2 text-center">
-                <i class="bi bi-file-earmark"></i>
-             </div>`;
+          ? `
+            <div class="thumb-wrap">
+              <img src="${url}" alt="${name}" class="img-thumbnail w-100" style="height:120px; object-fit:cover;">
+            </div>
+          `
+          : `
+            <div class="border rounded p-2 text-center" style="height:120px; display:flex; align-items:center; justify-content:center;">
+              <i class="bi bi-file-earmark" style="font-size:32px;"></i>
+            </div>
+          `;
 
         $wrap.append(`
           <div class="col-6 col-md-3 mb-2" data-attach-id="${a.id}">
             <div class="file-card shadow-sm p-2 position-relative">
-
               <button type="button"
                       class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 btn-del-existing"
                       style="z-index:10;"
@@ -888,24 +885,19 @@ $(document)
                 ${thumb}
               </a>
 
-              <div class="small text-truncate mt-1" title="${name}">
-                ${name}
-              </div>
-              <div class="text-muted small">
-                ${typeLabel}
-              </div>
+              <div class="small text-truncate mt-1" title="${name}">${name}</div>
+              <div class="text-muted small">${typeLabel}</div>
             </div>
           </div>
         `);
-
-
       });
     });
   };
 
-  // เปิด modal แล้วโหลดไฟล์เดิม
+  // เปิด modal แล้วโหลดไฟล์เดิม (แก้ให้หา id ใน modal ชัวร์ขึ้น)
   $('#modalFvscisOldEdit').on('shown.bs.modal', function () {
-    const id = $('#edit-id').val();
+    const $modal = $(this);
+    const id = $modal.find('#edit-id').val(); // ✅ ดีกว่า $('#edit-id')
     if (id) window.renderExistingAttachments(id);
   });
 
@@ -914,16 +906,24 @@ $(document)
     const $modal = $('#modalFvscisOldEdit');
     const $input = $modal.find('#certAttachmentsEdit');
     const selected = $input.data('selected') || [];
+
     const dt = new DataTransfer();
     selected.forEach((f) => dt.items.add(f));
     if ($input[0]) $input[0].files = dt.files;
   }
+
+  // เก็บ objectURL กันเมมรั่ว
+  let _objectUrls = [];
 
   function renderSelectedPreviewEdit() {
     const $modal = $('#modalFvscisOldEdit');
     const $input = $modal.find('#certAttachmentsEdit');
     const $list = $modal.find('#selectedFilesEdit');
     const selected = $input.data('selected') || [];
+
+    // เคลียร์ URL เก่าก่อน
+    _objectUrls.forEach(u => URL.revokeObjectURL(u));
+    _objectUrls = [];
 
     if (!selected.length) {
       $list.empty();
@@ -934,11 +934,23 @@ $(document)
     selected.forEach((f, idx) => {
       const isImg = isImgFile(f);
       const src = isImg ? URL.createObjectURL(f) : '';
+      if (src) _objectUrls.push(src);
+
+      const preview = isImg
+        ? `
+          <div class="thumb-wrap">
+            <img src="${src}" alt="${f.name}" class="img-thumbnail w-100" style="height:120px; object-fit:cover;">
+          </div>
+        `
+        : `
+          <div class="border rounded p-2 text-center" style="height:120px; display:flex; align-items:center; justify-content:center;">
+            <span class="fw-bold">PDF</span>
+          </div>
+        `;
 
       html += `
         <div class="col-6 col-md-3">
           <div class="border rounded p-2 shadow-sm file-card position-relative">
-
             <button type="button"
                     class="btn btn-sm btn-danger btn-remove-new-edit position-absolute"
                     style="top:4px; left:4px; z-index:5;"
@@ -947,17 +959,9 @@ $(document)
               <i class="bi bi-x-lg"></i>
             </button>
 
-            ${
-              isImg
-                ? `<div class="thumb-wrap">
-                     <img src="${src}" alt="${f.name}">
-                   </div>`
-                : `<div class="icon-pdf">PDF</div>`
-            }
+            ${preview}
 
-            <div class="file-name mt-2 text-truncate" title="${f.name}">
-              ${f.name}
-            </div>
+            <div class="file-name mt-2 text-truncate" title="${f.name}">${f.name}</div>
             <div class="text-muted small">${bytesFmt(f.size || 0)}</div>
 
             <select class="form-select form-select-sm mt-1" name="attachment_type_new[]">
@@ -995,9 +999,7 @@ $(document)
       const files = Array.from(this.files || []);
 
       files.forEach((f) => {
-        if (!selected.some((x) => x.name === f.name && x.size === f.size)) {
-          selected.push(f);
-        }
+        if (!selected.some((x) => x.name === f.name && x.size === f.size)) selected.push(f);
       });
 
       $input.data('selected', selected);
@@ -1009,12 +1011,10 @@ $(document)
     .on('click.removeNewEdit', '.btn-remove-new-edit', function () {
       const $modal = $('#modalFvscisOldEdit');
       const $input = $modal.find('#certAttachmentsEdit');
+
       let selected = $input.data('selected') || [];
       const idx = +$(this).data('idx');
-
-      if (idx >= 0) {
-        selected.splice(idx, 1);
-      }
+      if (idx >= 0) selected.splice(idx, 1);
 
       $input.data('selected', selected);
       syncInputFilesEdit();
@@ -1022,11 +1022,15 @@ $(document)
     });
 
   // -------- ลบไฟล์เดิม (existing) --------
-  $(document).on('click', '.btn-del-existing', function () {
+  $(document).on('click', '.btn-del-existing', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
     const attachId = $(this).data('id');
     if (!attachId) return;
 
     const $btn = $(this);
+    const $item = $btn.closest('[data-attach-id]');
 
     Swal.fire({
       title: 'ยืนยันการลบไฟล์?',
@@ -1042,52 +1046,45 @@ $(document)
 
       $btn.prop('disabled', true);
 
-      $.post(
-        'ajax/fvscisold_attachment_delete.php',
-        { attachment_id: attachId },
-        function (res) {
+      $.ajax({
+        url: 'ajax/fvscisold_attachment_delete.php',
+        method: 'POST',
+        dataType: 'json',
+        data: { attachment_id: attachId },
+      })
+        .done(function (res) {
           if (res && res.success) {
-            $(`[data-attach-id="${attachId}"]`).remove();
-
-            Swal.fire({
-              icon: 'success',
-              title: 'ลบไฟล์เรียบร้อย',
-              timer: 900,
-              showConfirmButton: false,
-            });
+            $item.remove();
+            Swal.fire({ icon: 'success', title: 'ลบไฟล์เรียบร้อย', timer: 900, showConfirmButton: false });
           } else {
-            Swal.fire({
-              icon: 'error',
-              title: 'ลบไม่สำเร็จ',
-              text: res?.message || 'เกิดข้อผิดพลาด',
-            });
+            Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: (res && res.message) ? res.message : 'เกิดข้อผิดพลาด' });
           }
-        },
-        'json'
-      )
-        .fail(() => {
-          Swal.fire({
-            icon: 'error',
-            title: 'เชื่อมต่อไม่ได้',
-            text: 'โปรดลองใหม่อีกครั้ง',
-          });
         })
-        .always(() => {
+        .fail(function (xhr) {
+          console.log(xhr.responseText);
+          Swal.fire({ icon: 'error', title: 'เชื่อมต่อไม่ได้', text: 'โปรดลองใหม่อีกครั้ง' });
+        })
+        .always(function () {
           $btn.prop('disabled', false);
         });
     });
   });
 
-
   // รีเซ็ตเมื่อปิดโมดัล
   $('#modalFvscisOldEdit').on('hidden.bs.modal', function () {
     const $modal = $('#modalFvscisOldEdit');
     const $input = $modal.find('#certAttachmentsEdit');
+
+    _objectUrls.forEach(u => URL.revokeObjectURL(u));
+    _objectUrls = [];
+
     $input.val('').removeData('selected');
     $modal.find('#selectedFilesEdit').empty();
     $modal.find('#existingFiles').empty();
   });
 })();
+
+
 
 //#endregion Edit Modal: ไฟล์เดิม + ไฟล์ใหม่
 

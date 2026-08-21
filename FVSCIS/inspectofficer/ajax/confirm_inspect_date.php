@@ -55,6 +55,7 @@ try {
 
     if ($need_reconfirm) {
         $request->is_confirm = 0; // reset ให้ชาวประมงยืนยันใหม่
+        $request->status = "pending";
     }
 
     if (!$request->save()) {
@@ -82,7 +83,7 @@ try {
             'fisherman',
             $request->id,
             7,
-            "เจ้าหน้าที่เสนอเปลี่ยนวันตรวจเรือ {$request->vessel_name} จาก {$old_text} เป็น {$confirmed_date} กรุณายืนยันวันนัดใหม่",
+            "เจ้าหน้าที่เสนอเปลี่ยนวันตรวจเรือ {$request->vessel_name} จาก {$old_text} เป็น {$new_text} กรุณายืนยันวันนัดใหม่",
             'warning'
         );
     } else {
@@ -91,7 +92,7 @@ try {
             'fisherman',
             $request->id,
             7,
-            "เจ้าหน้าที่กำหนดวันตรวจเรือ {$request->vessel_name} เป็นวันที่ {$confirmed_date} กรุณากดยืนยันวันนัด",
+            "เจ้าหน้าที่กำหนดวันตรวจเรือ {$request->vessel_name} เป็นวันที่ {$new_text} กรุณากดยืนยันวันนัด",
             'warning'
         );
     }

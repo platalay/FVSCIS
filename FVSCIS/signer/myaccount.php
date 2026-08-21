@@ -4,7 +4,7 @@ $session->require_role(['signer']);
 $Officer = Officer::find_by_id($session->user_id());
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarsigner.php");
-include("../../private/shared/topbarofficer.php");
+include("../../private/shared/topbarsigner.php");
 ?>
 
 <div class="container-fluid">

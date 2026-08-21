@@ -35,7 +35,8 @@ try {
     // ------------------------------
     $attachments = InspectionAttachment::find_by_request_id($id);
     $fileList = [];
-
+    $applicant = InspectionApplicantInfo::find_by_request_id($id);
+    
     $docRoot = rtrim(str_replace('\\','/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
     $pubPath = rtrim(str_replace('\\','/', defined('PUBLIC_PATH') ? PUBLIC_PATH : $docRoot), '/');
 
@@ -89,11 +90,15 @@ try {
     // ------------------------------
     // 6) Log การลบ
     // ------------------------------
+    $fisherman = Fisherman::find_by_id($currentUserId);
     $log = new InspectionLog();
     $log->inspection_request_id = $id;
     $log->action_id             = 4;
-    $log->note                  = "เรือ {$request->vessel_name} ถูกลบคำขอโดย user_id={$currentUserId}";
-
+    if ($applicant && !empty($applicant->form1_doc_number)) {
+    $log->note = "เรือ {$request->vessel_name} หมายเลขทะเบียน {$request->ship_code} หมายเลขเอกสาร {$applicant->form1_doc_number} ถูกลบคำขอโดย {$fisherman->full_name}";    
+    }else{
+    $log->note = "เรือ {$request->vessel_name} หมายเลขทะเบียน {$request->ship_code} ถูกลบคำขอโดย {$fisherman->full_name}";
+    }
     if (!$log->save()) {
         $db->query("ROLLBACK");
         throw new Exception('ลบสำเร็จ แต่บันทึกประวัติไม่สำเร็จ');

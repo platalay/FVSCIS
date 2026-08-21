@@ -11,10 +11,9 @@ $showTopSearch = in_array($base, $pagesWithSearch, true);
 
 $pageTitles = [
     'index.php'    => 'หน้าภาพรวม',
-    'incoming_requests.php'   => 'คำขอตรวจ',
+    'incoming_requests.php'   => 'คำขอที่รอการอนุมัติ',
     'inspection_request.php'     => 'คำขอทั้งหมดของหน่วยงานในสังกัด',
     'old_certification.php'    => 'ข้อมูลการอนุมัติ',
-    'all_old_certification.php'    => 'ข้อมูลที่หน่วยงานรับผิดชอบ',
     'myaccount.php'      => 'จัดการบัญชีผู้ใช้',
     // เติมไฟล์อื่น ๆ ตามจริงของคุณได้เลย
 ];

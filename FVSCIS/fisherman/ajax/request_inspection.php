@@ -219,6 +219,24 @@ try {
         $finfo   = new finfo(FILEINFO_MIME_TYPE);
         $cnt     = count($_FILES['attachments']['name']);
 
+        // === folder: /uploads/inspection/YYYY/REQ_00012345/ ===
+        $year = date('Y');
+        $reqFolder = 'REQ_' . str_pad((string)$request->id, 8, '0', STR_PAD_LEFT);
+        $baseRelDir = "/uploads/inspection/{$year}/{$reqFolder}";  // relative (สำหรับเก็บลง DB / ทำ URL)
+        $baseAbsDir = PUBLIC_PATH . $baseRelDir;                   // absolute (สำหรับเก็บไฟล์จริง)
+
+        if (!is_dir($baseAbsDir)) {
+            mkdir($baseAbsDir, 0775, true);
+        }
+
+        // map mime -> ext กันกรณี ext จากชื่อไฟล์ไม่ตรง
+        $mimeToExt = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/gif'  => 'gif',
+            'image/webp' => 'webp',
+        ];
+
         for ($i = 0; $i < $cnt; $i++) {
             if ($_FILES['attachments']['error'][$i] !== UPLOAD_ERR_OK) continue;
 
@@ -231,14 +249,18 @@ try {
             if ($size > 10 * 1024 * 1024) continue;
 
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+            // ถ้า ext ว่าง/ไม่ใช่ตัวที่คาด ให้ใช้จาก mime แทน
+            if ($ext === '' || !in_array($ext, ['jpg','jpeg','png','gif','webp'], true)) {
+                $ext = $mimeToExt[$mime] ?? 'bin';
+            }
+            // normalize jpeg -> jpg
+            if ($ext === 'jpeg') $ext = 'jpg';
+
             $new = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
 
-            $rel = '/uploads/inspection/' . $new;
-            $abs = PUBLIC_PATH . $rel;
-
-            if (!is_dir(dirname($abs))) {
-                mkdir(dirname($abs), 0775, true);
-            }
+            $rel = $baseRelDir . '/' . $new;
+            $abs = $baseAbsDir . '/' . $new;
 
             if (!move_uploaded_file($tmp, $abs)) continue;
 
@@ -256,6 +278,7 @@ try {
             $att->save(); // ถ้า fail ก็แค่ข้ามไป ไม่ถึงขั้น throw
         }
     }
+
 
     // Log การยื่นคำขอ
     $log = new InspectionLog();

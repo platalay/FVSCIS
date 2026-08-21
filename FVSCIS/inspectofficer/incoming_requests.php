@@ -34,6 +34,7 @@ include("../../private/shared/topbarofficer.php");
                                         <th>วันนัดตรวจ</th>
                                         <th>ประเภทคำขอ</th>
                                         <th>วันที่ยื่นคำขอ</th>
+                                        <th>วันที่นัดตรวจเรือ</th>
                                         <th>สถานะ</th>
                                     </tr>
                                 </thead>
@@ -45,7 +46,7 @@ include("../../private/shared/topbarofficer.php");
                                 if (empty($requests)) :
                                 ?>
                                     <tr>
-                                        <td colspan="9" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือที่รับผิดชอบ</td>
+                                        <td colspan="10" class="text-center text-muted">ยังไม่มีคำขอตรวจเรือที่รับผิดชอบ</td>
                                     </tr>
                                 <?php
                                 else:
@@ -156,39 +157,96 @@ include("../../private/shared/topbarofficer.php");
                                                 <?php } ?>
 
                                                 <!-- ปุ่มฟอร์มตรวจ -->
-                                                <?php if ($req->is_confirm == 1): ?>
-                                                    <?php
-                                                    $form_status = InspectionFormStatus::find_by_request_id($req->id);
+<?php
+$isConfirmed = ((int)$req->is_confirm === 1);
+$form_status = null;
 
-                                                    if (!$form_status) {
-                                                        // ❌ ยังไม่เริ่มตรวจ → ต้องกดเริ่ม
-                                                    ?>
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-success btn-sm btn-start-inspect"
-                                                            data-id="<?= h($req->id) ?>"
-                                                            data-department="<?= h($req->department_id) ?>"
-                                                            title="เริ่มตรวจเรือ">
-                                                            <i class="fas fa-file-signature"></i>
-                                                        </button>
-                                                    <?php
-                                                    } else {
-                                                        // ✅ เริ่มตรวจแล้ว → เข้า form ได้เลย
-                                                    ?>
-                                                        <a
-                                                            href="form_inspect.php?id=<?= h($req->id) ?>&department_id=<?= h($req->department_id) ?>"
-                                                            class="btn btn-success btn-sm"
-                                                            title="ฟอร์มตรวจ">
-                                                            <i class="fas fa-file-signature"></i>
-                                                        </a>
-                                                    <?php
-                                                    }
-                                                    ?>
-                                                <?php else : ?>
-                                                    <button class="btn btn-secondary btn-sm" title="ยังไม่สามารถกรอกฟอร์มตรวจได้" disabled>
-                                                        <i class="fas fa-file-signature"></i>
-                                                    </button>
-                                                <?php endif; ?>
+if ($isConfirmed) {
+    $form_status = InspectionFormStatus::find_by_request_id($req->id);
+}
+$isPending = ($req->status === 'pending');
+$isInspecting = ($req->status === 'inspecting');
+$isStarted = ($form_status !== null);
+$isPass    = ($req->status === 'passed');
+$isFailed = ($req->status === 'failed');
+$isCondition = ($req->status === 'conditional');
+$isComplete = ($req->is_complete == 1);
+?>
+
+<?php if (!$isConfirmed && $isPending): ?>
+
+    <!-- ยังไม่ยืนยันวันตรวจ -->
+    <button class="btn btn-secondary btn-sm" title="ยังไม่สามารถกรอกฟอร์มตรวจได้" disabled>
+        <i class="fas fa-file-signature"></i>
+    </button>
+
+<?php elseif ($isConfirmed && $isInspecting): ?>
+
+    <!-- ยืนยันแล้ว แต่ยังไม่เริ่มตรวจ -->
+    <button
+        type="button"
+        class="btn btn-info btn-sm btn-start-inspect"
+        data-id="<?= h($req->id) ?>"
+        data-department="<?= h($req->department_id) ?>"
+        title="เริ่มตรวจเรือ">
+        <i class="fas fa-file-signature"></i>
+    </button>
+
+<?php elseif($isConfirmed && $isFailed): ?>
+
+    <!-- ตรวจเสร็จแล้ว (ผ่าน/ไม่ผ่าน) → เปิด PDF -->
+    <a
+        href="generate_pdf.php?token=<?= h($form_status->document_token) ?>"
+        target="_blank"
+        class="btn btn-danger btn-sm"
+        title="ผลการตรวจไม่ผ่าน">
+        <i class="fas fa-exclamation-triangle"></i>
+    </a>
+
+<?php elseif($isConfirmed && $isPass): ?>
+
+    <!-- ตรวจเสร็จแล้ว (ผ่าน/ไม่ผ่าน) → เปิด PDF -->
+    <a
+        href="generate_pdf.php?token=<?= h($form_status->document_token) ?>"
+        target="_blank"
+        class="btn btn-success btn-sm"
+        title="ผลการตรวจผ่าน">
+        <i class="fas fa-file-alt"></i>
+    </a>
+<?php elseif($isConfirmed && $isCondition): ?>
+
+    <!-- ตรวจเสร็จแล้ว (ผ่าน/ไม่ผ่าน) → เปิด PDF -->
+    <a
+        href="generate_pdf.php?token=<?= h($form_status->document_token) ?>"
+        target="_blank"
+        class="btn btn-info btn-sm"
+        title="ผลการตรวจผ่าน">
+        <i class="fas fa-file-alt"></i>
+    </a>    
+<?php endif; ?>
+<?php if($isConfirmed && $isComplete && $isFailed): ?>
+
+    <!-- ตรวจเสร็จแล้ว (ผ่าน/ไม่ผ่าน) → เปิด PDF -->
+    <a
+        href="generate_pdf.php?token=<?= h($form_status->document_token) ?>"
+        target="_blank"
+        class="btn btn-danger btn-sm"
+        title="หนังสือ สร.3">
+        <i class="fas fa-file-alt"></i>
+    </a>
+<?php elseif($isConfirmed && $isComplete && $isPass || $isConfirmed && $isComplete && $isCondition ): ?>
+
+    <!-- ตรวจเสร็จแล้ว (ผ่าน/ไม่ผ่าน) → เปิด PDF -->
+    <a
+        href="generate_pdf.php?token=<?= h($form_status->document_token) ?>"
+        target="_blank"
+        class="btn btn-success btn-sm"
+        title="หนังสือ สร.3">
+        <i class="fas fa-file-alt"></i>
+    </a>
+
+<?php endif; ?>
+
                                             </div>
                                         </td>
 
@@ -196,6 +254,7 @@ include("../../private/shared/topbarofficer.php");
                                         <td><?= h($req->vessel_name) ?></td>
                                         <td><?= h($req->port_name) ?></td>
                                         <td><?= thai_date($req->inspect_date_start) . " ถึงวันที่ " . thai_date($req->inspect_date_end) ?></td>
+                                        
                                         <td><?= $displayText ?></td>
 
                                         <td class="text-center">
@@ -228,6 +287,7 @@ include("../../private/shared/topbarofficer.php");
                                         </td>
 
                                         <td><?= thai_date($req->created_at) ?></td>
+                                        <td><?= thai_date($req->confirmed_inspect_date) ?></td>
                                         <td>
                                             <?php
                                             switch ($req->status) {

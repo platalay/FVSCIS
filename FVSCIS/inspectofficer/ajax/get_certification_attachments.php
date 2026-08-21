@@ -55,7 +55,7 @@ $out = [];
 foreach ($atts as $a) {
   $rel = normalize_rel_upload($a->file_path ?? '');
   $url = $rel ? $appBase . $rel : '';
-
+  //error_log('a vars = ' . print_r(get_object_vars($a), true));
   $out[] = [
     'id'        => (int)$a->id,
     'name'      => $a->file_name,

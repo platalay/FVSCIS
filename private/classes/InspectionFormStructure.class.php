@@ -93,7 +93,7 @@ class InspectionFormStructure extends DatabaseObject {
 
         // 2) กันกรณี field ไม่ใช่คอลัมน์จริง → ป้องกัน save ล้ม
         if (!in_array($field, static::$db_columns)) {
-            error_log("autosave error: Field '{$field}' not found in table " . static::$table_name);
+            //error_log("autosave error: Field '{$field}' not found in table " . static::$table_name);
             return false;
         }
 

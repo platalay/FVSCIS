@@ -216,26 +216,53 @@ try {
         $finfo   = new finfo(FILEINFO_MIME_TYPE);
         $cnt     = count($_FILES['attachments']['name']);
 
-        for ($i=0; $i<$cnt; $i++) {
+        // === folder: /uploads/inspection/YYYY/REQ_00012345/ ===
+        $year      = date('Y');
+        $reqFolder = 'REQ_' . str_pad((string)$req->id, 8, '0', STR_PAD_LEFT);
+        $baseRelDir = "/uploads/inspection/{$year}/{$reqFolder}";
+        $baseAbsDir = rtrim(PUBLIC_PATH, '/\\') . $baseRelDir;
+
+        if (!is_dir($baseAbsDir)) {
+            mkdir($baseAbsDir, 0775, true);
+        }
+
+        // map mime -> ext กันกรณี ext จากชื่อไฟล์ไม่ตรง
+        $mimeToExt = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/gif'  => 'gif',
+            'image/webp' => 'webp',
+        ];
+
+        for ($i = 0; $i < $cnt; $i++) {
             if ($_FILES['attachments']['error'][$i] !== UPLOAD_ERR_OK) continue;
-            
+
             $tmp  = $_FILES['attachments']['tmp_name'][$i];
             $name = $_FILES['attachments']['name'][$i];
             $mime = $finfo->file($tmp) ?: 'application/octet-stream';
             $size = (int)$_FILES['attachments']['size'][$i];
 
-            if (!in_array($mime,$allowed,true)) continue;
-            if ($size > 10*1024*1024) continue;
+            if (!in_array($mime, $allowed, true)) continue;
+            if ($size > 10 * 1024 * 1024) continue;
 
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            $new = date('YmdHis').'_'.bin2hex(random_bytes(4)).'.'.$ext;
 
-            $rel = '/uploads/inspection/'.$new;
-            $abs = PUBLIC_PATH . $rel;
-            if (!is_dir(dirname($abs))) { mkdir(dirname($abs), 0775, true); }
-            if (!move_uploaded_file($tmp,$abs)) continue;
+            // ถ้า ext ว่าง/ไม่ใช่ตัวที่คาด ให้ใช้จาก mime แทน
+            if ($ext === '' || !in_array($ext, ['jpg','jpeg','png','gif','webp'], true)) {
+                $ext = $mimeToExt[$mime] ?? 'bin';
+            }
+            // normalize jpeg -> jpg
+            if ($ext === 'jpeg') $ext = 'jpg';
+
+            $new = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+
+            $rel = $baseRelDir . '/' . $new;   // ✅ เก็บลง DB เป็น /uploads/...
+            $abs = $baseAbsDir . '/' . $new;   // ✅ absolute ไปยังไฟล์จริง
+
+            if (!move_uploaded_file($tmp, $abs)) continue;
+
             $type = $types[$i] ?? '';
-            
+
             $att = new InspectionAttachment([
                 'request_id'      => $req->id,
                 'attachment_type' => $type,
@@ -245,9 +272,10 @@ try {
                 'file_size'       => $size,
                 'created_by'      => $session->user_id() ?? 0
             ]);
-            $att->save(); // ถ้า save ไม่ได้ เราไม่ throw เพื่อไม่ให้ทั้งคำขอล้ม (แล้วแต่นโยบาย)
+            $att->save(); // ไม่ throw เพื่อไม่ให้ทั้งคำขอล้ม
         }
     }
+
 
     // --------------------------
     // 5) Log + Notification
