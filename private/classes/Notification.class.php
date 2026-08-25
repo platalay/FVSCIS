@@ -64,6 +64,64 @@ class Notification extends DatabaseObject {
         return static::count_by_sql($sql);
     }
 
+    public static function build_destination($notification, $user_role) {
+        if (!$notification) {
+            return '#';
+        }
+
+        $role = strtolower((string)$user_role);
+        $inspection_request_id = (int)($notification->inspection_request_id ?? 0);
+        $request = null;
+
+        if ($inspection_request_id > 0) {
+            $request = InspectionRequest::find_by_id($inspection_request_id);
+        }
+
+        $shipcode = null;
+        if ($request && !empty($request->ship_code)) {
+            $shipcode = $request->ship_code;
+        }
+
+        if ($role === 'fisherman') {
+            if (!empty($shipcode)) {
+                return 'mystatus.php?shipcode=' . urlencode($shipcode);
+            }
+            return 'mystatus.php';
+        }
+
+        if (in_array($role, ['inspectofficer', 'signer'], true)) {
+            if (!empty($shipcode)) {
+                return 'incoming_requests.php?shipcode=' . urlencode($shipcode);
+            }
+            return 'incoming_requests.php';
+        }
+
+        if (in_array($role, ['admin', 'headquarter'], true)) {
+            if (!empty($shipcode)) {
+                return 'inspection_requests.php?shipcode=' . urlencode($shipcode);
+            }
+            return 'inspection_requests.php';
+        }
+
+        return '#';
+    }
+
+    public static function mark_single_as_read($notification_id, $user_id, $user_role) {
+        $notification_id = (int)$notification_id;
+        $user_id         = self::$database->escape_string($user_id);
+        $user_role       = self::$database->escape_string($user_role);
+
+        $sql = "UPDATE " . static::$table_name . "
+                SET is_read = 1
+                WHERE id = {$notification_id}
+                  AND user_id = '{$user_id}'
+                  AND user_role = '{$user_role}'";
+
+        $updated = self::$database->query($sql);
+
+        return $updated && self::$database->affected_rows > 0;
+    }
+
     public static function recent_notifications($user_id, $user_role, $limit = 10) {
         $user_id   = self::$database->escape_string($user_id);
         $user_role = self::$database->escape_string($user_role);
@@ -113,8 +171,7 @@ class Notification extends DatabaseObject {
         $inspection_request_id = (int)$inspection_request_id;
 
         $sql = "UPDATE " . static::$table_name . "
-                SET action_taken = 1,
-                    is_read = 1
+                SET action_taken = 1
                 WHERE user_id = '{$user_id}'
                 AND user_role = '{$user_role}'
                 AND inspection_request_id = {$inspection_request_id}";

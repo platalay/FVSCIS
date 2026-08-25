@@ -3,18 +3,14 @@ require_once('../../private/initialize.php');
 $session->require_role(['signer']);
 
 $user_id   = $session->user_id();
-$user_role = $session->user_role ?? 'signer'; // ปรับตาม Session ของเต้ย
+$user_role = $session->role;
 
-// ดึงการแจ้งเตือนล่าสุด (เช่น 50 รายการ)
 $notifications = Notification::recent_notifications($user_id, $user_role, 50);
 
 include("../../private/shared/headerofficer.php");
 include("../../private/shared/sidebarsigner.php");
 include("../../private/shared/topbarsigner.php");
 
-/**
- * helper แปลง type → bootstrap badge
- */
 function notification_badge_class($type) {
   switch ($type) {
     case 'success': return 'badge-success';
@@ -24,22 +20,11 @@ function notification_badge_class($type) {
   }
 }
 
-/**
- * helper แปลง reference_type → URL
- */
-function notification_link($n) {
-  if (empty($n->reference_type) || empty($n->reference_id)) {
+function notification_link($n, $role) {
+  if (!$n) {
     return '#';
   }
-  switch ($n->reference_type) {
-    case 'inspection_request':
-      return 'request_show.php?id=' . urlencode($n->reference_id);
-    case 'certificate_old':
-      return 'certificate_old_show.php?id=' . urlencode($n->reference_id);
-    // เพิ่ม case ตามชนิดอื่นๆ ได้
-    default:
-      return '#';
-  }
+  return Notification::build_destination($n, $role);
 }
 
 ?>
@@ -79,10 +64,9 @@ function notification_link($n) {
           <?php foreach ($notifications as $n) : 
             $is_unread = ($n->is_read == 0);
             $badge_class = notification_badge_class($n->notification_type);
-            $link = notification_link($n);
+            $link = notification_link($n, $user_role);
           ?>
-            <div class="list-group-item d-flex justify-content-between align-items-start <?php echo $is_unread ? 'bg-light' : ''; ?>">
-              
+            <a href="<?php echo htmlspecialchars($link, ENT_QUOTES, 'UTF-8'); ?>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start <?php echo $is_unread ? 'bg-light' : ''; ?>" <?php echo ($link === '#') ? 'onclick="return false;"' : ''; ?>>
               <div class="mr-3">
                 <span class="badge <?php echo $badge_class; ?> mr-2">
                   <?php echo h($n->notification_type); ?>
@@ -103,7 +87,7 @@ function notification_link($n) {
               <?php } else { ?>
                 <span class="badge badge-secondary">อ่านแล้ว</span>
               <?php } ?>
-              </div>
+            </a>
           <?php endforeach; ?>
 
         </div>

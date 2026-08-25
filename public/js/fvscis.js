@@ -4,8 +4,8 @@ function loadNotificationCount() {
             method: 'GET',
             dataType: 'json',
             success: function(response) {
-                $('#alert-count').text(response.unread_count);
-                if (response.unread_count > 0) {
+                $('#alert-count').text(response.unread_count || 0);
+                if ((response.unread_count || 0) > 0) {
                     $('#alert-count').show();
                 } else {
                     $('#alert-count').hide();
@@ -13,6 +13,35 @@ function loadNotificationCount() {
             }
         });
     }
+
+function markNotificationRead(notificationId, targetUrl) {
+    if (!notificationId) return true;
+
+    $.ajax({
+        url: 'notifications_mark_read.php',
+        method: 'POST',
+        dataType: 'json',
+        data: { notification_id: notificationId },
+        success: function (response) {
+            if (response && response.success) {
+                if (targetUrl && targetUrl !== '#') {
+                    window.location.href = targetUrl;
+                }
+                return;
+            }
+            if (targetUrl && targetUrl !== '#') {
+                window.location.href = targetUrl;
+            }
+        },
+        error: function () {
+            if (targetUrl && targetUrl !== '#') {
+                window.location.href = targetUrl;
+            }
+        }
+    });
+
+    return false;
+}
 
 $(document).ready(function () {
     // ✅ แจ้งเตือนแบบ Ajax
@@ -35,7 +64,13 @@ $(document).ready(function () {
             method: 'GET',
             dataType: 'json',
             success: function(response) {
-                $('#alert-count').text(response.unread_count);
+                $('#alert-count').text(response.unread_count || 0);
+
+                if ((response.unread_count || 0) > 0) {
+                    $('#alert-count').show();
+                } else {
+                    $('#alert-count').hide();
+                }
 
                 if (response.notifications.length === 0) {
                     $('#alert-list').html('<div class="dropdown-item text-gray-500 small">ไม่มีการแจ้งเตือน</div>');
@@ -44,8 +79,9 @@ $(document).ready(function () {
 
                 let html = '';
                 response.notifications.forEach(n => {
+                    const link = n.link ?? '#';
                     html += `
-                    <a class="dropdown-item d-flex align-items-center" href="${n.link ?? '#'}">
+                    <a class="dropdown-item d-flex align-items-center" href="${link}" onclick="return markNotificationRead(${n.id || 0}, '${link.replace(/'/g, "\\'")}');">
                         <div class="me-3">
                             <div class="icon-circle bg-${n.type === 'action_required' ? 'warning' : 'primary'}">
                                 <i class="fas fa-${n.type === 'action_required' ? 'exclamation-triangle' : 'info-circle'} text-white"></i>

@@ -5,6 +5,52 @@
 
 ---
 
+# Notification Bell / Destination Fix
+
+แก้ไขระบบ Notification / กระดิ่งของ FVSCIS ให้ยึด source of truth ตาม model จริง และให้หน้า bell + รายการแจ้งเตือนไป link ถึงหน้าที่ถูกต้อง โดยไม่พึ่ง field ที่ไม่มีอยู่จริง
+
+## รายละเอียดการแก้ไข
+
+- **Root cause:** หน้า bell และหน้ารายการแจ้งเตือนใช้ helper ที่อ้างอิง `reference_type` / `reference_id` ขณะที่ schema จริงของ `notifications` ไม่มี field เหล่านี้ รวมทั้งบาง endpoint คืน `link => null` หรือ `#`
+- **ไฟล์ที่แก้:** [private/classes/Notification.class.php](private/classes/Notification.class.php), [public/js/fvscis.js](public/js/fvscis.js), [public/fisherman/ajax/load_notifications.php](public/fisherman/ajax/load_notifications.php), [public/inspectofficer/ajax/load_notifications.php](public/inspectofficer/ajax/load_notifications.php), [public/signer/ajax/load_notifications.php](public/signer/ajax/load_notifications.php), [public/admin/ajax/load_notifications.php](public/admin/ajax/load_notifications.php), [public/headquarter/ajax/load_notifications.php](public/headquarter/ajax/load_notifications.php), [public/fisherman/notifications.php](public/fisherman/notifications.php), [public/inspectofficer/notifications.php](public/inspectofficer/notifications.php), [public/signer/notifications.php](public/signer/notifications.php), [public/admin/notifications.php](public/admin/notifications.php), [public/headquarter/notifications.php](public/headquarter/notifications.php)
+- **การแก้ไข:** เพิ่ม `Notification::build_destination($notification, $user_role)` เพื่อ resolve ลิงก์จาก `inspection_request_id` ผ่าน `InspectionRequest::find_by_id()` แล้วใช้ `ship_code` สร้าง target page ตาม role; ปรับ AJAX loader ให้ส่ง `id`, `link`, `message`, `type`, `time` แบบสอดคล้องกัน; ปรับ dropdown bell ให้ mark notification เดี่ยวเป็นอ่านก่อนเปิด link
+- **Single-item read:** เพิ่ม `Notification::mark_single_as_read($notification_id, $user_id, $user_role)` และ role-specifc endpoint `notifications_mark_read.php` สำหรับทุก role พร้อม guard ที่จำกัดด้วย `id + user_id + user_role`
+- **Read semantics:** ปรับ `mark_action_taken()` ให้เซ็ตเฉพาะ `action_taken = 1` และไม่แตะ `is_read` เพื่อให้ action status และ read status เป็นคนละเรื่อง
+- **Cleanup:** ลบไฟล์สำเนาไม่ใช้จริง [public/headquarter/ajax/load_notifications copy.php](public/headquarter/ajax/load_notifications%20copy.php) หลังยืนยันว่าไม่มี code อ้างอิง
+
+## Static Verification
+
+- `php -l private/classes/Notification.class.php` ผ่าน
+- `php -l public/fisherman/ajax/load_notifications.php` ผ่าน
+- `php -l public/inspectofficer/ajax/load_notifications.php` ผ่าน
+- `php -l public/signer/ajax/load_notifications.php` ผ่าน
+- `php -l public/admin/ajax/load_notifications.php` ผ่าน
+- `php -l public/headquarter/ajax/load_notifications.php` ผ่าน
+- `php -l public/fisherman/notifications.php` ผ่าน
+- `php -l public/inspectofficer/notifications.php` ผ่าน
+- `php -l public/signer/notifications.php` ผ่าน
+- `php -l public/admin/notifications.php` ผ่าน
+- `php -l public/headquarter/notifications.php` ผ่าน
+- `php -l public/fisherman/notifications_mark_read.php` ผ่าน
+- `php -l public/inspectofficer/notifications_mark_read.php` ผ่าน
+- `php -l public/signer/notifications_mark_read.php` ผ่าน
+- `php -l public/admin/notifications_mark_read.php` ผ่าน
+- `php -l public/headquarter/notifications_mark_read.php` ผ่าน
+- `php -l public/js/fvscis.js` ผ่าน
+- ไม่มี automated test หรือ runtime check ตามข้อกำหนด; ให้เจ้าของระบบทดสอบจริงใน browser ต่อไป
+
+## Notification Runtime Test Result
+
+- ทดสอบจริงด้วย session `inspectofficer` บน XAMPP: loader ตอบ HTTP 200 JSON, badge แสดง 13, dropdown แสดง 10 รายการ และ polling ทำงานห่างประมาณ 60 วินาที
+- Single read notification id `46` ผ่าน: unread ลด 13 เหลือ 12, `is_read=1`, `action_taken` คงเดิมที่ 0; อ่านซ้ำ/wrong user/wrong role ตอบ failure และไม่ update
+- Dropdown และหน้า `notifications.php` ใช้ destination เดียวกัน (`incoming_requests.php` ในรายการที่ทดสอบ)
+- Mark-all ตรวจแบบ rollback-only transaction: เปลี่ยนเฉพาะ `is_read`, ไม่เปลี่ยน `action_taken`; ยังไม่ได้ mark-all จริงเพื่อรักษาข้อมูลระบบ
+- Route เดิมที่เคยรายงาน 404 เกิดจาก unauthenticated request ถูก redirect ไป `inspectofficer/login.php` ที่ไม่มีอยู่; authenticated browser session เรียก loader ได้จริง
+- **ยังทดสอบไม่ได้:** end-to-end ของ fisherman/signer/admin/headquarter, workflow สร้าง notification จริง, duplicate workflow และ regression ครบทุก role เนื่องจากไม่มี credential/test data ที่ปลอดภัยสำหรับสร้างข้อมูลจริง
+- **Data finding:** notification หลายรายการชี้ไป `inspection_request_id` ที่ไม่พบใน `inspection_requests`; destination จึงเป็น fallback generic และยังยืนยัน ship code ไม่ได้
+
+---
+
 # Certificate Attachment Document Type Fix
 
 แก้ bug ที่การเพิ่มหรือลบไฟล์ใน Modal Add และ Modal Edit ทำให้ประเภทเอกสารของไฟล์เดิมกลับเป็น `ทะเบียนเรือ`

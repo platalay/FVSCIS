@@ -16,11 +16,13 @@ $unread = Notification::unread_count($user_id, $user_role);
 
 $data = [];
 foreach ($notifications as $n) {
+  $created_at = !empty($n->created_at) ? strtotime($n->created_at) : time();
   $data[] = [
+    'id'      => (int)$n->id,
     'message' => htmlspecialchars($n->message),
-    'type' => $n->notification_type,
-    'time' => date("d/m/Y H:i", strtotime($n->created_at)),
-    'link' => null // คุณจะเพิ่ม link ภายหลังได้
+    'type'    => $n->notification_type,
+    'time'    => date("d/m/Y H:i", $created_at),
+    'link'    => Notification::build_destination($n, $user_role)
   ];
 }
 
