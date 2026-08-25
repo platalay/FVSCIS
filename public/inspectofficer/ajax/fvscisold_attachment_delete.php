@@ -16,6 +16,12 @@ try {
     $att = FvCertificateAttachment::find_by_id($attach_id);
     if(!$att) throw new Exception('attachment not found');
 
+    // Backend Guard: ลบไฟล์แนบได้เฉพาะของ record ที่เป็น working record จริง (status=active และยังไม่หมดอายุ) เท่านั้น
+    $cert = FvSanitationCertificationOld::find_by_id((int)$att->certificate_id);
+    if (!$cert || !FvSanitationCertificationOld::is_active_working($cert->status, $cert->expiration_date)) {
+        throw new Exception('รายการนี้ไม่ใช่ใบรับรองที่ใช้งานอยู่ในปัจจุบัน และไม่สามารถแก้ไขหรือลบได้');
+    }
+
     // ลบไฟล์จริง (กรณีเก็บใน /public/uploads)
     $docRoot = rtrim(str_replace('\\','/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
     $pubPath = rtrim(str_replace('\\','/', defined('PUBLIC_PATH') ? PUBLIC_PATH : $docRoot), '/');

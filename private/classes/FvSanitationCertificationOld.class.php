@@ -104,7 +104,82 @@ class FvSanitationCertificationOld extends DatabaseObject
         $sql .= "ORDER BY id DESC";
         return static::find_by_sql($sql);
     }
-    
+
+    // ===================================================================
+    // Main List แสดงทุก record ในขอบเขต evaluation_agency / responsible_unit เดิม (business scope ไม่เปลี่ยน)
+    // กรองด้วย $filter (status_filter) — default = 'all' ไม่ซ่อนข้อมูลใด ๆ โดยไม่ตั้งใจ
+    //   all      = ไม่กรองสถานะ/วันที่เพิ่มเติมเลย (ทุก record ใน scope)
+    //   active   = status='active' AND expiration_date >= วันนี้ (= "ใช้งานจริง")
+    //   expired  = status='active' AND expiration_date < วันนี้ (= "หมดอายุ")
+    //   inactive = status='inactive' (= "ไม่ใช้งาน")
+    //   fail     = status='fail' (= "ไม่ผ่าน")
+    //   pending  = status='pending' (= "อยู่ระหว่างการตรวจ e-FVSCIS")
+    // ===================================================================
+
+    protected static function status_filter_sql_condition(string $filter): string
+    {
+        $today = date('Y-m-d');
+        switch ($filter) {
+            case 'active':
+                return " AND status = 'active' AND expiration_date IS NOT NULL AND expiration_date >= '{$today}' ";
+            case 'expired':
+                return " AND status = 'active' AND expiration_date IS NOT NULL AND expiration_date < '{$today}' ";
+            case 'inactive':
+                return " AND status = 'inactive' ";
+            case 'fail':
+                return " AND status = 'fail' ";
+            case 'pending':
+                return " AND status = 'pending' ";
+            case 'all':
+            default:
+                return "";
+        }
+    }
+
+    // Working Record จริง (มีสิทธิ Edit/Delete/แก้ไข attachment) = active และยังไม่หมดอายุเท่านั้น
+    // ใช้ทั้งฝั่งแสดงผล (คำนวณปุ่ม) และฝั่ง backend guard (update/delete/attachment) เพื่อให้ผลตรงกันเสมอ
+    public static function is_active_working(?string $status, $expiration_date): bool
+    {
+        if ($status !== 'active') return false;
+        if (empty($expiration_date) || $expiration_date === '0000-00-00') return false;
+        return $expiration_date >= date('Y-m-d');
+    }
+
+    // Effective status (คำนวณจาก status + expiration_date ร่วมกัน) สำหรับแสดงผลเป็น badge เดียวที่ไม่ขัดกันเอง
+    // คืนค่าเป็นหนึ่งใน: active, expired, inactive, fail, pending, unknown
+    public static function effective_status_code(?string $status, $expiration_date): string
+    {
+        if ($status === 'active') {
+            return static::is_active_working($status, $expiration_date) ? 'active' : 'expired';
+        }
+        if (in_array($status, ['inactive', 'fail', 'pending'], true)) {
+            return $status;
+        }
+        return 'unknown';
+    }
+
+    public static function find_by_status_filter_and_evaluation_agency($evaluation_agency, string $filter = 'all')
+    {
+        $agency = self::$database->escape_string($evaluation_agency);
+
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE evaluation_agency = '{$agency}' ";
+        $sql .= static::status_filter_sql_condition($filter);
+        $sql .= "ORDER BY id DESC";
+        return static::find_by_sql($sql);
+    }
+
+    public static function find_by_status_filter_and_responsible_unit($responsible_unit, string $filter = 'all')
+    {
+        $unit = self::$database->escape_string($responsible_unit);
+
+        $sql  = "SELECT * FROM " . static::$table_name . " ";
+        $sql .= "WHERE responsible_unit = '{$unit}' ";
+        $sql .= static::status_filter_sql_condition($filter);
+        $sql .= "ORDER BY id DESC";
+        return static::find_by_sql($sql);
+    }
+
     public static function link_to_fisherman_by_citizen(Fisherman $fisherman) {
 
         if (empty($fisherman->citizen_id)) {
@@ -369,6 +444,86 @@ class FvSanitationCertificationOld extends DatabaseObject
                 // 3) มีใบที่ยังไม่หมดอายุ → ใบนั้น active (อัปเดตแค่ record นั้น)
                 $active_id = (int)$row['id'];
                 return static::update_status_by_id($active_id, 'active');
+            }
+
+            // ===================================================================
+            // Rule B helpers: ใบเดิม active + ยังไม่หมดอายุ + ผลตรวจรอบใหม่ failed
+            // ต้องคง active ไว้ (ห้าม inactive) และ append remark แทนการเขียนทับ
+            // ===================================================================
+
+            // หา "ใบล่าสุดที่ status=active และยังไม่หมดอายุ" ของเรือลำนี้ (ถ้ามี)
+            public static function find_active_unexpired_by_ship_code(string $ship_code): ?self
+            {
+                $ship_code = self::$database->escape_string($ship_code);
+                $today     = date('Y-m-d');
+
+                $sql  = "SELECT * FROM " . static::$table_name . " ";
+                $sql .= "WHERE ship_code = '{$ship_code}' ";
+                $sql .= "  AND status = 'active' ";
+                $sql .= "  AND expiration_date IS NOT NULL ";
+                $sql .= "  AND expiration_date >= '{$today}' ";
+                $sql .= "ORDER BY expiration_date DESC, id DESC ";
+                $sql .= "LIMIT 1";
+
+                $result_array = static::find_by_sql($sql);
+                return !empty($result_array) ? array_shift($result_array) : null;
+            }
+
+            // คืนทุกแถวของเรือลำนี้ที่ status=active และยังไม่หมดอายุ (ใช้ตรวจว่ามีมากกว่า 1 ใบพร้อมกันหรือไม่)
+            public static function find_all_active_unexpired_by_ship_code(string $ship_code): array
+            {
+                $ship_code = self::$database->escape_string($ship_code);
+                $today     = date('Y-m-d');
+
+                $sql  = "SELECT * FROM " . static::$table_name . " ";
+                $sql .= "WHERE ship_code = '{$ship_code}' ";
+                $sql .= "  AND status = 'active' ";
+                $sql .= "  AND expiration_date IS NOT NULL ";
+                $sql .= "  AND expiration_date >= '{$today}' ";
+                $sql .= "ORDER BY id DESC";
+
+                return static::find_by_sql($sql);
+            }
+
+            // ต่อท้าย remark เดิม (ห้ามเขียนทับ) ด้วยข้อความใหม่ แยกด้วยขึ้นบรรทัดใหม่
+            public static function append_remark(int $id, string $new_text): int|false
+            {
+                $id = self::$database->escape_string((string)$id);
+
+                $sql = "SELECT remark FROM " . static::$table_name . " WHERE id = '{$id}' LIMIT 1";
+                $result = self::$database->query($sql);
+                if (!$result) return false;
+                $row = $result->fetch_assoc();
+                if (!$row) return false;
+
+                $existing = trim((string)($row['remark'] ?? ''));
+                $combined = ($existing === '') ? $new_text : ($existing . "\n" . $new_text);
+                $combined_esc = self::$database->escape_string($combined);
+
+                $sql = "UPDATE " . static::$table_name . " SET remark = '{$combined_esc}' WHERE id = '{$id}'";
+                $ok = self::$database->query($sql);
+                if (!$ok) return false;
+
+                return (int) self::$database->affected_rows;
+            }
+
+            // เมื่อออกใบรับรองใหม่สำเร็จ (passed/conditional) ให้ปิดใบ active เดิมของเรือลำนี้ (ยกเว้นใบใหม่)
+            // ไม่แตะแถวที่ status เป็น fail/pending/inactive อยู่แล้ว
+            public static function deactivate_other_active(string $ship_code, int $exclude_id): int|false
+            {
+                $ship_code  = self::$database->escape_string($ship_code);
+                $exclude_id = self::$database->escape_string((string)$exclude_id);
+
+                $sql = "UPDATE " . static::$table_name . " "
+                     . "SET status = 'inactive' "
+                     . "WHERE ship_code = '{$ship_code}' "
+                     . "  AND status = 'active' "
+                     . "  AND id <> '{$exclude_id}'";
+
+                $ok = self::$database->query($sql);
+                if (!$ok) return false;
+
+                return (int) self::$database->affected_rows;
             }
 
             // ===================================================================

@@ -37,8 +37,16 @@ try {
         exit;
     }
 
-    // เก็บผลประเมินก่อนเปลี่ยนเป็น COMPLETED
+    // เก็บผลประเมินเดิม (passed/conditional) ไว้ใช้ตลอด logic นี้ ก่อนที่ status จะถูกปิดเป็น completed
     $evaluation_status = $request->status;
+
+    // ===== กัน approve ซ้ำ (ตรวจเบื้องต้นนอก transaction ก่อน — จะถูกตรวจซ้ำแบบ lock อีกครั้งด้านล่าง) =====
+    if ((int)($request->is_complete ?? 0) === 1
+        || $request->status === InspectionRequest::STATUS_COMPLETED
+        || !empty($request->approved_at)) {
+        echo json_encode(['success' => false, 'message' => 'คำขอนี้ได้รับการอนุมัติไปแล้ว']);
+        exit;
+    }
 
     // ===== กันพลาด: approve ได้เฉพาะ PASSED / CONDITIONAL =====
     if (!in_array($evaluation_status, [InspectionRequest::STATUS_PASSED, InspectionRequest::STATUS_CONDITIONAL], true)) {
@@ -91,12 +99,6 @@ try {
         exit;
     }
 
-    // ===== สร้างเลขเอกสารโดยอิง effective_date =====
-    list($doc_code, $running_no, $doc_year) = DocumentCounter::next_code_by_effective(
-        $request->department_group_id,
-        $effective_date
-    );
-
     $departmentgroup = DepartmentGroup::find_by_id($request->department_group_id);
     if (!$departmentgroup) {
         echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูลหน่วยงานผู้ลงนาม']);
@@ -106,9 +108,30 @@ try {
     // ===== Transaction start =====
     $database->begin_transaction();
 
+    // ===== ล็อกแถว request กัน race condition (เปิดสองแท็บ/กดซ้ำพร้อมกัน) แล้วตรวจซ้ำว่ายังไม่ถูกอนุมัติ =====
+    $request_id_esc = $database->escape_string((string)$request->id);
+    $lock_sql = "SELECT is_complete, status, approved_at FROM inspection_requests WHERE id = '{$request_id_esc}' FOR UPDATE";
+    $lock_result = $database->query($lock_sql);
+    $lock_row = $lock_result ? $lock_result->fetch_assoc() : null;
+
+    if (!$lock_row
+        || (int)($lock_row['is_complete'] ?? 0) === 1
+        || $lock_row['status'] === InspectionRequest::STATUS_COMPLETED
+        || !empty($lock_row['approved_at'])) {
+        $database->rollback();
+        echo json_encode(['success' => false, 'message' => 'คำขอนี้ได้รับการอนุมัติไปแล้ว']);
+        exit;
+    }
+
+    // ===== สร้างเลขเอกสารโดยอิง effective_date (ต้องอยู่หลัง guard กันอนุมัติซ้ำเสมอ) =====
+    list($doc_code, $running_no, $doc_year) = DocumentCounter::next_code_by_effective(
+        $request->department_group_id,
+        $effective_date
+    );
+
     $now = date('Y-m-d H:i:s');
 
-    // 1) update request
+    // 1) update request — ปิดคำขอให้จบ workflow เมื่ออนุมัติสำเร็จ
     $request->approved_by      = $user_id;
     $request->approved_at      = $now;
     $request->approved_ip      = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
@@ -116,8 +139,8 @@ try {
     $request->temporary_reason = $temporary_reason;
     $request->approval_note    = $approval_note;
     $request->expire_at        = $expire_at;
-    $request->result = $request->status;
-    $request->is_complete = 1;
+    $request->is_complete      = 1;
+    $request->status           = InspectionRequest::STATUS_COMPLETED;
 
     if (!$request->save()) {
         $database->rollback();
@@ -164,8 +187,8 @@ try {
     $old->effective_date       = $request->effective_date;
     $old->expiration_date      = $request->expire_at;
     $signature_date = thai_date($request->effective_date);
-    // เก็บสถานะคำขอปัจจุบัน (COMPLETED)
-    $old->vessel_status        = $request->status;
+    // เก็บผลตรวจเดิม (passed/conditional) เป็น snapshot — ห้ามเก็บ 'completed' แทนผลตรวจ
+    $old->vessel_status        = $evaluation_status;
 
     $old->evaluation_agency    = $request->department_id;
     $old->signing_unit         = $request->department_group_id;
@@ -182,6 +205,9 @@ try {
         echo json_encode(['success' => false, 'message' => 'บันทึกข้อมูลใบรับรอง (old) ไม่สำเร็จ']);
         exit;
     }
+
+    // 3) ใบใหม่ออกสำเร็จแล้ว → ปิดใบ active เดิมของเรือลำนี้เป็น inactive (คงแถวเดิมไว้เป็น history)
+    FvSanitationCertificationOld::deactivate_other_active($request->ship_code, (int)$old->id);
 
     // 4) LOG + Notification (ยังอยู่ใน Transaction) ผ่าน กัน ผ่านแบบมีเงือนไข
     if($evaluation_status == InspectionRequest::STATUS_PASSED || $evaluation_status == InspectionRequest::STATUS_CONDITIONAL){ 

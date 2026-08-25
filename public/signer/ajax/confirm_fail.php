@@ -42,6 +42,9 @@ try {
         exit;
     }
 
+    // เก็บผลตรวจเดิม (failed) ไว้ก่อนที่ status จะถูกเปลี่ยนเป็น completed ด้านล่าง
+    $evaluation_status = $request->status;
+
     $departmentgroup = DepartmentGroup::find_by_id($request->department_group_id);
     if (!$departmentgroup) {
         echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูลหน่วยงานผู้ลงนาม']);
@@ -111,8 +114,8 @@ try {
     $old->effective_date       = $request->effective_date;
     $old->expiration_date      = null;
 
-    // สถานะคำขอปัจจุบัน (failed)
-    $old->vessel_status        = $request->status;
+    // สถานะคำขอปัจจุบัน (เก็บผลตรวจเดิม 'failed' — ห้ามเก็บ 'completed' แทนผลตรวจ)
+    $old->vessel_status        = $evaluation_status;
 
     $old->evaluation_agency    = $request->department_id;
     $old->signing_unit         = $request->department_group_id;
@@ -132,6 +135,16 @@ try {
         $database->rollback();
         echo json_encode(['success' => false, 'message' => 'บันทึกข้อมูลผลไม่ผ่านในตารางประวัติใบรับรองไม่สำเร็จ']);
         exit;
+    }
+
+    // Rule B: ถ้ามีใบเดิม status=active และยังไม่หมดอายุ ผลตรวจรอบใหม่ failed จะไม่ถือเป็นการเพิกถอนโดยอัตโนมัติ
+    // → คงใบเดิมเป็น active ต่อไป (ห้ามเปลี่ยนเป็น inactive) เพียง append remark เตือนว่าอยู่ระหว่างแก้ไข
+    $existing_active = FvSanitationCertificationOld::find_active_unexpired_by_ship_code($request->ship_code);
+    if ($existing_active && (int)$existing_active->id !== (int)$old->id) {
+        FvSanitationCertificationOld::append_remark(
+            (int)$existing_active->id,
+            'ผลการตรวจครั้งล่าสุดไม่ผ่าน อยู่ระหว่างดำเนินการแก้ไข'
+        );
     }
 
     // 3) เคลียร์ pending เก่าของเรือลำนี้ (กันค้าง/กันนับทั้งตารางเพี้ยน)

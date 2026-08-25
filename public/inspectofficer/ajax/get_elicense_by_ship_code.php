@@ -9,7 +9,7 @@ $session->require_role(['inspectofficer']);
 // สมมติว่ามีตัวแปร $el_db (PDO ไปยัง Postgres/ELicense) ถูกเตรียมใน initialize.php แล้ว
 try {
     $ship_code = trim($_POST['ship_code'] ?? '');
-    $fishery_year = trim($_POST['fishery_year'] ?? '2567'); // จะส่งมาหรือใช้ค่าเริ่มต้น
+    $fishery_year = trim($_POST['fishery_year'] ?? '2569'); // จะส่งมาหรือใช้ค่าเริ่มต้น
 
     if ($ship_code === '') {
         throw new Exception('กรุณาระบุ ship_code');

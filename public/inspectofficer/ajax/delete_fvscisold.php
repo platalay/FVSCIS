@@ -27,6 +27,12 @@ try {
         throw new Exception('ไม่พบข้อมูล');
     }
 
+    // Backend Guard: ลบได้เฉพาะ record ที่เป็น working record จริง (status=active และยังไม่หมดอายุ) เท่านั้น
+    // record ที่เป็นประวัติ (active-แต่หมดอายุ/inactive/fail/pending) ห้ามลบ
+    if (!FvSanitationCertificationOld::is_active_working($obj->status, $obj->expiration_date)) {
+        throw new Exception('รายการนี้ไม่ใช่ใบรับรองที่ใช้งานอยู่ในปัจจุบัน และไม่สามารถแก้ไขหรือลบได้');
+    }
+
     // เริ่ม Transaction
     $db->begin_transaction();
 

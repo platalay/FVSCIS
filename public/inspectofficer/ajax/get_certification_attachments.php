@@ -10,11 +10,8 @@ if (!$certification_id) { echo json_encode(['success'=>false,'message'=>'missing
 
 $atts = FvCertificateAttachment::find_by_certificate_id($certification_id);
 
-// ===== คำนวณ BASE จาก PUBLIC_PATH -> '/fvscis' =====
-$docRoot = rtrim(str_replace('\\','/', $_SERVER['DOCUMENT_ROOT']), '/');
+// ===== physical path base (ใช้เฉพาะตรวจว่าไฟล์มีอยู่จริงบน disk เท่านั้น ไม่ใช้สร้าง URL) =====
 $pubPath = rtrim(str_replace('\\','/', PUBLIC_PATH), '/');
-$appBase = str_replace($docRoot, '', $pubPath);
-$appBase = ($appBase === '' ? '' : '/' . ltrim($appBase, '/'));
 
 // ทำให้เป็น '/uploads/...' เสมอ ต่อให้ DB เก็บ '/inspectofficer/ajax/uploads/...'
 function normalize_rel_upload($p) {
@@ -54,7 +51,8 @@ function is_img($name, $type) {
 $out = [];
 foreach ($atts as $a) {
   $rel = normalize_rel_upload($a->file_path ?? '');
-  $url = $rel ? $appBase . $rel : '';
+  // Public URL: ใช้ helper กลาง (WWW_ROOT ตาม request จริง) แทนการ diff DOCUMENT_ROOT/PUBLIC_PATH เอง
+  $url = FvCertificateAttachment::public_url($a->file_path ?? '');
   //error_log('a vars = ' . print_r(get_object_vars($a), true));
   $out[] = [
     'id'        => (int)$a->id,
@@ -65,7 +63,7 @@ foreach ($atts as $a) {
     'url'       => $url,                    // มาตรฐาน
     'url_enc'   => encode_path($url),       // เผื่อ JS อยากใช้ที่ encode แล้ว
     'is_image'  => is_img($a->file_name, $a->file_type),
-    'exists'    => $rel ? file_exists($pubPath . $rel) : false, // บอกสถานะไฟล์จริง
+    'exists'    => $rel ? file_exists($pubPath . $rel) : false, // บอกสถานะไฟล์จริง (physical path)
   ];
 }
 echo json_encode(['success'=>true,'attachments'=>$out], JSON_UNESCAPED_UNICODE);

@@ -93,6 +93,29 @@ class FvCertificateAttachment extends DatabaseObject {
         return $this->delete();
     }
 
+    // ตัด path ให้เหลือแค่ '/uploads/...' เสมอ (physical/relative path เท่านั้น ไม่ใช่ URL)
+    protected static function normalize_rel_path(string $file_path): string
+    {
+        if ($file_path === '') return '';
+        $p = str_replace('\\', '/', $file_path);
+        $pos = strpos($p, '/uploads/');
+        if ($pos !== false) {
+            $p = substr($p, $pos);
+        } else {
+            $p = '/' . ltrim($p, '/');
+        }
+        return $p;
+    }
+
+    // Canonical public URL ของไฟล์แนบ Paper Certification (ใช้ WWW_ROOT ที่คำนวณจาก SCRIPT_NAME จริงของ request
+    // ใน private/initialize.php + url_for() ที่มีอยู่แล้วใน private/functions.php แทนการ diff DOCUMENT_ROOT/PUBLIC_PATH เอง
+    // เพื่อไม่ให้ '/public' หลุดเข้า URL และไม่ hardcode host/BASE_URL)
+    public static function public_url(string $file_path): string
+    {
+        $rel = static::normalize_rel_path($file_path);
+        return $rel !== '' ? url_for($rel) : '';
+    }
+
     public static function delete_by_certificate_id($certificate_id) {
         $cid = self::$database->escape_string($certificate_id);
         $sql = "DELETE FROM " . static::$table_name . " WHERE certificate_id = '{$cid}'";

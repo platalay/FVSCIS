@@ -171,6 +171,10 @@ $isPass    = ($req->status === 'passed');
 $isFailed = ($req->status === 'failed');
 $isCondition = ($req->status === 'conditional');
 $isComplete = ($req->is_complete == 1);
+// หลังอนุมัติ/ยืนยันไม่ผ่าน status จะถูกปิดเป็น 'completed' เสมอ 2 เส้นทางนี้
+// เลยต้องใช้ is_complete แยกเคส: is_complete=1 เซ็ตโดย approve_request.php เท่านั้น (ผ่าน/มีเงื่อนไข) ส่วน confirm_fail.php ไม่เคย set
+$isCompletedFailed   = ($req->status === InspectionRequest::STATUS_COMPLETED && !$isComplete);
+$isCompletedApproved = ($req->status === InspectionRequest::STATUS_COMPLETED && $isComplete);
 ?>
 
 <?php if (!$isConfirmed && $isPending): ?>
@@ -224,7 +228,7 @@ $isComplete = ($req->is_complete == 1);
         <i class="fas fa-file-alt"></i>
     </a>    
 <?php endif; ?>
-<?php if($isConfirmed && $isComplete && $isFailed): ?>
+<?php if($isConfirmed && $isCompletedFailed): ?>
 
     <!-- ตรวจเสร็จแล้ว (ผ่าน/ไม่ผ่าน) → เปิด PDF -->
     <a
@@ -234,7 +238,7 @@ $isComplete = ($req->is_complete == 1);
         title="หนังสือ สร.3">
         <i class="fas fa-file-alt"></i>
     </a>
-<?php elseif($isConfirmed && $isComplete && $isPass || $isConfirmed && $isComplete && $isCondition ): ?>
+<?php elseif($isConfirmed && $isCompletedApproved): ?>
 
     <!-- ตรวจเสร็จแล้ว (ผ่าน/ไม่ผ่าน) → เปิด PDF -->
     <a

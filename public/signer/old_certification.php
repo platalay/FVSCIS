@@ -184,6 +184,10 @@ include("../../private/shared/topbarsigner.php");
           <div id="oldCertContent" style="display:none;">
             <!-- (ของเดิมคุณได้ดีอยู่แล้ว ไม่แตะ) -->
             ...
+            <div class="col-12 mt-2">
+              <label class="form-label text-muted">หมายเหตุ</label>
+              <div id="oc_remark">-</div>
+            </div>
           </div>
         </div>
 

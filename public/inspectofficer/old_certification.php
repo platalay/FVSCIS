@@ -72,6 +72,23 @@ include("../../private/shared/topbarofficer.php"); ?>
 
     </div><!--card header-->
     <div class="card-body">
+      <!-- ตัวกรองสถานะ (แทน History Modal) -->
+      <form method="get" class="row g-2 align-items-center mb-3">
+        <div class="col-auto">
+          <label class="col-form-label" for="status_filter">สถานะ</label>
+        </div>
+        <div class="col-auto">
+          <?php $status_filter = $_GET['status_filter'] ?? 'all'; ?>
+          <select name="status_filter" id="status_filter" class="form-select" onchange="this.form.submit()">
+            <option value="all" <?= $status_filter === 'all' ? 'selected' : '' ?>>ทั้งหมด</option>
+            <option value="active" <?= $status_filter === 'active' ? 'selected' : '' ?>>ใช้งานจริง</option>
+            <option value="expired" <?= $status_filter === 'expired' ? 'selected' : '' ?>>หมดอายุ</option>
+            <option value="inactive" <?= $status_filter === 'inactive' ? 'selected' : '' ?>>ไม่ใช้งาน</option>
+            <option value="fail" <?= $status_filter === 'fail' ? 'selected' : '' ?>>ไม่ผ่าน</option>
+            <option value="pending" <?= $status_filter === 'pending' ? 'selected' : '' ?>>อยู่ระหว่างการตรวจ e-FVSCIS</option>
+          </select>
+        </div>
+      </form>
       <div class="table-responsive">
         <table
           class="table table-bordered"
@@ -94,8 +111,9 @@ include("../../private/shared/topbarofficer.php"); ?>
           </thead>
           <tbody>
           <?php
+          // ข้อมูลอนุมัติ (evaluation_agency scope) กรองด้วยตัวกรองสถานะเดียว (default = ใช้งานจริง)
           $FvSanitationCertificationOlds =
-          FvSanitationCertificationOld::find_all_by_evaluation_agency($Officer->departments_id);
+          FvSanitationCertificationOld::find_by_status_filter_and_evaluation_agency($Officer->departments_id, $status_filter);
 
           if (empty($FvSanitationCertificationOlds)) : ?>
               <tr>
@@ -107,9 +125,13 @@ include("../../private/shared/topbarofficer.php"); ?>
           else:
               foreach ($FvSanitationCertificationOlds as $req):
 
-                  // 🎨 map row class ตามสถานะ
+                  // เป็น working record จริงหรือไม่ (active และยังไม่หมดอายุ) — คุม Edit/Delete (ใช้ helper เดียวกับ backend guard)
+                  $isActiveWorking = FvSanitationCertificationOld::is_active_working($req->status, $req->expiration_date);
+                  $effectiveStatus  = FvSanitationCertificationOld::effective_status_code($req->status, $req->expiration_date);
+
+                  // 🎨 map row class ตาม effective status
                   $rowClass = '';
-                  switch ($req->status) {
+                  switch ($effectiveStatus) {
                       case 'inactive':
                           $rowClass = 'tr-not-scheduled';
                           break;
@@ -119,8 +141,8 @@ include("../../private/shared/topbarofficer.php"); ?>
                       case 'fail':
                           $rowClass = 'tr-cancelled';
                           break;
-                      case 'pass':
-                          $rowClass = 'tr-pending-confirmed';
+                      case 'expired':
+                          $rowClass = 'tr-not-scheduled';
                           break;
                       case 'active':
                           $rowClass = 'tr-completed';
@@ -140,6 +162,7 @@ include("../../private/shared/topbarofficer.php"); ?>
                           >
                               <i class="fas fa-search"></i>
                       </button>
+                      <?php if ($isActiveWorking): ?>
                       <button
                           type="button"
                           data-bs-toggle="tooltip"
@@ -161,6 +184,7 @@ include("../../private/shared/topbarofficer.php"); ?>
                       >
                           <i class="fas fa-trash"></i>
                       </button>
+                      <?php endif; ?>
 
                       <?php
                       $attCount = FvCertificateAttachment::count_by_certificate_id($req->id);
@@ -170,7 +194,7 @@ include("../../private/shared/topbarofficer.php"); ?>
                               class="btn btn-sm btn-warning btn-attachments me-1 mb-1"
                               data-bs-toggle="tooltip"
                               data-bs-placement="right"
-                              title="ไฟล์แนบ (<?= $attCount ?>)"
+                              title="ไฟล์แนบ (<?= $attCount ?>)<?= $isActiveWorking ? '' : ' — ดูอย่างเดียว' ?>"
                               data-id="<?= $req->id ?>"
                           >
                               <i class="fas fa-paperclip"></i>
@@ -186,26 +210,22 @@ include("../../private/shared/topbarofficer.php"); ?>
                   <td><?= thai_date($req->expiration_date) ?></td>
                   
 
-                  <!-- 🎯 Badge ตามระบบใหม่ -->
+                  <!-- 🎯 Badge ตาม effective status (status + expiration_date ร่วมกัน ไม่แสดงข้อความขัดกัน) -->
                   <td>
-                      <?php if ($req->status === 'active'): ?>
+                      <?php switch ($effectiveStatus):
+                          case 'active': ?>
                           <span class="badge bg-success">ใช้งานจริง</span>
-
-                      <?php elseif ($req->status === 'pending'): ?>
-                          <span class="badge bg-primary">กำลังตรวจ</span>
-
-                      <?php elseif ($req->status === 'fail'): ?>
+                      <?php break; case 'expired': ?>
+                          <span class="badge bg-warning text-dark">หมดอายุ</span>
+                      <?php break; case 'inactive': ?>
+                          <span class="badge bg-secondary">ไม่ใช้งาน</span>
+                      <?php break; case 'fail': ?>
                           <span class="badge bg-danger">ไม่ผ่าน</span>
-
-                      <?php elseif ($req->status === 'pass'): ?>
-                          <span class="badge bg-info text-dark">ผ่านแล้ว</span>
-
-                      <?php elseif ($req->status === 'inactive'): ?>
-                          <span class="badge bg-secondary">ไม่ยื่น / หมดอายุ</span>
-
-                      <?php else: ?>
+                      <?php break; case 'pending': ?>
+                          <span class="badge bg-primary">อยู่ระหว่างการตรวจ e-FVSCIS</span>
+                      <?php break; default: ?>
                           <span class="badge bg-light text-dark">-</span>
-                      <?php endif; ?>
+                      <?php endswitch; ?>
                   </td>
 
               </tr>
@@ -672,6 +692,7 @@ function openOldCertificationModalById(id) {
 
   function renderSelectedPreviewAdd(input, wrap) {
     const selected = input._selectedFiles || [];
+    const selectedTypes = input._selectedTypes || [];
     wrap.innerHTML = '';
 
     selected.forEach((file, idx) => {
@@ -715,8 +736,16 @@ function openOldCertificationModalById(id) {
         </div>
       `;
 
+      const select = col.querySelector('select[name="attachment_type[]"]');
+      select.value = selectedTypes[idx] || 'ทะเบียนเรือ';
       wrap.appendChild(col);
     });
+  }
+
+  function captureAttachmentTypesAdd(input, wrap) {
+    input._selectedTypes = Array.from(
+      wrap.querySelectorAll('select[name="attachment_type[]"]')
+    ).map((select) => select.value || 'ทะเบียนเรือ');
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -726,15 +755,19 @@ function openOldCertificationModalById(id) {
 
     input.addEventListener('change', function () {
       let selected = this._selectedFiles || [];
+      captureAttachmentTypesAdd(this, wrap);
+      const selectedTypes = this._selectedTypes || [];
       const newFiles = Array.from(this.files || []);
 
       newFiles.forEach((f) => {
         if (!selected.some((x) => x.name === f.name && x.size === f.size)) {
           selected.push(f);
+          selectedTypes.push('ทะเบียนเรือ');
         }
       });
 
       this._selectedFiles = selected;
+      this._selectedTypes = selectedTypes;
       syncInputFilesAdd(this);
       renderSelectedPreviewAdd(this, wrap);
     });
@@ -748,18 +781,30 @@ function openOldCertificationModalById(id) {
 
       const idx = Number(box.dataset.idx);
       let selected = input._selectedFiles || [];
+      captureAttachmentTypesAdd(input, wrap);
+      const selectedTypes = input._selectedTypes || [];
 
       if (idx >= 0 && idx < selected.length) {
         selected.splice(idx, 1);
+        selectedTypes.splice(idx, 1);
         input._selectedFiles = selected;
+        input._selectedTypes = selectedTypes;
         syncInputFilesAdd(input);
         renderSelectedPreviewAdd(input, wrap);
       }
     });
 
+    wrap.addEventListener('change', function (e) {
+      const select = e.target.closest('select[name="attachment_type[]"]');
+      if (!select) return;
+      const box = select.closest('[data-idx]');
+      if (box) input._selectedTypes[Number(box.dataset.idx)] = select.value;
+    });
+
     $('#modalFvscisOldAdd').on('hidden.bs.modal', function () {
       input.value = '';
       input._selectedFiles = [];
+      input._selectedTypes = [];
       wrap.innerHTML = '';
     });
   });
@@ -776,58 +821,107 @@ $(document)
 
     const $form = $(this);
     const $btn = $form.find('button[type=submit]').prop('disabled', true);
-    const fd = new FormData();
 
-    $form.serializeArray().forEach((p) => fd.append(p.name, p.value));
+    function buildFormData(confirmReplace) {
+      const fd = new FormData();
+      $form.serializeArray().forEach((p) => fd.append(p.name, p.value));
 
-    const input = document.getElementById('certAttachments');
-    if (input?.files?.length) {
-      const types = $('select[name="attachment_type[]"]')
-        .map(function () {
-          return $(this).val() || '';
-        })
-        .get();
+      const input = document.getElementById('certAttachments');
+      if (input?.files?.length) {
+        const types = $(input).closest('#form-fvscisold-add').find('select[name="attachment_type[]"]')
+          .map(function () {
+            return $(this).val() || '';
+          })
+          .get();
 
-      Array.from(input.files).forEach((f, idx) => {
-        fd.append('attachments[]', f, f.name);
-        fd.append('attachment_type[]', types[idx] || '');
-      });
+        Array.from(input.files).forEach((f, idx) => {
+          fd.append('attachments[]', f, f.name);
+          fd.append('attachment_type[]', types[idx] || '');
+        });
+      }
+
+      if (confirmReplace) fd.append('confirm_replace_active', '1');
+      return fd;
     }
 
-    $.ajax({
-      url: 'ajax/create_fvscisold.php',
-      type: 'POST',
-      data: fd,
-      processData: false,
-      contentType: false,
-      dataType: 'json',
-      success(res) {
-        if (res?.success) {
-          Swal.fire({
-            icon: 'success',
-            title: 'บันทึกสำเร็จ',
-            timer: 1000,
-            showConfirmButton: false,
-          }).then(() => location.reload());
-        } else {
+    function doSubmit(confirmReplace) {
+      $.ajax({
+        url: 'ajax/create_fvscisold.php',
+        type: 'POST',
+        data: buildFormData(confirmReplace),
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success(res) {
+          if (res?.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'บันทึกสำเร็จ',
+              timer: 1000,
+              showConfirmButton: false,
+            }).then(() => location.reload());
+            return;
+          }
+
+          // พบใบรับรองเดิมที่ยัง active และยังไม่หมดอายุ -> ต้องให้ผู้ใช้ยืนยันก่อน
+          if (res?.need_confirmation && res?.existing_certificate) {
+            const c = res.existing_certificate;
+            $btn.prop('disabled', false);
+            Swal.fire({
+              icon: 'warning',
+              title: 'พบใบรับรอง สร.3 ที่ยังไม่หมดอายุ',
+              html:
+                `เลขที่: <b>${c.certificate_number ?? '-'}</b><br>` +
+                `มีผลตั้งแต่: <b>${c.effective_date ?? '-'}</b><br>` +
+                `หมดอายุ: <b>${c.expiration_date ?? '-'}</b><br><br>` +
+                `หากบันทึกใบรับรองฉบับใหม่นี้สำเร็จ<br>` +
+                `ใบรับรองเดิมจะถูกเปลี่ยนสถานะเป็น "ไม่ใช้งาน"<br>` +
+                `และยังคงเก็บไว้เป็นประวัติ<br><br>` +
+                `ต้องการดำเนินการต่อหรือไม่?`,
+              showCancelButton: true,
+              confirmButtonText: 'ดำเนินการต่อ',
+              cancelButtonText: 'ยกเลิก',
+            }).then((result) => {
+              if (result.isConfirmed) {
+                $btn.prop('disabled', true);
+                doSubmit(true);
+              }
+            });
+            return;
+          }
+
+          // พบ active+ยังไม่หมดอายุมากกว่า 1 ใบ -> data inconsistency ห้ามบันทึกต่อ
+          if (res?.inconsistency) {
+            Swal.fire({
+              icon: 'error',
+              title: 'พบข้อมูลไม่สอดคล้องกัน',
+              text:
+                res?.message ||
+                'พบใบรับรองที่ยังใช้งานอยู่มากกว่า 1 รายการ กรุณาตรวจสอบข้อมูลก่อนบันทึกใบรับรองใหม่',
+            });
+            return;
+          }
+
           Swal.fire({
             icon: 'error',
             title: 'ผิดพลาด',
             text: res?.message || '',
           });
-        }
-      },
-      error(xhr) {
-        Swal.fire({
-          icon: 'error',
-          title: 'เชื่อมต่อไม่ได้',
-          text: xhr.responseText || 'โปรดลองใหม่',
-        });
-      },
-      complete() {
-        $btn.prop('disabled', false);
-      },
-    });
+        },
+        error(xhr) {
+          Swal.fire({
+            icon: 'error',
+            title: 'เชื่อมต่อไม่ได้',
+            text: xhr.responseText || 'โปรดลองใหม่',
+          });
+        },
+        complete() {
+          $btn.prop('disabled', false);
+        },
+      });
+    }
+
+    doSubmit(false);
   });
 
 //#endregion AJAX: บันทึก ADD
@@ -920,6 +1014,7 @@ $(document)
     const $input = $modal.find('#certAttachmentsEdit');
     const $list = $modal.find('#selectedFilesEdit');
     const selected = $input.data('selected') || [];
+    const selectedTypes = $input.data('selectedTypes') || [];
 
     // เคลียร์ URL เก่าก่อน
     _objectUrls.forEach(u => URL.revokeObjectURL(u));
@@ -986,6 +1081,9 @@ $(document)
     });
 
     $list.html(html);
+    $list.find('select[name="attachment_type_new[]"]').each(function (idx) {
+      this.value = selectedTypes[idx] || 'ทะเบียนเรือ';
+    });
   }
 
   // เมื่อเลือกไฟล์ใหม่
@@ -996,13 +1094,20 @@ $(document)
       const $input = $modal.find('#certAttachmentsEdit');
 
       let selected = $input.data('selected') || [];
+      let selectedTypes = $input.data('selectedTypes') || [];
+      selectedTypes = $modal.find('#selectedFilesEdit select[name="attachment_type_new[]"]')
+        .map(function () { return $(this).val() || 'ทะเบียนเรือ'; }).get();
       const files = Array.from(this.files || []);
 
       files.forEach((f) => {
-        if (!selected.some((x) => x.name === f.name && x.size === f.size)) selected.push(f);
+        if (!selected.some((x) => x.name === f.name && x.size === f.size)) {
+          selected.push(f);
+          selectedTypes.push('ทะเบียนเรือ');
+        }
       });
 
       $input.data('selected', selected);
+      $input.data('selectedTypes', selectedTypes);
       syncInputFilesEdit();
       renderSelectedPreviewEdit();
     })
@@ -1013,13 +1118,25 @@ $(document)
       const $input = $modal.find('#certAttachmentsEdit');
 
       let selected = $input.data('selected') || [];
+      let selectedTypes = $input.data('selectedTypes') || [];
       const idx = +$(this).data('idx');
-      if (idx >= 0) selected.splice(idx, 1);
+      if (idx >= 0) {
+        selected.splice(idx, 1);
+        selectedTypes.splice(idx, 1);
+      }
 
       $input.data('selected', selected);
+      $input.data('selectedTypes', selectedTypes);
       syncInputFilesEdit();
       renderSelectedPreviewEdit();
     });
+
+  $('#modalFvscisOldEdit').on('change.certAttachTypeEdit', '#selectedFilesEdit select[name="attachment_type_new[]"]', function () {
+    const $input = $('#modalFvscisOldEdit').find('#certAttachmentsEdit');
+    const types = $('#modalFvscisOldEdit').find('#selectedFilesEdit select[name="attachment_type_new[]"]')
+      .map(function () { return $(this).val() || 'ทะเบียนเรือ'; }).get();
+    $input.data('selectedTypes', types);
+  });
 
   // -------- ลบไฟล์เดิม (existing) --------
   $(document).on('click', '.btn-del-existing', function (e) {
@@ -1079,6 +1196,7 @@ $(document)
     _objectUrls = [];
 
     $input.val('').removeData('selected');
+    $input.removeData('selectedTypes');
     $modal.find('#selectedFilesEdit').empty();
     $modal.find('#existingFiles').empty();
   });
@@ -1103,7 +1221,7 @@ $(document)
 
     const input = document.getElementById('certAttachmentsEdit');
     if (input?.files?.length) {
-      const types = $('select[name="attachment_type_new[]"]')
+      const types = $(input).closest('#form-fvscisold-edit').find('select[name="attachment_type_new[]"]')
         .map(function () {
           return $(this).val() || '';
         })

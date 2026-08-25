@@ -107,7 +107,7 @@ class Elicense extends DatabaseObjectEl{
             LEFT JOIN public.amphur am ON am.id = ef.amphur_id
             LEFT JOIN public.province pr ON pr.id = ef.province_id
             LEFT JOIN public.fishing_vessel fv ON fv.id = fl.vessel_id
-            WHERE fl.fishery_year = '2567'
+            WHERE fl.fishery_year = '2569'
               AND fl.state = 'active'
               AND fl.license_type_id = 1
               AND rpn.number = :id_number";
@@ -180,7 +180,7 @@ class Elicense extends DatabaseObjectEl{
             LEFT JOIN public.fishing_tool_line ftl1 on ftl1.id = (select ftl.id from fishing_tool_line ftl where ftl.fishing_license_id = fl.id order by ftl.id asc offset 0 limit 1)
             LEFT JOIN public.fishing_tool_group ftg1 on ftg1.id = ftl1.fishing_tool_category_id
             LEFT JOIN public.fishing_tool ft1 on ft1.id = ftl1.fishing_tool_id
-            WHERE fl.fishery_year = '2567'
+            WHERE fl.fishery_year = '2569'
               AND fl.state = 'active'
               AND fl.license_type_id = 1
               AND rpn.number = :citizen_id";
@@ -208,7 +208,7 @@ class Elicense extends DatabaseObjectEl{
     }
 
 
-    public static function find_one_by_ship_code(PDO $pdo, string $ship_code, string $fishery_year = '2567') {
+    public static function find_one_by_ship_code(PDO $pdo, string $ship_code, string $fishery_year = '2569') {
       $sql = "SELECT
                 am.name AS amphur_request,
                 pr.name AS province_request,
@@ -292,7 +292,7 @@ class Elicense extends DatabaseObjectEl{
                 fl.fishing_area
               FROM public.fishing_license fl
               LEFT JOIN public.fishing_vessel fv ON fv.id = fl.vessel_id
-              WHERE fl.fishery_year = '2567'
+              WHERE fl.fishery_year = '2569'
                 AND fl.state = 'active'
                 AND fl.license_type_id = 1
                 AND fv.ship_code = :ship_code

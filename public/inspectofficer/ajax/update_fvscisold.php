@@ -18,6 +18,12 @@ try {
     $obj = FvSanitationCertificationOld::find_by_id($id);
     if(!$obj) throw new Exception('ไม่พบรายการ');
 
+    // Backend Guard: แก้ไขได้เฉพาะ record ที่เป็น working record จริง (status=active และยังไม่หมดอายุ) เท่านั้น
+    // record อื่น (active-แต่หมดอายุ/inactive/fail/pending) ถือเป็นประวัติ ห้ามแก้ไข/ห้ามแนบไฟล์เพิ่มผ่าน endpoint นี้
+    if (!FvSanitationCertificationOld::is_active_working($obj->status, $obj->expiration_date)) {
+        throw new Exception('รายการนี้ไม่ใช่ใบรับรองที่ใช้งานอยู่ในปัจจุบัน และไม่สามารถแก้ไขหรือลบได้');
+    }
+
     unset($attrs['id']);
 
     // อัปเดตฟิลด์หลัก

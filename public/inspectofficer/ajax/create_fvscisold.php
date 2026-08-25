@@ -33,6 +33,52 @@ try {
     }
 
     // -----------------------------
+    // 1.1) Single-Active Guard (เฉพาะกรณีใบใหม่จะเป็น active) — ต้องเช็คก่อน insert เสมอ
+    // -----------------------------
+    $ship_code_for_check = trim((string)($attrs['ship_code'] ?? ''));
+    $old_to_deactivate_id = null;
+
+    if ($attrs['status'] === 'active' && $ship_code_for_check !== '') {
+        $existing_active = FvSanitationCertificationOld::find_all_active_unexpired_by_ship_code($ship_code_for_check);
+        $existing_count   = count($existing_active);
+
+        // พบ active+ยังไม่หมดอายุมากกว่า 1 ใบ -> data inconsistency ห้าม insert ต่อโดยเด็ดขาด
+        if ($existing_count > 1) {
+            if (method_exists($database, 'rollback')) { $database->rollback(); } else { $database->autocommit(true); }
+            echo json_encode([
+                'success'       => false,
+                'inconsistency' => true,
+                'message'       => 'พบใบรับรองที่ยังใช้งานอยู่มากกว่า 1 รายการ กรุณาตรวจสอบข้อมูลก่อนบันทึกใบรับรองใหม่',
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // พบ active+ยังไม่หมดอายุ 1 ใบ -> ต้องได้รับการยืนยันจากเจ้าหน้าที่ก่อนเท่านั้น
+        if ($existing_count === 1) {
+            $confirmed = !empty($_POST['confirm_replace_active']);
+            if (!$confirmed) {
+                $old = $existing_active[0];
+                if (method_exists($database, 'rollback')) { $database->rollback(); } else { $database->autocommit(true); }
+                echo json_encode([
+                    'success'             => false,
+                    'need_confirmation'   => true,
+                    'existing_certificate' => [
+                        'id'                 => $old->id,
+                        'certificate_number' => $old->certificate_number,
+                        'effective_date'     => $old->effective_date,
+                        'expiration_date'    => $old->expiration_date,
+                    ],
+                    'message' => 'พบใบรับรองเดิมที่ยังไม่หมดอายุ กรุณายืนยันก่อนบันทึกใบรับรองใหม่',
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            // ยืนยันแล้ว -> จำ id ของใบเดิมไว้ ปิดเป็น inactive หลัง insert ใบใหม่สำเร็จ
+            $old_to_deactivate_id = (int)$existing_active[0]->id;
+        }
+    }
+
+    // -----------------------------
     // 2) สร้าง record ใหม่
     // -----------------------------
     $cert = new FvSanitationCertificationOld($attrs);
@@ -44,9 +90,12 @@ try {
     // อัปเดตสถานะรวมของเรือ
     if ($attrs['status'] == 'fail') {
         FvSanitationCertificationOld::mark_fail($cert->ship_code);
-    } else {
-        FvSanitationCertificationOld::mark_active($cert->ship_code);
+    } elseif ($old_to_deactivate_id !== null) {
+        // Single-Active Rule: ใบใหม่ที่เพิ่ง insert สำเร็จ = active อยู่แล้ว (ตามค่า status ที่ส่งเข้ามา)
+        // ปิดใบเดิมที่ active อยู่ก่อนหน้าเป็น inactive เท่านั้น ไม่ใช้ mark_active() เลือกใบจากวันหมดอายุไกลที่สุด
+        FvSanitationCertificationOld::deactivate_other_active($cert->ship_code, (int)$cert->id);
     }
+
 
     $cert_id = $cert->id;
 
