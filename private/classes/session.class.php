@@ -196,6 +196,7 @@ class Session {
     public function require_role(array $allowed_roles) {
       if (!$this->is_logged_in()) {
           if ($this->is_ajax_request()) {
+            http_response_code(401);
               header('Content-Type: application/json');
               echo json_encode([
                   'success' => false,
@@ -203,11 +204,12 @@ class Session {
               ]);
               exit;
           }
-          redirect_to('../login.php');
+              redirect_to(WWW_ROOT . '/login.php');
       }
 
       if (!in_array($this->role, $allowed_roles)) {
           if ($this->is_ajax_request()) {
+            http_response_code(403);
               header('Content-Type: application/json');
               echo json_encode([
                   'success' => false,
@@ -215,7 +217,7 @@ class Session {
               ]);
               exit;
           }
-          redirect_to('../login.php');
+              redirect_to(WWW_ROOT . '/login.php');
       }
   }
 

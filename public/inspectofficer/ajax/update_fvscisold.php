@@ -18,11 +18,32 @@ try {
     $obj = FvSanitationCertificationOld::find_by_id($id);
     if(!$obj) throw new Exception('ไม่พบรายการ');
 
+    // Fix: never trust a client-submitted evaluation_agency value for manual certificate edits.
+    // The certificate scope must remain aligned with the authenticated officer's department.
+    $currentOfficer = Officer::find_by_id($session->user_id());
+    if ($currentOfficer && isset($currentOfficer->departments_id) && $currentOfficer->departments_id !== null && $currentOfficer->departments_id !== '') {
+        $attrs['evaluation_agency'] = (int)$currentOfficer->departments_id;
+    }
+
+    $audit_fields = [
+        'vessel_name', 'ship_code', 'certificate_number', 'request_date',
+        'signature_date', 'effective_date', 'expiration_date', 'status',
+        'vessel_status', 'evaluation_agency', 'signing_unit', 'temporary_reason',
+        'responsible_unit', 'certificate_status', 'remark', 'license_status',
+        'license_number', 'gear_type', 'owner_name', 'vessel_mark'
+    ];
+    $old_values = [];
+    foreach ($audit_fields as $field) {
+        $old_values[$field] = $obj->$field ?? null;
+    }
+
     // Backend Guard: แก้ไขได้เฉพาะ record ที่เป็น working record จริง (status=active และยังไม่หมดอายุ) เท่านั้น
     // record อื่น (active-แต่หมดอายุ/inactive/fail/pending) ถือเป็นประวัติ ห้ามแก้ไข/ห้ามแนบไฟล์เพิ่มผ่าน endpoint นี้
     if (!FvSanitationCertificationOld::is_active_working($obj->status, $obj->expiration_date)) {
         throw new Exception('รายการนี้ไม่ใช่ใบรับรองที่ใช้งานอยู่ในปัจจุบัน และไม่สามารถแก้ไขหรือลบได้');
     }
+
+    $database->begin_transaction();
 
     unset($attrs['id']);
 
@@ -41,6 +62,19 @@ try {
 
     if(!$obj->save()){
         throw new Exception('บันทึกไม่สำเร็จ');
+    }
+
+    $new_values = [];
+    foreach ($audit_fields as $field) {
+        $new_values[$field] = $obj->$field ?? null;
+    }
+    $changed_old = [];
+    $changed_new = [];
+    foreach ($audit_fields as $field) {
+        if ((string)($old_values[$field] ?? '') !== (string)($new_values[$field] ?? '')) {
+            $changed_old[$field] = $old_values[$field];
+            $changed_new[$field] = $new_values[$field];
+        }
     }
 
     // ===== แนบไฟล์ใหม่ (append) - SHORT =====
@@ -123,26 +157,49 @@ try {
 
         if ($att->save()) $files_saved++;
         else { @unlink($abs); $files_failed++; $file_errors[] = "บันทึก DB ไม่สำเร็จ: {$origName}"; }
+
+        if ($att->id > 0 && !InspectionLog::create_manual_certificate_audit(
+            'fvscis_attachment_added',
+            $certificate_id,
+            'เพิ่มไฟล์แนบใบรับรอง Manual',
+            null,
+            [
+                'attachment_id' => (int)$att->id,
+                'attachment_type' => $att->attachment_type,
+                'file_name' => $att->file_name,
+            ]
+        )) {
+            throw new Exception('บันทึกประวัติไฟล์แนบไม่สำเร็จ');
+        }
     }
     }
 
 
-    $action = LogAction::find_by_code('fvscis_updated_by_officer');
-    if ($action) {
-        $log = new InspectionLog();
-            $log->inspection_request_id = $obj->id;
-            $log->action_id             = $action->id;
-            $log->note                  = "เจ้าหน้าที่แก้ไขผลตรวจจากเอกสารของเรือ ".$obj->vessel_name;
-            $log->save();
+    if ($changed_old) {
+        if (!InspectionLog::create_manual_certificate_audit(
+            'fvscis_updated_by_officer',
+            $obj->id,
+            "เจ้าหน้าที่แก้ไขผลตรวจจากเอกสารของเรือ " . $obj->vessel_name,
+            $changed_old,
+            $changed_new
+        )) {
+            throw new Exception('บันทึกประวัติการแก้ไขไม่สำเร็จ');
+        }
     }
+    $has_audit_event = !empty($changed_old) || $files_saved > 0;
     $message = "เจ้าหน้าที่แก้ไขผลตรวจจากเอกสารของเรือ ".$obj->vessel_name;
     $officers = Officer::find_by_department_id($obj->evaluation_agency);
+    $updated_action = LogAction::find_by_code('fvscis_updated_by_officer');
+    if ($has_audit_event && !$updated_action) {
+        throw new Exception('ไม่พบ action สำหรับประวัติการแก้ไข');
+    }
+    if ($has_audit_event) {
         foreach ($officers as $officer) {
             Notification::create_notification(
                 $officer->id,
                 'inspectofficer',
                 $obj->id,
-                $action->id,
+                $updated_action->id,
                 $message,
                 'warning'
             );
@@ -153,7 +210,12 @@ try {
         foreach ($officers as $officer) {
         Notification::mark_action_taken($officer->id, 'inspectofficer', $obj->id, [2,3]);
         }*/
-        Notification::mark_action_taken($session->user_id(), 'inspectofficer', $obj->id, $action1->id);
+        if ($action1) {
+            Notification::mark_action_taken($session->user_id(), 'inspectofficer', $obj->id, $action1->id);
+        }
+    }
+
+    $database->commit();
 
         $ini_upload_max = ini_get('upload_max_filesize') ?: '';
         $ini_post_max   = ini_get('post_max_size') ?: '';
@@ -172,6 +234,9 @@ try {
     exit;
 
 } catch (Throwable $e) {
+    if (isset($database)) {
+        @$database->rollback();
+    }
     echo json_encode([
         'success'=>false,
         'message'=>$e->getMessage()

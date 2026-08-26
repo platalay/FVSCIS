@@ -22,25 +22,59 @@ try {
         throw new Exception('รายการนี้ไม่ใช่ใบรับรองที่ใช้งานอยู่ในปัจจุบัน และไม่สามารถแก้ไขหรือลบได้');
     }
 
-    // ลบไฟล์จริง (กรณีเก็บใน /public/uploads)
+    $deleted_attachment = [
+        'attachment_id' => (int)$att->id,
+        'attachment_type' => $att->attachment_type,
+        'file_name' => $att->file_name,
+    ];
+
     $docRoot = rtrim(str_replace('\\','/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
     $pubPath = rtrim(str_replace('\\','/', defined('PUBLIC_PATH') ? PUBLIC_PATH : $docRoot), '/');
-
-    $filePath = (string)$att->file_path; // อาจเป็น '/uploads/...' หรือ URL
-    if(!preg_match('~^https?://~i', $filePath)){
-        $abs = realpath($pubPath . '/' . ltrim($filePath,'/'));
+    $filePath = (string)$att->file_path;
+    $physical_path = null;
+    if (!preg_match('~^https?://~i', $filePath)) {
+        $candidate = realpath($pubPath . '/' . ltrim($filePath, '/'));
         $uploadsBase = realpath($pubPath . '/uploads');
-        if($abs && $uploadsBase && str_starts_with($abs, $uploadsBase) && is_file($abs)){
-            @unlink($abs);
+        if ($candidate && $uploadsBase && str_starts_with($candidate, $uploadsBase) && is_file($candidate)) {
+            $physical_path = $candidate;
         }
     }
 
-    // ลบ DB
+    $database->begin_transaction();
+
+    // ลบ DB และเขียน audit ก่อน commit; physical file cleanup ทำหลัง commit เท่านั้น
     if(!$att->delete()){
         throw new Exception('delete db failed');
     }
 
-    echo json_encode(['success'=>true], JSON_UNESCAPED_UNICODE);
+    if (!InspectionLog::create_manual_certificate_audit(
+        'fvscis_attachment_deleted',
+        (int)$cert->id,
+        'ลบไฟล์แนบใบรับรอง Manual',
+        $deleted_attachment,
+        null
+    )) {
+        throw new Exception('บันทึกประวัติการลบไฟล์แนบไม่สำเร็จ');
+    }
+
+    $database->commit();
+
+    $cleanup_ok = true;
+    if ($physical_path !== null && !@unlink($physical_path)) {
+        $cleanup_ok = false;
+        error_log('[FVSCIS] Manual certificate attachment database/audit delete committed, but physical cleanup failed: ' . $physical_path);
+    }
+
+    echo json_encode([
+        'success' => true,
+        'database_deleted' => true,
+        'audit_recorded' => true,
+        'physical_cleanup_success' => $cleanup_ok,
+        'message' => $cleanup_ok ? 'ลบไฟล์แนบสำเร็จ' : 'ลบข้อมูลและประวัติสำเร็จ แต่ลบไฟล์จริงไม่สำเร็จ'
+    ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
+    if (isset($database)) {
+        @$database->rollback();
+    }
     echo json_encode(['success'=>false, 'message'=>$e->getMessage()], JSON_UNESCAPED_UNICODE);
 }

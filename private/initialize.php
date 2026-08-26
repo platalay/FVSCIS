@@ -35,7 +35,12 @@
   $database->query("SET time_zone = '+07:00'");
   DatabaseObject::set_database($database);
 
-  $el_db = db_el_connect();
+  try {
+    $el_db = db_el_connect();
+  } catch (Throwable $e) {
+    $el_db = null;
+    error_log('[FVSCIS] e-License database unavailable: ' . $e->getMessage());
+  }
   DatabaseObjectEl::set_database($el_db);
 
   //$fi_db = db_fi_connect();

@@ -25,6 +25,13 @@ try {
     // -----------------------------
     $attrs = $_POST['FvSanitationCertificationOld'];
 
+    // Fix: department scope must reflect the authenticated officer, not a client-controlled hidden field.
+    // This preserves the intended authorization rule: certificate.evaluation_agency == officer.departments_id.
+    $currentOfficer = Officer::find_by_id($session->user_id());
+    if ($currentOfficer && isset($currentOfficer->departments_id) && $currentOfficer->departments_id !== null && $currentOfficer->departments_id !== '') {
+        $attrs['evaluation_agency'] = (int)$currentOfficer->departments_id;
+    }
+
     // map สถานะ
     $attrs['status'] = ($attrs['certificate_status'] == 'ไม่ผ่าน') ? 'fail' : 'active';
 
@@ -174,6 +181,19 @@ try {
 
             if ($att->save()) {
                 $files_saved++;
+                if (!InspectionLog::create_manual_certificate_audit(
+                    'fvscis_attachment_added',
+                    $cert_id,
+                    'เพิ่มไฟล์แนบใบรับรอง Manual',
+                    null,
+                    [
+                        'attachment_id' => (int)$att->id,
+                        'attachment_type' => $att->attachment_type,
+                        'file_name' => $att->file_name,
+                    ]
+                )) {
+                    throw new Exception('บันทึกประวัติไฟล์แนบไม่สำเร็จ');
+                }
             } else {
                 // ถ้า save ไม่ได้ จะปล่อยไฟล์ค้างไหม?
                 // ถ้าไม่อยากให้ค้าง: @unlink($target_path);
@@ -186,15 +206,26 @@ try {
     // -----------------------------
     // 4) log + แจ้งเตือน (ย่อ)
     // -----------------------------
-    $action = LogAction::find_by_code('fvscis_created_by_officer');
-    if ($action) {
-        $log = new InspectionLog();
-        $log->inspection_request_id = $cert->id;
-        $log->action_id             = $action->id;
-        $log->note                  = "เจ้าหน้าที่บันทึกผลตรวจจากเอกสารของเรือ " . $cert->vessel_name;
-        $log->save();
+    $audit_values = [
+        'vessel_name' => $cert->vessel_name,
+        'ship_code' => $cert->ship_code,
+        'certificate_number' => $cert->certificate_number,
+        'effective_date' => $cert->effective_date,
+        'expiration_date' => $cert->expiration_date,
+        'certificate_status' => $cert->certificate_status,
+        'status' => $cert->status,
+    ];
+    if (!InspectionLog::create_manual_certificate_audit(
+        'fvscis_created_by_officer',
+        $cert->id,
+        "เจ้าหน้าที่บันทึกผลตรวจจากเอกสารของเรือ " . $cert->vessel_name,
+        null,
+        $audit_values
+    )) {
+        throw new Exception('บันทึกประวัติใบรับรองไม่สำเร็จ');
     }
 
+    $created_action = LogAction::find_by_code('fvscis_created_by_officer');
     $message  = "เจ้าหน้าที่บันทึกผลตรวจจากเอกสารของเรือ " . $cert->vessel_name;
     $officers = Officer::find_by_department_id($cert->evaluation_agency);
     foreach ($officers as $officer) {
@@ -202,7 +233,7 @@ try {
             $officer->id,
             'inspectofficer',
             $cert->id,
-            $action->id ?? null,
+            $created_action->id,
             $message,
             'warning'
         );

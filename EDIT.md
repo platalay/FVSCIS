@@ -1,3 +1,52 @@
+# Inspect Officer Authentication Runtime Fix
+
+- Root cause HTTP 500: `private/initialize.php` เรียก e-License PostgreSQL `172.16.1.168:5432` แล้ว connection timeout ที่ `private/database_functions.php` line 36 ก่อน endpoint จะถึง auth guard
+- แก้ `private/initialize.php` ให้ catch `Throwable`, เขียน `error_log()` และให้ระบบที่ไม่ใช้ e-License bootstrap ต่อได้
+- แก้ `private/classes/session.class.php`: AJAX expired session เป็น HTTP 401 JSON, wrong role เป็น HTTP 403 JSON, normal page redirect ไป `WWW_ROOT/login.php`
+- Runtime ผ่าน: login UI สำเร็จ, Inspect Officer loader HTTP 200 JSON (`unread=12`, 10 รายการ), audit reader ในหน่วยงานเดียวกันสำเร็จ, ต่างหน่วยงานถูกปฏิเสธ, unauthenticated loader HTTP 401 JSON
+- พบ `img/default-user.svg` 404 และ external CDN warnings ซึ่งไม่เกี่ยวกับ auth/audit blocker
+- ไม่มีการ commit หรือ push
+
+---
+
+# Manual FV Certificate Audit Log
+
+เพิ่ม audit trail เฉพาะ Manual FV Certificate ตาม scope: create, edit, delete และ attachment add/delete
+
+## Files Changed
+
+| ไฟล์ | รายละเอียด |
+|---|---|
+| [private/classes/InspectionLog.class.php](private/classes/InspectionLog.class.php) | เพิ่ม `entity_type`, `entity_id`, `old_values`, `new_values`, `actor_role`; เพิ่ม helper สร้าง/อ่าน Manual Certificate audit |
+| [public/inspectofficer/ajax/create_fvscisold.php](public/inspectofficer/ajax/create_fvscisold.php) | audit Create และ attachment Add หลัง business save สำเร็จใน transaction เดิม |
+| [public/inspectofficer/ajax/update_fvscisold.php](public/inspectofficer/ajax/update_fvscisold.php) | อ่าน old snapshot ก่อน update, เก็บเฉพาะ field ที่เปลี่ยนใน old/new JSON และ audit attachment Add |
+| [public/inspectofficer/ajax/delete_fvscisold.php](public/inspectofficer/ajax/delete_fvscisold.php) | เก็บ certificate/attachment metadata ก่อน hard delete และสร้าง audit หลังลบใน transaction |
+| [public/inspectofficer/ajax/fvscisold_attachment_delete.php](public/inspectofficer/ajax/fvscisold_attachment_delete.php) | ทำ attachment file/DB delete และ audit ให้อยู่ใน transaction เดียวกัน |
+| [public/inspectofficer/ajax/get_manual_certificate_audit.php](public/inspectofficer/ajax/get_manual_certificate_audit.php) | reader เฉพาะ inspect officer พร้อมตรวจ evaluation agency กับ department |
+| [ADD_MANUAL_CERTIFICATE_AUDIT_LOG.sql](ADD_MANUAL_CERTIFICATE_AUDIT_LOG.sql) | migration แบบ backward-compatible และ idempotent สำหรับ MariaDB |
+| [SYSTEM_LOG.md](SYSTEM_LOG.md) | อัปเดต schema, event coverage, reader และข้อจำกัด |
+
+## Audit Design
+
+- ไม่ใช้ `inspection_request_id` เก็บ certificate id สำหรับ audit ใหม่
+- ใช้ `entity_type='manual_certificate'` และ `entity_id=certificate.id`; ตั้ง `inspection_request_id=0` เพื่อคง compatibility กับ column เดิมที่เป็น NOT NULL
+- `old_values` และ `new_values` เป็น JSON แบบ whitelist; Edit เก็บเฉพาะ field ที่เปลี่ยน และไม่สร้าง change event เมื่อไม่มีการเปลี่ยนค่า
+- Create เก็บค่า certificate สำคัญหลังสร้าง; Delete เก็บ snapshot สำคัญก่อนลบ; attachment เก็บ id, type และ file name ไม่เก็บ binary
+- Actor id/time/IP เติมจาก `DatabaseObject::save()` และ role จาก session
+- เพิ่ม action codes `fvscis_attachment_added` และ `fvscis_attachment_deleted`; action codes certificate เดิมถูกใช้ต่อโดยไม่ใช้ numeric id ใหม่
+- ทุก audit insert ใน create/update/delete certificate และ attachment delete อยู่หลัง business mutation สำเร็จ; attachment delete เพิ่ม transaction ครอบคลุม file/DB/audit
+
+## Verification
+
+- ตรวจ DDL จริงของ `inspection_logs`, `log_actions`, `fv_sanitation_certification_old` และ `fv_certificate_attachments` จาก MariaDB 10.4.32 ก่อนออกแบบ migration
+- Apply migration บน local database สำเร็จ; columns และ action codes ใหม่มีอยู่จริง
+- PHP lint ผ่านสำหรับ model, endpoints และ audit reader
+- ทดสอบ authorization reader ตาม role/department logic จาก source; ยังไม่ได้ยิง authenticated browser reader หลัง session หมดอายุ
+- ยังไม่ได้สร้าง/แก้/ลบ certificate หรือ upload/delete attachment จริง เพราะไม่มี isolated fixture และการทำดังกล่าวเปลี่ยนข้อมูล/ไฟล์ระบบ
+- ไม่มีการ commit หรือ push
+
+---
+
 # FVSCIS — EDIT.md
 
 การแก้ไขรอบนี้อ้างอิงผลวิเคราะห์ใน [WORKFLOW.md](WORKFLOW.md) และ Business Rule (Rule B) ที่เจ้าของระบบยืนยัน
